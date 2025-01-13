@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBook Viewer</title>
+    <title>Ecology Book by Dr. Chun-I Chiu</title>
     <style>
         body {
             margin: 0;
@@ -42,12 +42,36 @@
             flex: 1;
             background-color: #fff;
             overflow: hidden;
+            position: relative;
         }
 
         .right-column iframe {
             width: 100%;
             height: 100%;
             border: none;
+        }
+
+        .spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f4f4f4;
+            border-top: 5px solid darkgreen;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -67,12 +91,30 @@
     </div>
 
     <div class="right-column">
-        <iframe id="contentFrame" src="https://termcic.github.io/insect_ecology/about_population_ecology.html"></iframe>
+        <div class="spinner" id="spinner"></div>
+        <iframe id="contentFrame" src="https://termcic.github.io/insect_ecology/about_population_ecology.html" onload="hideSpinner()"></iframe>
     </div>
 
     <script>
         function loadPage(url) {
-            document.getElementById('contentFrame').src = url;
+            const spinner = document.getElementById('spinner');
+            const iframe = document.getElementById('contentFrame');
+
+            // Show spinner and temporarily hide iframe
+            spinner.style.display = 'block';
+            iframe.style.visibility = 'hidden';
+
+            // Change iframe source
+            iframe.src = url;
+        }
+
+        function hideSpinner() {
+            const spinner = document.getElementById('spinner');
+            const iframe = document.getElementById('contentFrame');
+
+            // Hide spinner and show iframe
+            spinner.style.display = 'none';
+            iframe.style.visibility = 'visible';
         }
     </script>
 </body>
