@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diversity Indices Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h3 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .results-container {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f8f8;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        canvas {
+            display: block;
+            margin: auto auto;
+            height: 300px;
+            width: 300px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .explanation h3 {
+            margin-top: 0;
+        }
+
+        .explanation p {
+            margin-bottom: 10px;
+        }
+
+        .explanation ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Diversity Indices Calculator</h1>
+    <h3>by Dr. Chun-I Chiu</h3>
+    <h3>Department of Entomology and Plant Pathology, Chiang Mai University</h3>
+    <div class="container">
+        <h2>Input Data</h2>
+        <button onclick="addSpecies()">Add Species</button><br><br>
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Species</th>
+                        <th>Abundance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button onclick="processData()">Calculate Diversity Indices</button>
+        <h2>Results</h2>
+        <div id="results" class="results-container"></div>
+
+        <h2>Visualization</h2>
+        <div class="table-container">
+            <canvas id="chart"></canvas>
+        </div>
+        <button onclick="downloadChart()">Download Figure</button>
+
+        <div class="explanation">
+            <h3>Diversity Indices Formulas</h3>
+            <p><strong>Shannon-Wiener Index (H'):</strong> A measure of species diversity in a community.</p>
+            <p><em>Formula:</em> \( H' = - \sum p_i \cdot \ln(p_i) \)</p>
+
+            <p><strong>Simpson's Index (D):</strong> A measure of dominance, where higher values indicate lower diversity.</p>
+            <p><em>Formula:</em> \( D = \sum p_i^2 \)</p>
+
+            <p><strong>Evenness (E):</strong> A measure of how evenly individuals are distributed among species.</p>
+            <p><em>Formula:</em> \( E = \frac{H'}{\ln(S)} \)</p>
+
+            <p><strong>Chao 1 Index:</strong> An estimate of species richness accounting for undetected species.</p>
+            <p><em>Formula:</em> \( \text{Chao 1} = S + \frac{(F_1^2)}{2 \cdot F_2} \)</p>
+
+            <ul>
+                <li><strong>p<sub>i</sub>:</strong> Proportion of individuals of species \( i \) in the total population.</li>
+                <li><strong>S:</strong> Observed species richness.</li>
+                <li><strong>F<sub>1</sub>:</strong> Number of singletons (species with 1 individual).</li>
+                <li><strong>F<sub>2</sub>:</strong> Number of doubletons (species with 2 individuals).</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let speciesCount = 0;
+        let chart;
+
+        function addSpecies() {
+            speciesCount++;
+            const tableBody = document.querySelector("#dataTable tbody");
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>Species ${speciesCount}</td>
+                <td><input type="number" min="0" placeholder="Enter abundance"></td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        function processData() {
+            const rows = document.querySelectorAll("#dataTable tbody tr");
+            const abundances = [];
+            let totalIndividuals = 0;
+
+            rows.forEach(row => {
+                const abundance = parseInt(row.children[1].querySelector("input").value) || 0;
+                abundances.push(abundance);
+                totalIndividuals += abundance;
+            });
+
+            if (abundances.length === 0 || totalIndividuals === 0) {
+                alert("Please enter valid abundance data for at least one species.");
+                return;
+            }
+
+            const proportions = abundances.map(abundance => abundance / totalIndividuals);
+            const H = calculateShannonIndex(proportions);
+            const D = calculateSimpsonsIndex(proportions);
+            const E = calculateEvenness(H, abundances.length);
+            const Chao1 = calculateChao1(abundances);
+
+            displayResults({ H, D, E, Chao1 });
+            plotData(abundances);
+        }
+
+        function calculateShannonIndex(proportions) {
+            return -proportions.reduce((sum, p) => sum + (p > 0 ? p * Math.log(p) : 0), 0);
+        }
+
+        function calculateSimpsonsIndex(proportions) {
+            return proportions.reduce((sum, p) => sum + p ** 2, 0);
+        }
+
+        function calculateEvenness(H, speciesCount) {
+            return H / Math.log(speciesCount);
+        }
+
+        function calculateChao1(abundances) {
+            const S = abundances.filter(a => a > 0).length; // Observed species richness
+            const F1 = abundances.filter(a => a === 1).length; // Singletons
+            const F2 = abundances.filter(a => a === 2).length; // Doubletons
+
+            if (F2 === 0) {
+                return S + (F1 * (F1 - 1)) / 2; // Approximation when F2 is zero
+            }
+
+            return S + (F1 ** 2) / (2 * F2);
+        }
+
+        function displayResults({ H, D, E, Chao1 }) {
+            const container = document.getElementById("results");
+            container.innerHTML = `
+                <p><strong>Shannon-Wiener Index (H'):</strong> ${H.toFixed(4)}</p>
+                <p><strong>Simpson's Index (D):</strong> ${D.toFixed(4)}</p>
+                <p><strong>Evenness (E):</strong> ${E.toFixed(4)}</p>
+                <p><strong>Chao 1 Index:</strong> ${Chao1.toFixed(4)}</p>
+            `;
+        }
+
+        function plotData(abundances) {
+            const ctx = document.getElementById("chart").getContext("2d");
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: abundances.map((_, i) => `Species ${i + 1}`),
+                    datasets: [
+                        {
+                            label: "Abundance",
+                            data: abundances,
+                            backgroundColor: "rgba(0, 123, 255, 0.7)",
+                            borderColor: "rgba(0, 123, 255, 1)",
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: "Species Abundance"
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Species"
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Abundance"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function downloadChart() {
+            const link = document.createElement("a");
+            link.download = "chart.png";
+            link.href = document.getElementById("chart").toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+
+</html>
