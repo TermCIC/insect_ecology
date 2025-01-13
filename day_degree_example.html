@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Degree-Day Concept Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                macros: {
+                    degree: "\\,^{\\circ}\\text{C}" // Define \degree as °C
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .chart-container {
+            margin: 20px 0;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Degree-Day Concept Example</h1>
+    <div class="container">
+        <h2>Example: Insect Development</h2>
+        <p>An insect requires 150 degree-days (DD) to become an adult. Assuming its T<sub>min</sub> = 0. Below is the seasonal fluctuation of temperature, and we calculate how many days it takes for the insect to complete its development.</p>
+
+        <div class="chart-container">
+            <canvas id="temperatureChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="accumulatedDDChart"></canvas>
+        </div>
+
+        <div class="result" id="result">
+            <h3>Result</h3>
+            <p>The insect will become an adult in <span id="daysToAdult"></span> days.</p>
+        </div>
+    </div>
+
+    <script>
+        // Sample data: daily max and min temperatures over a season
+        const dailyTemperatures = [
+            { max: 25, min: 11 },
+            { max: 24, min: 13 },
+            { max: 26, min: 17 },
+            { max: 28, min: 18 },
+            { max: 27, min: 20 },
+            { max: 23, min: 13 },
+            { max: 22, min: 12 },
+            { max: 20, min: 9 },
+            { max: 19, min: 10 },
+            { max: 21, min: 11 },
+            { max: 23, min: 13 },
+            { max: 24, min: 14 },
+            { max: 26, min: 17 },
+            { max: 25, min: 12 },
+            { max: 26, min: 13 },
+            { max: 29, min: 22 },
+        ];
+
+        const Tmin = 10; // Development threshold in degrees Celsius
+        const requiredDegreeDays = 150; // Required DD for development
+
+        // Calculate degree-days and accumulate them
+        let accumulatedDD = 0;
+        let daysToAdult = 0;
+        const dailyDegreeDays = [];
+        const accumulatedDegreeDays = [];
+
+        dailyTemperatures.forEach((day, index) => {
+            const avgTemp = (day.max + day.min) / 2;
+            const dailyDD = Math.max(avgTemp - Tmin, 0);
+            accumulatedDD += dailyDD;
+
+            // Store daily DD and accumulated DD
+            dailyDegreeDays.push(dailyDD);
+            accumulatedDegreeDays.push(accumulatedDD);
+
+            // Count days to reach required DD
+            if (accumulatedDD < requiredDegreeDays) {
+                daysToAdult = index + 1;
+            }
+        });
+
+        // Display the result
+        document.getElementById('daysToAdult').textContent = daysToAdult;
+
+        // Chart.js: Display temperature fluctuations and degree-days
+        const ctxTemperature = document.getElementById('temperatureChart').getContext('2d');
+        new Chart(ctxTemperature, {
+            type: 'line',
+            data: {
+                labels: dailyTemperatures.map((_, index) => `Day ${index + 1}`),
+                datasets: [
+                    {
+                        label: 'Max Temp (°C)',
+                        data: dailyTemperatures.map(day => day.max),
+                        borderColor: 'red',
+                        fill: false
+                    },
+                    {
+                        label: 'Min Temp (°C)',
+                        data: dailyTemperatures.map(day => day.min),
+                        borderColor: 'blue',
+                        fill: false
+                    },
+                    {
+                        label: 'Degree-Days (DD)',
+                        data: dailyDegreeDays,
+                        borderColor: 'green',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Seasonal Temperature Fluctuations and Degree-Days'
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Temperature / Degree-Days'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Days'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Chart.js: Display accumulated degree-days
+        const ctxAccumulatedDD = document.getElementById('accumulatedDDChart').getContext('2d');
+        new Chart(ctxAccumulatedDD, {
+            type: 'line',
+            data: {
+                labels: dailyTemperatures.map((_, index) => `Day ${index + 1}`),
+                datasets: [
+                    {
+                        label: 'Accumulated DD',
+                        data: accumulatedDegreeDays,
+                        borderColor: 'orange',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Accumulated Degree-Days Over Time'
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Accumulated Degree-Days'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Days'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
