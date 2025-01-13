@@ -139,19 +139,27 @@
 
             const parameters = {
                 r: {
-                    mortalityRate: 0.38,
+                    mortalityRate: 0.36,
                     reproductiveRate: [50, 200],
-                    beginToReproduce: 0.03
+                    maxReproductionCapacityRange: [500, 1000],
+                    beginToReproduce: 0.029
                 },
                 k: {
-                    mortalityRate: 0.05,
+                    mortalityRate: 0.04,
                     reproductiveRate: [5, 10],
-                    beginToReproduce: 0.01
+                    maxReproductionCapacityRange: [50, 100],
+                    beginToReproduce: 0.007
                 }
             };
 
-            const { mortalityRate, reproductiveRate, beginToReproduce } = parameters[insectType];
-            const individuals = generateIndividuals(populationSize, mortalityRate, reproductiveRate, beginToReproduce);
+            const { mortalityRate, reproductiveRate, maxReproductionCapacityRange, beginToReproduce } = parameters[insectType];
+            const individuals = generateIndividuals(
+                populationSize,
+                mortalityRate,
+                reproductiveRate,
+                maxReproductionCapacityRange,
+                beginToReproduce
+            );
             const maxSurvivalDays = Math.max(...individuals.map(ind => ind.survivalDays));
 
             populateSexTable(individuals);
@@ -161,17 +169,29 @@
             populateFecundityTable(fecundityData);
         }
 
-        function generateIndividuals(populationSize, mortalityRate, reproductiveRate, beginToReproduce) {
+        function generateIndividuals(populationSize, mortalityRate, reproductiveRate, maxReproductionCapacityRange, beginToReproduce) {
+            const powerExponent = 2; // Control the steepness of the power-law growth
+
             return Array.from({ length: populationSize }, (_, i) => {
                 const sex = Math.random() < 0.5 ? 'Male' : 'Female';
                 const survivalDays = calculateSurvivalDays(mortalityRate);
                 let startReproductionDay = -1;
 
+                // Assign a max reproduction capacity for females
+                const maxReproductionCapacity = sex === 'Female'
+                    ? Math.floor(
+                        Math.random() *
+                        (maxReproductionCapacityRange[1] - maxReproductionCapacityRange[0] + 1)
+                    ) + maxReproductionCapacityRange[0]
+                    : 0;
+
                 if (sex === 'Female') {
-                    const growthRate = beginToReproduce; // Scale growth rate based on `beginToReproduce`
                     for (let day = 1; day <= survivalDays; day++) {
-                        const probability = 1 - Math.exp(-growthRate * day); // Slower growth for K-selected
-                        if (Math.random() < probability) {
+                        const basicProbability = beginToReproduce * day;
+                        const adjustedProbability = Math.pow(basicProbability, powerExponent);
+                        const finalProbability = Math.min(adjustedProbability, 1);
+
+                        if (Math.random() < finalProbability) {
                             startReproductionDay = day;
                             break;
                         }
@@ -183,10 +203,11 @@
                     sex,
                     survivalDays,
                     startReproductionDay,
+                    maxReproductionCapacity, // Maximum fecundity for the individual
+                    currentReproductionCapacity: maxReproductionCapacity // Track remaining capacity
                 };
             });
         }
-
 
         function calculateSurvivalDays(mortalityRate) {
             let days = 0;
@@ -194,7 +215,7 @@
             while (true) {
                 const probability = 1 - Math.exp(-growthRate * days); // Mortality probability increases exponentially
                 if (Math.random() < probability * mortalityRate) {
-                    break; // Individual dies if random roll is less than the calculated probability
+                    break;
                 }
                 days++;
             }
@@ -204,21 +225,27 @@
         function calculateFecundity(individuals, maxSurvivalDays, reproductiveRate) {
             return Array.from({ length: maxSurvivalDays + 1 }, (_, day) => {
                 return individuals.map(individual => {
-                    // Check if the individual is alive and has started reproduction
+                    // Check if the individual is alive, started reproduction, and has remaining capacity
                     if (
                         individual.sex === 'Female' &&
-                        day <= individual.survivalDays && // Ensure the individual is alive
+                        day <= individual.survivalDays &&
                         day >= individual.startReproductionDay &&
-                        individual.startReproductionDay > 0
+                        individual.startReproductionDay > 0 &&
+                        individual.currentReproductionCapacity > 0
                     ) {
-                        return Math.floor(Math.random() * (reproductiveRate[1] - reproductiveRate[0] + 1)) + reproductiveRate[0];
+                        const dailyFecundity = Math.min(
+                            Math.floor(Math.random() * (reproductiveRate[1] - reproductiveRate[0] + 1)) + reproductiveRate[0],
+                            individual.currentReproductionCapacity // Limit daily fecundity to remaining capacity
+                        );
+
+                        individual.currentReproductionCapacity -= dailyFecundity; // Decrease remaining capacity
+                        return dailyFecundity;
                     } else {
-                        return 0; // No eggs if the individual is dead or hasn't started reproduction
+                        return 0; // No eggs if the individual is dead, hasn't started reproduction, or has no remaining capacity
                     }
                 });
             });
         }
-
 
         function populateSexTable(individuals) {
             const tbody = document.querySelector("#sexTable tbody");
@@ -245,6 +272,7 @@
                 .join('');
         }
     </script>
+
 </body>
 
 </html>
