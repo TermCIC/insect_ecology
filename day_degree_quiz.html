@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Degree-Day Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .question {
+            margin: 20px 0;
+        }
+
+        .options {
+            margin: 10px 0;
+        }
+
+        .options label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: none;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Degree-Day Concept Quiz</h1>
+    <div class="container">
+        <form id="quizForm">
+            <div class="question">
+                <h3>1. What is the lower development threshold (T<sub>min</sub>)?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q1" value="a"> The minimum temperature below which development stops.</label>
+                    <label><input type="radio" name="q1" value="b"> The maximum temperature above which development stops.</label>
+                    <label><input type="radio" name="q1" value="c"> The average temperature required for development.</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>2. What does "degree-day" represent?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q2" value="a"> The total number of days in a year.</label>
+                    <label><input type="radio" name="q2" value="b"> The heat accumulated above a threshold in one day.</label>
+                    <label><input type="radio" name="q2" value="c"> The average daily temperature.</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>3. How is the degree-day for a single day calculated using the simple average method?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q3" value="a"> (Max Temp + Min Temp) / 2 - T<sub>min</sub></label>
+                    <label><input type="radio" name="q3" value="b"> Max Temp - T<sub>min</sub></label>
+                    <label><input type="radio" name="q3" value="c"> Min Temp - T<sub>min</sub></label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>4. What happens if the average temperature is below T<sub>min</sub>?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q4" value="a"> Degree-day is zero.</label>
+                    <label><input type="radio" name="q4" value="b"> Degree-day is negative.</label>
+                    <label><input type="radio" name="q4" value="c"> Degree-day is constant.</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>5. Why are degree-days important in insect development?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q5" value="a"> To predict development stages based on temperature.</label>
+                    <label><input type="radio" name="q5" value="b"> To measure annual rainfall.</label>
+                    <label><input type="radio" name="q5" value="c"> To calculate soil pH.</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>6. What is the unit of degree-days?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q6" value="a"> Hours</label>
+                    <label><input type="radio" name="q6" value="b"> °C</label>
+                    <label><input type="radio" name="q6" value="c"> °C-days</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>7. If the max temp is 30°C, min temp is 20°C, and T<sub>min</sub> is 10°C, what is the degree-day?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q7" value="a"> 20</label>
+                    <label><input type="radio" name="q7" value="b"> 15</label>
+                    <label><input type="radio" name="q7" value="c"> 25</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>8. What does the term "thermal constant" mean?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q8" value="a"> The number of degree-days required for a specific stage of development.</label>
+                    <label><input type="radio" name="q8" value="b"> The temperature at which development is fastest.</label>
+                    <label><input type="radio" name="q8" value="c"> The constant speed of development.</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>9. Which of these factors can affect degree-day accuracy?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q9" value="a"> Microclimate conditions.</label>
+                    <label><input type="radio" name="q9" value="b"> Variability in temperature.</label>
+                    <label><input type="radio" name="q9" value="c"> Both a and b.</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>10. What is the primary application of the degree-day concept?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q10" value="a"> Predicting insect development stages.</label>
+                    <label><input type="radio" name="q10" value="b"> Measuring humidity.</label>
+                    <label><input type="radio" name="q10" value="c"> Determining wind speed.</label>
+                </div>
+            </div>
+
+            <button type="button" onclick="checkAnswers()">Submit</button>
+        </form>
+
+        <div class="result" id="quizResult">
+            <h3>Quiz Result</h3>
+            <p>You scored <span id="score"></span>/10.</p>
+        </div>
+    </div>
+
+    <script>
+        const correctAnswers = {
+            q1: 'a',
+            q2: 'b',
+            q3: 'a',
+            q4: 'a',
+            q5: 'a',
+            q6: 'c',
+            q7: 'b',
+            q8: 'a',
+            q9: 'c',
+            q10: 'a'
+        };
+
+        function checkAnswers() {
+            const form = document.getElementById('quizForm');
+            let score = 0;
+
+            Object.keys(correctAnswers).forEach(question => {
+                const selected = form[question].value;
+                if (selected === correctAnswers[question]) {
+                    score++;
+                }
+            });
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('quizResult').style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>
