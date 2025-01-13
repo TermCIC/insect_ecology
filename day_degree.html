@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Degree-Day Concept</title>
+    <script>
+        window.MathJax = {
+            tex: {
+                macros: {
+                    degree: "\\,^{\\circ}\\text{C}" // Define \degree as °C
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h3 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .explanation h3 {
+            margin-top: 0;
+        }
+
+        .explanation p {
+            margin-bottom: 10px;
+        }
+
+        .explanation ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Degree-Day Concept</h1>
+    <h3>by Dr. Chun-I Chiu</h3>
+    <h3>Department of Entomology and Plant Pathology, Chiang Mai University</h3>
+
+    <div class="container">
+        <h2>Introduction</h2>
+        <p>The degree-day concept is a method for understanding and predicting insect development based on temperature. It provides a useful framework for ecological and agricultural applications by quantifying heat accumulation above a specific threshold required for insect development.</p>
+
+        <div class="explanation">
+            <h3>Key Concepts</h3>
+            <h4>1. Development Threshold</h4>
+            <ul>
+                <li><strong>Lower Development Threshold (T<sub>min</sub>):</strong> The minimum temperature below which development stops.</li>
+                <li><strong>Upper Development Threshold (T<sub>max</sub>):</strong> The maximum temperature above which development stops or slows (optional for some models).</li>
+            </ul>
+
+            <h4>2. Degree-Day Calculation</h4>
+            <p><strong>Formula:</strong></p>
+            <p>For a single day:</p>
+            \[
+            \text{Degree-days (DD)} = \text{Average Daily Temperature} - T_{\text{min}}
+            \]
+            <p>If the daily temperature is below \(T_{\text{min}}\), the degree-day is 0.</p>
+            <p>Using the Simple Average Method:</p>
+            \[
+            \text{DD} = \frac{\text{Max Temp} + \text{Min Temp}}{2} - T_{\text{min}}
+            \]
+            <p>For example, when Max Temp = 25 \( \degree \), Min Temp = 15 \( \degree \), and T<sub>min</sub> = 10 \( \degree \), the degree-day is:</p>
+            \[
+            \text{DD} = \frac{25 + 15}{2} - 10 = 10 \, \degree
+            \]
+
+            <h4>3. Developmental Milestones</h4>
+            <p>Each insect species requires a specific number of accumulated degree-days (thermal constant) to complete a life stage. For example, eggs may hatch after accumulating 100 degree-days.</p>
+
+            <h4>4. Applications</h4>
+            <ul>
+                <li><strong>Predicting Development:</strong> Forecast when insects will reach specific life stages.</li>
+                <li><strong>Pest Management:</strong> Time interventions, such as pesticide applications, to target vulnerable stages.</li>
+                <li><strong>Population Forecasting:</strong> Model population dynamics under varying temperature conditions.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h3>Example</h3>
+            <p>For an insect with \( T_{\text{min}} = 10 \, \degree \):</p>
+            <ul>
+                <li>Daily temperatures: Max = 25 \( \degree \), Min = 15 \( \degree \).</li>
+                <li>\( \text{DD} = \frac{25 + 15}{2} - 10 = 10 \, \degree \).</li>
+                <li>If 100 DD is required for egg hatching, it would take approximately 10 days under these conditions.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h3>Factors Affecting Accuracy</h3>
+            <ul>
+                <li>Microclimate conditions (e.g., soil temperature, canopy shading).</li>
+                <li>Variability in temperature within an insect's habitat.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h3>Formula Summary</h3>
+            <p><strong>Degree-Day (DD):</strong></p>
+            \[
+            \text{DD} = \frac{\text{Max Temp} + \text{Min Temp}}{2} - T_{\text{min}}
+            \]
+            <p><strong>Accumulated Degree-Days:</strong></p>
+            \[
+            \text{Total DD} = \sum \text{Daily DD}
+            \]
+        </div>
+    </div>
+</body>
+
+</html>
