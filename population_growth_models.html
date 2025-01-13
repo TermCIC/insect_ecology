@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Growth Models</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h3 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            margin-right: 10px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        canvas {
+            display: block;
+            margin: 20px auto;
+            height: 400px;
+            width: 400px;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .explanation h3 {
+            margin-top: 0;
+        }
+
+        .explanation p {
+            margin-bottom: 10px;
+        }
+
+        .explanation ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Population Growth Models</h1>
+    <h3>by Dr. Chun-I Chiu</h3>
+    <h3>Department of Entomology and Plant Pathology, Chiang Mai University</h3>
+
+    <div class="container">
+        <h2>Input Parameters</h2>
+        <div class="input-group">
+            <label for="initialPopulation">Initial Population (N₀):</label>
+            <input type="number" id="initialPopulation" value="10" step="1">
+        </div>
+        <div class="input-group">
+            <label for="growthRate">Growth Rate (r):</label>
+            <input type="number" id="growthRate" value="0.1" step="0.01">
+        </div>
+        <div class="input-group">
+            <label for="carryingCapacity">Carrying Capacity (K):</label>
+            <input type="number" id="carryingCapacity" value="100" step="1">
+        </div>
+        <div class="input-group">
+            <label for="timeSteps">Number of Time Steps:</label>
+            <input type="number" id="timeSteps" value="50" step="1">
+        </div>
+        <button onclick="generateModels()">Generate Models</button>
+
+        <h2>Visualization</h2>
+        <canvas id="linearChart"></canvas>
+        <canvas id="exponentialChart"></canvas>
+        <canvas id="logisticChart"></canvas>
+
+        <div class="explanation">
+            <h3>Model Explanations</h3>
+            <h4>1. Linear Growth Model</h4>
+            <p>The population grows by a fixed amount in each time step.</p>
+            <p><em>Formula:</em> \( N(t) = N₀ + r \cdot t \)</p>
+
+            <h4>2. Exponential Growth Model</h4>
+            <p>The population grows proportionally to its current size, leading to rapid increases.</p>
+            <p><em>Formula:</em> \( N(t) = N₀ \cdot e^{r \cdot t} \)</p>
+
+            <h4>3. Logistic Growth Model</h4>
+            <p>The population grows rapidly initially but slows down as it approaches the carrying capacity.</p>
+            <p><em>Formula:</em> \( N(t) = \frac{K}{1 + \frac{K - N₀}{N₀} \cdot e^{-r \cdot t}} \)</p>
+        </div>
+    </div>
+
+    <script>
+        let linearChart, exponentialChart, logisticChart;
+
+        function generateModels() {
+            const N0 = parseFloat(document.getElementById("initialPopulation").value);
+            const r = parseFloat(document.getElementById("growthRate").value);
+            const K = parseFloat(document.getElementById("carryingCapacity").value);
+            const timeSteps = parseInt(document.getElementById("timeSteps").value);
+
+            if (isNaN(N0) || isNaN(r) || isNaN(K) || isNaN(timeSteps)) {
+                alert("Please enter valid numeric values for all parameters.");
+                return;
+            }
+
+            const labels = Array.from({ length: timeSteps + 1 }, (_, i) => i);
+            const linearData = labels.map(t => N0 + r * t);
+            const exponentialData = labels.map(t => N0 * Math.exp(r * t));
+            const logisticData = labels.map(t => K / (1 + ((K - N0) / N0) * Math.exp(-r * t)));
+
+            plotLinearChart(labels, linearData);
+            plotExponentialChart(labels, exponentialData);
+            plotLogisticChart(labels, logisticData);
+        }
+
+        function plotLinearChart(labels, data) {
+            const ctx = document.getElementById("linearChart").getContext("2d");
+
+            if (linearChart) {
+                linearChart.destroy();
+            }
+
+            linearChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Linear Growth",
+                            data: data,
+                            borderColor: "blue",
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    aspectRatio: 1.5,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Linear Growth Model"
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Time"
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Population"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function plotExponentialChart(labels, data) {
+            const ctx = document.getElementById("exponentialChart").getContext("2d");
+
+            if (exponentialChart) {
+                exponentialChart.destroy();
+            }
+
+            exponentialChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Exponential Growth",
+                            data: data,
+                            borderColor: "green",
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    aspectRatio: 1.5,
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Exponential Growth Model"
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Time"
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Population"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function plotLogisticChart(labels, data) {
+            const ctx = document.getElementById("logisticChart").getContext("2d");
+
+            if (logisticChart) {
+                logisticChart.destroy();
+            }
+
+            logisticChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Logistic Growth",
+                            data: data,
+                            borderColor: "red",
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    aspectRatio: 1.5,
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: "Logistic Growth Model"
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Time"
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Population"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
