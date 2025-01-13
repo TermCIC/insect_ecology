@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <title>Introduction to Growth Models</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h3 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .explanation h3 {
+            margin-top: 0;
+        }
+
+        .explanation p {
+            margin-bottom: 10px;
+        }
+
+        .explanation ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Introduction to Growth Models</h1>
+    <h3>by Dr. Chun-I Chiu</h3>
+    <h3>Department of Entomology and Plant Pathology, Chiang Mai University</h3>
+
+    <div class="container">
+        <h2>What are Growth Models?</h2>
+        <p>Growth models are mathematical representations used to describe how populations or organisms grow over time under various conditions. They help in understanding biological, ecological, and agricultural processes.</p>
+
+        <div class="explanation">
+            <h3>Types of Growth Models</h3>
+
+            <h4>1. Linear Growth Model</h4>
+            <p>In this model, the population increases by a fixed amount in each time step. Growth is constant over time and does not depend on the current population size.</p>
+            <p><strong>Formula:</strong> \( N(t) = N_0 + r \cdot t \)</p>
+
+            <h4>2. Exponential Growth Model</h4>
+            <p>This model describes a situation where the population grows proportionally to its current size. It leads to rapid growth over time.</p>
+            <p><strong>Formula:</strong> \( N(t) = N_0 \cdot e^{r \cdot t} \)</p>
+
+            <h4>3. Logistic Growth Model</h4>
+            <p>In this model, the population grows rapidly at first but slows down as it approaches the carrying capacity, which is the maximum population size the environment can sustain.</p>
+            <p><strong>Formula:</strong> \( N(t) = \frac{K}{1 + \frac{K - N_0}{N_0} \cdot e^{-r \cdot t}} \)</p>
+        </div>
+
+        <div class="explanation">
+            <h3>Key Parameters</h3>
+            <ul>
+                <li><strong>Initial Population (N₀):</strong> The starting size of the population.</li>
+                <li><strong>Growth Rate (r):</strong> The rate at which the population increases.</li>
+                <li><strong>Carrying Capacity (K):</strong> The maximum population size that can be supported by the environment (used in the logistic model).</li>
+                <li><strong>Time (t):</strong> The time elapsed.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h3>Applications of Growth Models</h3>
+            <ul>
+                <li><strong>Ecology:</strong> Predicting population dynamics and understanding species interactions.</li>
+                <li><strong>Agriculture:</strong> Modeling crop growth and pest population dynamics.</li>
+                <li><strong>Medicine:</strong> Simulating the spread of diseases or the growth of cancer cells.</li>
+                <li><strong>Environmental Science:</strong> Assessing the impact of resource limitations on population growth.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h3>Comparison of Growth Models</h3>
+            <ul>
+                <li><strong>Linear Growth:</strong> Simplest model with a constant growth rate.</li>
+                <li><strong>Exponential Growth:</strong> Describes rapid, unchecked growth; applicable to ideal conditions.</li>
+                <li><strong>Logistic Growth:</strong> Realistic model accounting for environmental limits and resource availability.</li>
+            </ul>
+        </div>
+
+        <div class="explanation">
+            <h3>Visualizing Growth</h3>
+            <p>Graphs can help illustrate how populations change over time under different growth models. For instance:</p>
+            <ul>
+                <li>A linear graph shows a straight line.</li>
+                <li>An exponential graph curves upwards steeply.</li>
+                <li>A logistic graph forms an S-shaped curve, plateauing at the carrying capacity.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>
