@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insect Rearing Data Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        h3 {
+            text-align: center;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        select,
+        button,
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        table th {
+            background-color: #0056b3;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Insect Rearing Data Generator</h1>
+        <h3>by Dr. Chun-I Chiu</h3>
+        <h3>Department of Entomology and Plant Pathology, Chiang Mai University</h3>
+        <label for="insectType">Select the type of insect:</label>
+        <select id="insectType">
+            <option value="r">r-Selected Insect</option>
+            <option value="k">K-Selected Insect</option>
+        </select>
+
+        <label for="populationSize">Enter Initial Population Size:</label>
+        <input type="number" id="populationSize" value="30" min="1">
+
+        <button onclick="generateData()">Generate Simulation</button>
+
+        <h2>Sex of Individuals</h2>
+        <div class="table-container">
+            <table id="sexTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Sex</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h2>Survival Status by Day</h2>
+        <div class="table-container">
+            <table id="survivalTable">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th colspan="30">Individuals</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h2>Fecundity by Day</h2>
+        <div class="table-container">
+            <table id="fecundityTable">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th colspan="30">Eggs Laid by Individuals</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function generateData() {
+            const insectType = document.getElementById('insectType').value;
+            const populationSize = parseInt(document.getElementById('populationSize').value);
+
+            if (isNaN(populationSize) || populationSize <= 0) {
+                alert("Please enter a valid population size.");
+                return;
+            }
+
+            const parameters = {
+                r: {
+                    mortalityRate: 0.2,
+                    reproductiveRate: [50, 200],
+                    beginToReproduce: 0.0002
+                },
+                k: {
+                    mortalityRate: 0.05,
+                    reproductiveRate: [5, 20],
+                    beginToReproduce: 0.00001
+                }
+            };
+
+            const { mortalityRate, reproductiveRate, beginToReproduce } = parameters[insectType];
+            const individuals = generateIndividuals(populationSize, mortalityRate, reproductiveRate, beginToReproduce);
+            const maxSurvivalDays = Math.max(...individuals.map(ind => ind.survivalDays));
+
+            populateSexTable(individuals);
+            const survivalData = calculateSurvival(individuals, maxSurvivalDays);
+            populateSurvivalTable(survivalData);
+            const fecundityData = calculateFecundity(individuals, maxSurvivalDays, reproductiveRate);
+            populateFecundityTable(fecundityData);
+        }
+
+        function generateIndividuals(populationSize, mortalityRate, reproductiveRate, beginToReproduce) {
+            return Array.from({ length: populationSize }, (_, i) => {
+                const sex = Math.random() < 0.5 ? 'Male' : 'Female';
+                const survivalDays = calculateSurvivalDays(mortalityRate);
+                let startReproductionDay = -1;
+
+                if (sex === 'Female') {
+                    const growthRate = 0.1; // Adjust this value for faster/slower growth
+                    for (let day = 1; day <= survivalDays; day++) {
+                        const probability = 1 - Math.exp(-growthRate * day);
+                        if (Math.random() < probability) {
+                            startReproductionDay = day;
+                            break;
+                        }
+                    }
+                }
+
+                return {
+                    id: i + 1,
+                    sex,
+                    survivalDays,
+                    startReproductionDay,
+                };
+            });
+        }
+
+        function calculateSurvivalDays(mortalityRate) {
+            let days = 0;
+            while (Math.random() > mortalityRate) {
+                days++;
+            }
+            return days + 1; // At least one day
+        }
+
+        function calculateFecundity(individuals, maxSurvivalDays, reproductiveRate) {
+            return Array.from({ length: maxSurvivalDays + 1 }, (_, day) => {
+                return individuals.map(individual => {
+                    // Check if the individual is alive and has started reproduction
+                    if (
+                        individual.sex === 'Female' &&
+                        day <= individual.survivalDays && // Ensure the individual is alive
+                        day >= individual.startReproductionDay &&
+                        individual.startReproductionDay > 0
+                    ) {
+                        return Math.floor(Math.random() * (reproductiveRate[1] - reproductiveRate[0] + 1)) + reproductiveRate[0];
+                    } else {
+                        return 0; // No eggs if the individual is dead or hasn't started reproduction
+                    }
+                });
+            });
+        }
+
+
+        function populateSexTable(individuals) {
+            const tbody = document.querySelector("#sexTable tbody");
+            tbody.innerHTML = individuals.map(({ id, sex }) => `<tr><td>${id}</td><td>${sex}</td></tr>`).join('');
+        }
+
+        function calculateSurvival(individuals, maxSurvivalDays) {
+            return Array.from({ length: maxSurvivalDays + 1 }, (_, day) => {
+                return individuals.map(individual => (day <= individual.survivalDays ? 'Alive' : 'Dead'));
+            });
+        }
+
+        function populateSurvivalTable(survivalData) {
+            const tbody = document.querySelector("#survivalTable tbody");
+            tbody.innerHTML = survivalData
+                .map((dayData, index) => `<tr><td>${index}</td>${dayData.map(status => `<td>${status}</td>`).join('')}</tr>`)
+                .join('');
+        }
+
+        function populateFecundityTable(fecundityData) {
+            const tbody = document.querySelector("#fecundityTable tbody");
+            tbody.innerHTML = fecundityData
+                .map((dayData, index) => `<tr><td>${index}</td>${dayData.map(eggs => `<td>${eggs}</td>`).join('')}</tr>`)
+                .join('');
+        }
+    </script>
+</body>
+
+</html>
