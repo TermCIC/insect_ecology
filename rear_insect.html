@@ -139,14 +139,14 @@
 
             const parameters = {
                 r: {
-                    mortalityRate: 0.2,
+                    mortalityRate: 0.38,
                     reproductiveRate: [50, 200],
-                    beginToReproduce: 0.0002
+                    beginToReproduce: 0.03
                 },
                 k: {
                     mortalityRate: 0.05,
-                    reproductiveRate: [5, 20],
-                    beginToReproduce: 0.00001
+                    reproductiveRate: [5, 10],
+                    beginToReproduce: 0.01
                 }
             };
 
@@ -168,9 +168,9 @@
                 let startReproductionDay = -1;
 
                 if (sex === 'Female') {
-                    const growthRate = 0.1; // Adjust this value for faster/slower growth
+                    const growthRate = beginToReproduce; // Scale growth rate based on `beginToReproduce`
                     for (let day = 1; day <= survivalDays; day++) {
-                        const probability = 1 - Math.exp(-growthRate * day);
+                        const probability = 1 - Math.exp(-growthRate * day); // Slower growth for K-selected
                         if (Math.random() < probability) {
                             startReproductionDay = day;
                             break;
@@ -187,12 +187,18 @@
             });
         }
 
+
         function calculateSurvivalDays(mortalityRate) {
             let days = 0;
-            while (Math.random() > mortalityRate) {
+            const growthRate = 0.1; // Adjust this value for faster/slower mortality growth
+            while (true) {
+                const probability = 1 - Math.exp(-growthRate * days); // Mortality probability increases exponentially
+                if (Math.random() < probability * mortalityRate) {
+                    break; // Individual dies if random roll is less than the calculated probability
+                }
                 days++;
             }
-            return days + 1; // At least one day
+            return days + 1; // At least one day of survival
         }
 
         function calculateFecundity(individuals, maxSurvivalDays, reproductiveRate) {
