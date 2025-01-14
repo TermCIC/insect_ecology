@@ -379,7 +379,7 @@
 
             // Bootstrapping process
             for (let iteration = 0; iteration < R; iteration++) {
-                console.log(`Bootstrapping procedure: Conducted ${iteration + 1}/${R}`);
+                console.log(`Bootstrapping procedure (R0 bootstrapped based on two-sex): Conducted ${iteration + 1}/${R}`);
 
                 // Sample indices with replacement
                 const indices = Array.from({ length: N }, () => individuals[Math.floor(Math.random() * N)]);
