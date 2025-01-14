@@ -31,6 +31,24 @@
             border-radius: 8px;
         }
 
+        .legend {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border: 1px solid #333;
+        }
+
         .network {
             display: flex;
             justify-content: center;
@@ -40,17 +58,6 @@
         svg {
             border: 1px solid #ddd;
             background-color: #fff;
-        }
-
-        .node {
-            fill: steelblue;
-            stroke: #333;
-            stroke-width: 1.5px;
-        }
-
-        .link {
-            stroke: #999;
-            stroke-opacity: 0.6;
         }
 
         .tooltip {
@@ -72,53 +79,163 @@
 
     <div class="container">
         <h2>Food Chain Example</h2>
-        <p>This example demonstrates a simple food chain, where nodes represent species, and links represent predation relationships.</p>
+        <p>This example demonstrates a simple food chain, where nodes represent species, and links represent
+            predator/prey interactions.</p>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: green;"></div>Producer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: red;"></div>Primary Consumer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: orange;"></div>Secondary Consumer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: blue;"></div>Tertiary Consumer
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #999;"></div>predator/prey interaction
+            </div>
+        </div>
         <div class="network" id="foodChain"></div>
 
         <h2>Food Web Example</h2>
-        <p>This example illustrates a food web network, where nodes represent species, and links represent predation relationships.</p>
+        <p>This example illustrates a food web network, where nodes represent species, and links represent predator/prey
+            interactions.</p>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: green;"></div>Producer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: red;"></div>Primary Consumer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: orange;"></div>Secondary Consumer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: blue;"></div>Tertiary Consumer
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #999;"></div>predator/prey interaction
+            </div>
+        </div>
         <div class="network" id="foodWeb"></div>
+
+        <h2>Ecological Network Example</h2>
+        <p>This example illustrates an ecological network, where nodes represent species, and links represent
+            interactions.</p>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: green;"></div>Plant
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: orange;"></div>Herbivore
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: yellow;"></div>Pollinator
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: red"></div>Predator
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: blue;"></div>Parasitoid
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: red;"></div>predator/prey interaction
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: blue;"></div>parasitism interaction
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: yellow;"></div>pollination interaction
+            </div>
+        </div>
+        <div class="network" id="ecologicalNetwork"></div>
     </div>
 
     <script>
-        // Function to create a network visualization
         function createNetwork(containerId, nodes, links) {
-            const width = 600;
-            const height = 400;
+            const width = 800;
+            const height = 600;
 
             const svg = d3.select(`#${containerId}`).append("svg")
-                .attr("width", width)
-                .attr("height", height);
+                .attr("width", "100%")
+                .attr("height", "600px")
+                .call(d3.zoom()
+                    .scaleExtent([0.5, 5])
+                    .on("zoom", (event) => {
+                        g.attr("transform", event.transform);
+                    }))
+                .append("g");
+
+            const g = svg.append("g");
 
             const simulation = d3.forceSimulation(nodes)
                 .force("link", d3.forceLink(links).id(d => d.id).distance(100))
                 .force("charge", d3.forceManyBody().strength(-300))
                 .force("center", d3.forceCenter(width / 2, height / 2));
 
-            const link = svg.append("g")
+            const link = g.append("g")
                 .attr("class", "links")
                 .selectAll("line")
                 .data(links)
                 .enter().append("line")
-                .attr("class", "link");
+                .attr("class", "link")
+                .attr("stroke", d => {
+                    if (d.type === "predator/prey interaction") return "red";
+                    if (d.type === "parasitism interaction") return "blue";
+                    if (d.type === "pollination interaction") return "orange";
+                    return "gray";
+                })
+                .attr("stroke-width", 2)
+                .attr("stroke-opacity", 0.6);
 
-            const node = svg.append("g")
+            const nodeGroup = g.append("g")
                 .attr("class", "nodes")
-                .selectAll("circle")
+                .selectAll("g")
                 .data(nodes)
-                .enter().append("circle")
-                .attr("class", "node")
-                .attr("r", 8)
+                .enter().append("g")
+                .attr("class", "node-group")
                 .call(d3.drag()
                     .on("start", dragstarted)
                     .on("drag", dragged)
                     .on("end", dragended));
 
+            nodeGroup.append("circle")
+                .attr("r", 8)
+                .attr("fill", d => {
+                    if (d.role === "Producer") return "green";
+                    if (d.role === "Primary Consumer") return "red";
+                    if (d.role === "Secondary Consumer") return "orange";
+                    if (d.role === "Predator") return "red";
+                    if (d.role === "Herbivore") return "orange";
+                    if (d.role === "Pollinator") return "yellow";
+                    if (d.role === "Parasitoid") return "blue";
+                    return "blue"; // Default color
+                })
+                .attr("stroke", "#333")
+                .attr("stroke-width", 1.5);
+
+            nodeGroup.append("text")
+                .attr("x", 12) // Offset from the circle's center
+                .attr("y", 4)  // Slight vertical adjustment
+                .text(d => d.name)
+                .style("font-size", "12px")
+                .style("font-family", "Arial, sans-serif")
+                .style("fill", "#333");
+
             const tooltip = d3.select("body").append("div")
                 .attr("class", "tooltip")
                 .style("opacity", 0);
 
-            node.on("mouseover", (event, d) => {
+            nodeGroup.on("mouseover", (event, d) => {
                 tooltip.transition().duration(200).style("opacity", .9);
                 tooltip.html(d.name)
                     .style("left", (event.pageX + 5) + "px")
@@ -134,9 +251,8 @@
                     .attr("x2", d => d.target.x)
                     .attr("y2", d => d.target.y);
 
-                node
-                    .attr("cx", d => d.x)
-                    .attr("cy", d => d.y);
+                nodeGroup
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
             });
 
             function dragstarted(event, d) {
@@ -157,38 +273,66 @@
             }
         }
 
-        // Food Chain Data
+
         const foodChainNodes = [
-            { id: "Plant", name: "Plant" },
-            { id: "Herbivore", name: "Herbivore" },
-            { id: "Carnivore", name: "Carnivore" },
-            { id: "Top Predator", name: "Top Predator" }
+            { id: "Plant", name: "Plant", role: "Producer" },
+            { id: "Herbivore", name: "Herbivore", role: "Primary Consumer" },
+            { id: "Carnivore", name: "Carnivore", role: "Secondary Consumer" },
+            { id: "Top Predator", name: "Top Predator", role: "Tertiary Consumer" }
         ];
 
         const foodChainLinks = [
-            { source: "Plant", target: "Herbivore" },
-            { source: "Herbivore", target: "Carnivore" },
-            { source: "Carnivore", target: "Top Predator" }
+            { source: "Plant", target: "Herbivore", type: "predator/prey interaction" },
+            { source: "Herbivore", target: "Carnivore", type: "predator/prey interaction" },
+            { source: "Carnivore", target: "Top Predator", type: "predator/prey interaction" }
         ];
 
-        // Food Web Data
         const foodWebNodes = [
-            { id: "Plant 1", name: "Plant 1" },
-            { id: "Plant 2", name: "Plant 2" },
-            { id: "Bee", name: "Bee" },
-            { id: "Butterfly", name: "Butterfly" }
+            { id: "Plant 1", name: "Plant 1", role: "Producer" },
+            { id: "Plant 2", name: "Plant 2", role: "Producer" },
+            { id: "Bee", name: "Bee", role: "Primary Consumer" },
+            { id: "Butterfly", name: "Butterfly", role: "Primary Consumer" },
+            { id: "Grasshopper", name: "Grasshopper", role: "Primary Consumer" },
+            { id: "Frog", name: "Frog", role: "Secondary Consumer" },
+            { id: "Bird", name: "Bird", role: "Secondary Consumer" },
+            { id: "Snake", name: "Snake", role: "Tertiary Consumer" },
+            { id: "Hawk", name: "Hawk", role: "Tertiary Consumer" }
         ];
 
         const foodWebLinks = [
-            { source: "Plant 1", target: "Bee" },
-            { source: "Plant 2", target: "Bee" },
-            { source: "Plant 1", target: "Butterfly" },
-            { source: "Plant 2", target: "Butterfly" }
+            { source: "Plant 1", target: "Bee", type: "predator/prey interaction" },
+            { source: "Plant 2", target: "Butterfly", type: "predator/prey interaction" },
+            { source: "Plant 1", target: "Grasshopper", type: "predator/prey interaction" },
+            { source: "Bee", target: "Bird", type: "predator/prey interaction" },
+            { source: "Bee", target: "Frog", type: "predator/prey interaction" },
+            { source: "Butterfly", target: "Bird", type: "predator/prey interaction" },
+            { source: "Grasshopper", target: "Bird", type: "predator/prey interaction" },
+            { source: "Grasshopper", target: "Frog", type: "predator/prey interaction" },
+            { source: "Butterfly", target: "Frog", type: "predator/prey interaction" },
+            { source: "Frog", target: "Snake", type: "predator/prey interaction" },
+            { source: "Bird", target: "Hawk", type: "predator/prey interaction" },
+            { source: "Snake", target: "Hawk", type: "predator/prey interaction" }
         ];
 
-        // Render the networks
+        const ecologicalNetworkNodes = [
+            { id: "Plant 1", name: "Plant 1", role: "Producer" },
+            { id: "Caterpillar 1", name: "Caterpillar 1", role: "Herbivore" },
+            { id: "Bee 1", name: "Bee 1", role: "Pollinator" },
+            { id: "Mantis 1", name: "Mantis 1", role: "Predator" },
+            { id: "Parasitoid Wasp 1", name: "Parasitoid Wasp 1", role: "Parasitoid" },
+        ];
+
+        const ecologicalNetworkLinks = [
+            { source: "Plant 1", target: "Bee 1", type: "pollination interaction" },
+            { source: "Plant 1", target: "Caterpillar 1", type: "predator/prey interaction" },
+            { source: "Mantis 1", target: "Caterpillar 1", type: "predator/prey interaction" },
+            { source: "Mantis 1", target: "Bee 1", type: "predator/prey interaction" },
+            { source: "Parasitoid Wasp 1", target: "Caterpillar 1", type: "parasitism interaction" },
+        ];
+
         createNetwork("foodChain", foodChainNodes, foodChainLinks);
         createNetwork("foodWeb", foodWebNodes, foodWebLinks);
+        createNetwork("ecologicalNetwork", ecologicalNetworkNodes, ecologicalNetworkLinks);
     </script>
 </body>
 
