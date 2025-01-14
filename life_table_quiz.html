@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Table Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        ul {
+            margin: 20px 0;
+        }
+
+        .quiz-question {
+            margin: 20px 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .quiz-question:last-child {
+            border-bottom: none;
+        }
+
+        .quiz-question h3 {
+            margin-bottom: 10px;
+        }
+
+        .quiz-question label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Life Table Quiz</h1>
+        <p>Test your knowledge of life tables and their components.</p>
+
+        <div id="quiz">
+            <div class="quiz-question">
+                <h3>1. What does the symbol <strong>L<sub>x</sub></strong> represent in a life table?</h3>
+                <label><input type="radio" name="q1" value="a"> Average number of offspring produced at age x</label>
+                <label><input type="radio" name="q1" value="b"> Number of individuals surviving to age x</label>
+                <label><input type="radio" name="q1" value="c"> Proportion of individuals surviving to age x</label>
+                <label><input type="radio" name="q1" value="d"> Net reproductive rate</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>2. Which formula is used to calculate the net reproductive rate (R<sub>0</sub>)?</h3>
+                <label><input type="radio" name="q2" value="a"> \( R_0 = \sum (L_x \times M_x) \)</label>
+                <label><input type="radio" name="q2" value="b"> \( T_c = \frac{\ln(R_0)}{r} \)</label>
+                <label><input type="radio" name="q2" value="c"> \( D_t = \frac{\ln(2)}{r} \)</label>
+                <label><input type="radio" name="q2" value="d"> \( r = \frac{\ln(N)}{T} \)</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>3. What does <strong>M<sub>x</sub></strong> represent?</h3>
+                <label><input type="radio" name="q3" value="a"> Mortality rate at age x</label>
+                <label><input type="radio" name="q3" value="b"> Number of individuals surviving at age x</label>
+                <label><input type="radio" name="q3" value="c"> Average number of offspring produced by an individual at age x</label>
+                <label><input type="radio" name="q3" value="d"> Proportion of individuals surviving at age x</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>4. Which of the following measures the time required for a population to double in size?</h3>
+                <label><input type="radio" name="q4" value="a"> Net reproductive rate</label>
+                <label><input type="radio" name="q4" value="b"> Doubling time</label>
+                <label><input type="radio" name="q4" value="c"> Generation time</label>
+                <label><input type="radio" name="q4" value="d"> Intrinsic growth rate</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>5. What is the significance of the intrinsic growth rate (r)?</h3>
+                <label><input type="radio" name="q5" value="a"> It measures the average reproductive output</label>
+                <label><input type="radio" name="q5" value="b"> It determines the proportion of individuals surviving to age x</label>
+                <label><input type="radio" name="q5" value="c"> It represents the exponential growth rate of the population</label>
+                <label><input type="radio" name="q5" value="d"> It calculates the doubling time</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>6. How is generation time (T<sub>c</sub>) calculated?</h3>
+                <label><input type="radio" name="q6" value="a"> \( T_c = \frac{\ln(2)}{r} \)</label>
+                <label><input type="radio" name="q6" value="b"> \( T_c = \frac{\ln(R_0)}{r} \)</label>
+                <label><input type="radio" name="q6" value="c"> \( T_c = \sum (L_x \times M_x) \)</label>
+                <label><input type="radio" name="q6" value="d"> \( T_c = L_x + M_x \)</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>7. What does a high value of R<sub>0</sub> indicate about a population?</h3>
+                <label><input type="radio" name="q7" value="a"> Low mortality rate</label>
+                <label><input type="radio" name="q7" value="b"> High reproductive potential</label>
+                <label><input type="radio" name="q7" value="c"> Stable population</label>
+                <label><input type="radio" name="q7" value="d"> Low fecundity</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>8. What is the relationship between L<sub>x</sub> and survival rates?</h3>
+                <label><input type="radio" name="q8" value="a"> L<sub>x</sub> decreases as survival rates increase</label>
+                <label><input type="radio" name="q8" value="b"> L<sub>x</sub> increases as survival rates decrease</label>
+                <label><input type="radio" name="q8" value="c"> L<sub>x</sub> represents the proportion of surviving individuals</label>
+                <label><input type="radio" name="q8" value="d"> L<sub>x</sub> remains constant regardless of survival rates</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>9. Why is the life table an important tool in population biology?</h3>
+                <label><input type="radio" name="q9" value="a"> To study the reproductive success of individuals</label>
+                <label><input type="radio" name="q9" value="b"> To estimate population dynamics and predict trends</label>
+                <label><input type="radio" name="q9" value="c"> To calculate the lifespan of individuals</label>
+                <label><input type="radio" name="q9" value="d"> To determine population density</label>
+            </div>
+
+            <div class="quiz-question">
+                <h3>10. What does the term "cohort" refer to in a life table?</h3>
+                <label><input type="radio" name="q10" value="a"> A group of offspring produced by an individual</label>
+                <label><input type="radio" name="q10" value="b"> A population of individuals in a given area</label>
+                <label><input type="radio" name="q10" value="c"> A group of individuals born at the same time</label>
+                <label><input type="radio" name="q10" value="d"> The lifespan of an individual</label>
+            </div>
+        </div>
+
+        <button onclick="submitQuiz()">Submit Quiz</button>
+
+        <div id="results" style="margin-top: 20px; font-weight: bold;"></div>
+    </div>
+
+    <script>
+        function submitQuiz() {
+            const correctAnswers = ["c", "a", "c", "b", "c", "b", "b", "c", "b", "c"];
+            let score = 0;
+
+            correctAnswers.forEach((answer, index) => {
+                const question = document.querySelector(`input[name="q${index + 1}"]:checked`);
+                if (question && question.value === answer) {
+                    score++;
+                }
+            });
+
+            document.getElementById("results").textContent = `Your score: ${score}/${correctAnswers.length}`;
+        }
+    </script>
+</body>
+
+</html>
