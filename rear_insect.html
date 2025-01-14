@@ -145,6 +145,7 @@
     <script>
         let survivalCurveData = [];
         let fecundityCurveData = [];
+        let survivalFecundityChart;
 
         function generateData() {
             const insectType = document.getElementById('insectType').value;
@@ -190,13 +191,17 @@
             survivalCurveData = survivalData.map(dayData => dayData.filter(status => status === 'Alive').length);
             fecundityCurveData = fecundityData.map(dayData => dayData.reduce((sum, eggs) => sum + eggs, 0));
 
-            plotSurvivalFecundityChart(survivalCurveData, fecundityCurveData);
+            updateSurvivalFecundityChart(survivalCurveData, fecundityCurveData);
         }
 
-        function plotSurvivalFecundityChart(survivalCurve, fecundityCurve) {
+        function updateSurvivalFecundityChart(survivalCurve, fecundityCurve) {
             const ctx = document.getElementById('survivalFecundityChart').getContext('2d');
 
-            new Chart(ctx, {
+            if (survivalFecundityChart) {
+                survivalFecundityChart.destroy();
+            }
+
+            survivalFecundityChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: survivalCurve.map((_, index) => index),
