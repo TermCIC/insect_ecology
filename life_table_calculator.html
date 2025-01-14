@@ -448,7 +448,8 @@
                 <div class="results-container">
                     <!-- Calculated Parameters -->
                     <div class="results-section">
-                        <h3>Calculated Parameters</h3>
+                        <h3>Age-specific life table</h3>
+                        <h4>Calculated Parameters</h4>
                         <p><strong>R0:</strong> ${R0.toFixed(2)}</p>
                         <p><strong>rc:</strong> ${rc.toFixed(4)}</p>
                         <p><strong>λ:</strong> ${λ.toFixed(4)}</p>
@@ -458,7 +459,7 @@
                     
                     <!-- Bootstrapping Results -->
                     <div class="results-section">
-                        <h3>Bootstrapping Results (bootstrapped with sex ratio)</h3>
+                        <h3>Bootstrapped Parameters (with sex ratio randomized)</h3>
                         <p><strong>R0:</strong> ${formatBootResult(bootResults.R0)}</p>
                         <p><strong>rc:</strong> ${formatBootResult(bootResults.rc)}</p>
                         <p><strong>λ:</strong> ${formatBootResult(bootResults.λ)}</p>
