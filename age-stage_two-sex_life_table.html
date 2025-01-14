@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age-Stage Two-Sex Life Table</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .button-group {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f8f8;
+            cursor: text;
+        }
+
+        select {
+            width: 100%;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Life Table with Stages and Individuals</h1>
+    <div class="container">
+        <div class="button-group">
+            <button onclick="addStage()">Add Stage</button>
+            <button onclick="addIndividual()">Add Individual</button>
+            <button onclick="convertToStageSpecificMatrices()">Convert to Stage-Specific Matrices</button>
+        </div>
+        <div class="table-container">
+            <table id="lifeTable">
+                <thead>
+                    <tr>
+                        <th>Sex</th>
+                        <th contenteditable="true">Stage 1</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <select>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </td>
+                        <td><input type="number" min="0" placeholder="Days"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="matrixOutput" class="table-container"></div>
+        <canvas id="stageSurvivalCurve" width="800" height="400"></canvas>
+    </div>
+
+    <script>
+        function addStage() {
+            const table = document.getElementById("lifeTable");
+            const headerRow = table.querySelector("thead tr");
+            const rows = table.querySelectorAll("tbody tr");
+
+            // Add a new header column
+            const newHeader = document.createElement("th");
+            newHeader.contentEditable = "true";
+            newHeader.textContent = `Stage ${headerRow.children.length}`;
+            headerRow.appendChild(newHeader);
+
+            // Add a new input cell to each row
+            rows.forEach(row => {
+                const newCell = document.createElement("td");
+                newCell.innerHTML = '<input type="number" min="0" placeholder="Days">';
+                row.appendChild(newCell);
+            });
+        }
+
+        function addIndividual() {
+            const table = document.getElementById("lifeTable");
+            const tbody = table.querySelector("tbody");
+            const columnCount = table.querySelector("thead tr").children.length;
+
+            // Create a new row
+            const newRow = document.createElement("tr");
+
+            // Add the sex dropdown cell
+            const sexCell = document.createElement("td");
+            sexCell.innerHTML = `
+                <select>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="unknown">Unknown</option>
+                </select>`;
+            newRow.appendChild(sexCell);
+
+            // Add input cells for each stage
+            for (let i = 1; i < columnCount; i++) {
+                const newCell = document.createElement("td");
+                newCell.innerHTML = '<input type="number" min="0" placeholder="Days">';
+                newRow.appendChild(newCell);
+            }
+
+            tbody.appendChild(newRow);
+        }
+
+        function convertToStageSpecificMatrices() {
+            const table = document.getElementById("lifeTable");
+            const rows = Array.from(table.querySelectorAll("tbody tr"));
+            const stages = Array.from(table.querySelector("thead tr").children).slice(1).map(th => th.textContent);
+            
+            // Calculate stage-specific survival matrices
+            const survivalDays = rows.map(row => {
+                return Array.from(row.querySelectorAll("td input"))
+                    .map(input => parseInt(input.value) || 0);
+            });
+
+            const totalSurvivalDays = survivalDays.map(days => days.reduce((sum, d) => sum + d, 0));
+            const maxDays = Math.max(...totalSurvivalDays);
+
+            const stageSpecificMatrices = stages.map((_, stageIndex) => {
+                return survivalDays.map((days, individualIndex) => {
+                    const stageStart = days.slice(0, stageIndex).reduce((sum, d) => sum + d, 0);
+                    const stageEnd = stageStart + days[stageIndex];
+
+                    return Array.from({ length: maxDays }, (_, dayIndex) => {
+                        return dayIndex >= stageStart && dayIndex < stageEnd ? 1 : 0;
+                    });
+                });
+            });
+
+            displayStageSpecificMatrices(stageSpecificMatrices, stages);
+            calculateAndPlotSurvivalCurves(stageSpecificMatrices, stages);
+        }
+
+        function displayStageSpecificMatrices(matrices, stages) {
+            const outputDiv = document.getElementById("matrixOutput");
+            outputDiv.innerHTML = "<h3>Stage-Specific Survival Matrices</h3>";
+
+            matrices.forEach((matrix, index) => {
+                const stageHeader = document.createElement("h4");
+                stageHeader.textContent = stages[index];
+                outputDiv.appendChild(stageHeader);
+
+                const table = document.createElement("table");
+                table.innerHTML = matrix.map(row => {
+                    return `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
+                }).join("");
+
+                outputDiv.appendChild(table);
+            });
+        }
+
+        function calculateAndPlotSurvivalCurves(matrices, stages) {
+            const survivalCurves = matrices.map(matrix => {
+                const maxDays = matrix[0].length;
+                return Array.from({ length: maxDays }, (_, dayIndex) => {
+                    return matrix.reduce((sum, row) => sum + row[dayIndex], 0);
+                });
+            });
+
+            plotSurvivalCurves(survivalCurves, stages);
+        }
+
+        function plotSurvivalCurves(survivalCurves, stages) {
+            const ctx = document.getElementById("stageSurvivalCurve").getContext("2d");
+            const datasets = survivalCurves.map((curve, index) => {
+                return {
+                    label: stages[index],
+                    data: curve,
+                    borderColor: `hsl(${(index / survivalCurves.length) * 360}, 70%, 50%)`,
+                    fill: false,
+                    tension: 0.1
+                };
+            });
+
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: Array.from({ length: survivalCurves[0].length }, (_, i) => i + 1),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        title: {
+                            display: true,
+                            text: "Stage-Specific Survival Curves"
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: "Days"
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Number of Individuals"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
