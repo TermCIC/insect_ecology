@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Insect Rearing Data Generator</title>
     <style>
         body {
@@ -68,6 +69,15 @@
             background-color: #0056b3;
             color: white;
         }
+
+        .chart-container {
+            margin-top: 30px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
     </style>
 </head>
 
@@ -125,9 +135,17 @@
                 <tbody></tbody>
             </table>
         </div>
+
+        <div class="chart-container">
+            <h2>Survival Curve and Fecundity</h2>
+            <canvas id="survivalFecundityChart" width="800" height="400"></canvas>
+        </div>
     </div>
 
     <script>
+        let survivalCurveData = [];
+        let fecundityCurveData = [];
+
         function generateData() {
             const insectType = document.getElementById('insectType').value;
             const populationSize = parseInt(document.getElementById('populationSize').value);
@@ -167,6 +185,63 @@
             populateSurvivalTable(survivalData);
             const fecundityData = calculateFecundity(individuals, maxSurvivalDays, reproductiveRate);
             populateFecundityTable(fecundityData);
+
+            // Prepare data for chart
+            survivalCurveData = survivalData.map(dayData => dayData.filter(status => status === 'Alive').length);
+            fecundityCurveData = fecundityData.map(dayData => dayData.reduce((sum, eggs) => sum + eggs, 0));
+
+            plotSurvivalFecundityChart(survivalCurveData, fecundityCurveData);
+        }
+
+        function plotSurvivalFecundityChart(survivalCurve, fecundityCurve) {
+            const ctx = document.getElementById('survivalFecundityChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: survivalCurve.map((_, index) => index),
+                    datasets: [
+                        {
+                            label: 'Survival Curve',
+                            data: survivalCurve,
+                            borderColor: 'blue',
+                            fill: false
+                        },
+                        {
+                            label: 'Fecundity Curve',
+                            data: fecundityCurve,
+                            borderColor: 'green',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        title: {
+                            display: true,
+                            text: 'Survival Curve and Fecundity'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function generateIndividuals(populationSize, mortalityRate, reproductiveRate, maxReproductionCapacityRange, beginToReproduce) {
