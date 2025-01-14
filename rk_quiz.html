@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: r- and K-selection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: black;
+        }
+
+        .question {
+            margin: 20px 0;
+        }
+
+        .question h3 {
+            margin-bottom: 10px;
+        }
+
+        .options {
+            margin-left: 20px;
+        }
+
+        .options label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .results p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Quiz: r- and K-selection</h1>
+        <form id="quizForm">
+            <div class="question">
+                <h3>1. Which type of species typically has a high reproductive rate?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q1" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q1" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>2. Which type of species invests more in parental care?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q2" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q2" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>3. In an unstable environment, which type of species is more likely to thrive?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q3" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q3" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>4. Which type of species typically has a shorter lifespan?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q4" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q4" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>5. Which type of species tends to dominate in resource-limited environments?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q5" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q5" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>6. Which type of species produces fewer offspring but ensures higher survival rates?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q6" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q6" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>7. Which type of species is more likely to have a larger body size?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q7" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q7" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>8. Which type of species is more commonly found in rapidly changing environments?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q8" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q8" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>9. Which type of species has a higher mortality rate?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q9" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q9" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>10. Which type of species is most associated with stable environments?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q10" value="r"> r-selected species</label>
+                    <label><input type="radio" name="q10" value="k"> K-selected species</label>
+                </div>
+            </div>
+
+            <button type="button" onclick="submitQuiz()">Submit Quiz</button>
+        </form>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        function submitQuiz() {
+            const answers = {
+                q1: 'r',
+                q2: 'k',
+                q3: 'r',
+                q4: 'r',
+                q5: 'k',
+                q6: 'k',
+                q7: 'k',
+                q8: 'r',
+                q9: 'r',
+                q10: 'k'
+            };
+
+            let score = 0;
+            const form = document.getElementById('quizForm');
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            Object.keys(answers).forEach((question) => {
+                const selected = form[question].value;
+                if (selected === answers[question]) {
+                    score++;
+                } else {
+                    resultsDiv.innerHTML += `<p>Question ${question.slice(1)}: Incorrect (Correct Answer: ${answers[question] === 'r' ? 'r-selected species' : 'K-selected species'})</p>`;
+                }
+            });
+
+            resultsDiv.innerHTML = `<h3>Your Score: ${score}/10</h3>` + resultsDiv.innerHTML;
+        }
+    </script>
+</body>
+
+</html>
