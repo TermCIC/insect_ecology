@@ -77,6 +77,18 @@
             left: 10px;
             z-index: 100;
         }
+
+        .left-column button {
+            font-size: clamp(12px, 2.5vw, 16px);
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        @media (max-width: 576px) {
+            .left-column button {
+                padding: 5px;
+            }
+        }
     </style>
 </head>
 
