@@ -71,13 +71,13 @@
     <h3>by Dr. Chun-I Chiu</h3>
 
     <div class="container">
-        <h2>Food Web Example</h2>
-        <p>This example demonstrates a simple food web, where nodes represent species, and links represent predation relationships.</p>
-        <div class="network" id="foodWeb"></div>
+        <h2>Food Chain Example</h2>
+        <p>This example demonstrates a simple food chain, where nodes represent species, and links represent predation relationships.</p>
+        <div class="network" id="foodChain"></div>
 
-        <h2>Pollination Network Example</h2>
-        <p>This example illustrates a pollination network, where nodes represent plants and pollinators, and links indicate interactions.</p>
-        <div class="network" id="pollinationNetwork"></div>
+        <h2>Food Web Example</h2>
+        <p>This example illustrates a food web network, where nodes represent species, and links represent predation relationships.</p>
+        <div class="network" id="foodWeb"></div>
     </div>
 
     <script>
@@ -157,29 +157,29 @@
             }
         }
 
-        // Food Web Data
-        const foodWebNodes = [
+        // Food Chain Data
+        const foodChainNodes = [
             { id: "Plant", name: "Plant" },
             { id: "Herbivore", name: "Herbivore" },
             { id: "Carnivore", name: "Carnivore" },
             { id: "Top Predator", name: "Top Predator" }
         ];
 
-        const foodWebLinks = [
+        const foodChainLinks = [
             { source: "Plant", target: "Herbivore" },
             { source: "Herbivore", target: "Carnivore" },
             { source: "Carnivore", target: "Top Predator" }
         ];
 
-        // Pollination Network Data
-        const pollinationNodes = [
+        // Food Web Data
+        const foodWebNodes = [
             { id: "Plant 1", name: "Plant 1" },
             { id: "Plant 2", name: "Plant 2" },
             { id: "Bee", name: "Bee" },
             { id: "Butterfly", name: "Butterfly" }
         ];
 
-        const pollinationLinks = [
+        const foodWebLinks = [
             { source: "Plant 1", target: "Bee" },
             { source: "Plant 2", target: "Bee" },
             { source: "Plant 1", target: "Butterfly" },
@@ -187,8 +187,8 @@
         ];
 
         // Render the networks
+        createNetwork("foodChain", foodChainNodes, foodChainLinks);
         createNetwork("foodWeb", foodWebNodes, foodWebLinks);
-        createNetwork("pollinationNetwork", pollinationNodes, pollinationLinks);
     </script>
 </body>
 
