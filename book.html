@@ -21,10 +21,12 @@
             padding: 10px;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
-            transition: transform 0.3s ease;
+            transition: width 0.3s ease, transform 0.3s ease;
         }
 
         .left-column.hidden {
+            width: 0;
+            padding: 0;
             transform: translateX(-100%);
         }
 
@@ -33,6 +35,11 @@
             background-color: #fff;
             overflow: hidden;
             position: relative;
+            transition: width 0.3s ease;
+        }
+
+        .right-column.expanded {
+            width: 100%;
         }
 
         .right-column iframe {
@@ -95,7 +102,7 @@
         <button class="btn btn-success w-100 mb-2" onclick="loadPage('https://termcic.github.io/insect_ecology/calculate_diversity_index.html')">Diversity index</button>
     </div>
 
-    <div class="right-column">
+    <div class="right-column" id="rightColumn">
         <div class="spinner" id="spinner"></div>
         <iframe id="contentFrame" src="https://termcic.github.io/insect_ecology/about_population_ecology.html" onload="hideSpinner()"></iframe>
     </div>
@@ -105,11 +112,9 @@
             const spinner = document.getElementById('spinner');
             const iframe = document.getElementById('contentFrame');
 
-            // Show spinner and temporarily hide iframe
             spinner.style.display = 'block';
             iframe.style.visibility = 'hidden';
 
-            // Change iframe source
             iframe.src = url;
         }
 
@@ -117,16 +122,17 @@
             const spinner = document.getElementById('spinner');
             const iframe = document.getElementById('contentFrame');
 
-            // Hide spinner and show iframe
             spinner.style.display = 'none';
             iframe.style.visibility = 'visible';
         }
 
         const toggleButton = document.getElementById('toggleButton');
         const leftColumn = document.getElementById('leftColumn');
+        const rightColumn = document.getElementById('rightColumn');
 
         toggleButton.addEventListener('click', () => {
             leftColumn.classList.toggle('hidden');
+            rightColumn.classList.toggle('expanded');
         });
     </script>
 </body>
