@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIY Ecological Network</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvg/3.0.7/umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .form-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .form-section {
+            flex: 1;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section h2 {
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .network {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        svg {
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 6px;
+            font-size: 12px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>DIY Ecological Network</h1>
+    <div class="container">
+        <div class="form-container">
+            <!-- Add Node Section -->
+            <div class="form-section">
+                <h2>Add Node</h2>
+                <div class="form-group">
+                    <label for="nodeName">Node Name</label>
+                    <input type="text" id="nodeName" placeholder="Enter node name">
+                </div>
+                <div class="form-group">
+                    <label for="nodeRole">Node Role</label>
+                    <select id="nodeRole">
+                        <option value="Producer">Producer</option>
+                        <option value="Herbivore">Herbivore</option>
+                        <option value="Pollinator">Pollinator</option>
+                        <option value="Predator">Predator</option>
+                        <option value="Parasitoid">Parasitoid</option>
+                    </select>
+                </div>
+                <button onclick="addNode()">Add Node</button>
+            </div>
+
+            <!-- Add Linkage Section -->
+            <div class="form-section">
+                <h2>Add Linkage</h2>
+                <div class="form-group">
+                    <label for="linkSource">Source Node</label>
+                    <select id="linkSource"></select>
+                </div>
+                <div class="form-group">
+                    <label for="linkTarget">Target Node</label>
+                    <select id="linkTarget"></select>
+                </div>
+                <div class="form-group">
+                    <label for="linkType">Linkage Type</label>
+                    <select id="linkType">
+                        <option value="predator/prey interaction">Predator/Prey Interaction</option>
+                        <option value="pollination interaction">Pollination Interaction</option>
+                        <option value="parasitism interaction">Parasitism Interaction</option>
+                    </select>
+                </div>
+                <button onclick="addLink()">Add Linkage</button>
+            </div>
+        </div>
+
+        <div class="network" id="ecologicalNetwork"></div>
+
+        <button onclick="downloadNetworkImage()">Download Network Image</button>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: green;"></div>
+                Producer
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: orange;"></div>
+                Herbivore
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: yellow;"></div>
+                Pollinator
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: red;"></div>
+                Predator
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: blue;"></div>
+                Parasitoid
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: red;"></div>
+                Predator/Prey Interaction (Link)
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: orange;"></div>
+                Pollination Interaction (Link)
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: blue;"></div>
+                Parasitism Interaction (Link)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nodes = [];
+        let links = [];
+
+        const svg = d3.select("#ecologicalNetwork").append("svg")
+            .attr("width", "100%")
+            .attr("height", 600)
+            .call(d3.zoom().on("zoom", (event) => g.attr("transform", event.transform)));
+
+        const g = svg.append("g");
+
+        // Add a white background rect explicitly inside the SVG
+        svg.append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("fill", "white")
+            .lower(); // Send it to the back so it's behind other elements
+
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(400, 300));
+
+        const linkGroup = g.append("g").attr("class", "links");
+        const nodeGroup = g.append("g").attr("class", "nodes");
+
+        function updateNetwork() {
+            const link = linkGroup.selectAll("line").data(links);
+
+            link.enter().append("line")
+                .merge(link)
+                .attr("stroke", d => {
+                    if (d.type === "predator/prey interaction") return "red";
+                    if (d.type === "pollination interaction") return "orange";
+                    if (d.type === "parasitism interaction") return "blue";
+                    return "gray";
+                })
+                .attr("stroke-width", 2);
+
+            link.exit().remove();
+
+            const node = nodeGroup.selectAll("g").data(nodes, d => d.id);
+
+            const nodeEnter = node.enter().append("g").attr("class", "node-group")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+            nodeEnter.append("circle")
+                .attr("r", 8)
+                .attr("fill", d => {
+                    if (d.role === "Producer") return "green";
+                    if (d.role === "Herbivore") return "orange";
+                    if (d.role === "Pollinator") return "yellow";
+                    if (d.role === "Predator") return "red";
+                    if (d.role === "Parasitoid") return "blue";
+                    return "gray";
+                });
+
+            nodeEnter.append("text")
+                .attr("x", 12)
+                .attr("y", 4)
+                .text(d => d.name)
+                .style("font-size", "12px")
+                .style("font-family", "Arial, sans-serif")
+                .style("fill", "#333");
+
+            node.exit().remove();
+
+            simulation.nodes(nodes).on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+
+            simulation.force("link").links(links);
+            simulation.alpha(1).restart();
+        }
+
+        function addNode() {
+            const name = document.getElementById("nodeName").value;
+            const role = document.getElementById("nodeRole").value;
+            if (!name) {
+                alert("Node name is required");
+                return;
+            }
+            if (nodes.some(node => node.id === name)) {
+                alert("Node name must be unique.");
+                return;
+            }
+            nodes.push({ id: name, name, role });
+            updateNodeOptions();
+            updateNetwork();
+        }
+
+        function addLink() {
+            const source = document.getElementById("linkSource").value;
+            const target = document.getElementById("linkTarget").value;
+            const type = document.getElementById("linkType").value;
+            if (!source || !target || source === target) {
+                alert("Valid source and target nodes are required");
+                return;
+            }
+            links.push({ source, target, type });
+            updateNodeOptions()
+            updateNetwork();
+        }
+
+        function updateNodeOptions() {
+            const linkSource = document.getElementById("linkSource");
+            const linkTarget = document.getElementById("linkTarget");
+
+            [linkSource, linkTarget].forEach(select => {
+                select.innerHTML = nodes.map(node => `<option value="${node.id}">${node.name}</option>`).join("");
+            });
+            updateNetwork();
+        }
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        updateNodeOptions();
+    </script>
+    <script type="module">
+        import { Canvg } from 'https://cdn.skypack.dev/canvg@^4.0.0';
+    
+        window.downloadNetworkImage = async (scale = 2) => {
+            const svgElement = document.querySelector("#ecologicalNetwork svg");
+    
+            if (!svgElement) {
+                alert("Network SVG not found!");
+                return;
+            }
+    
+            // Serialize SVG to string
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgElement);
+    
+            // Create a canvas with scaling for higher resolution
+            const rect = svgElement.getBoundingClientRect();
+            const canvas = document.createElement("canvas");
+            canvas.width = rect.width * scale;
+            canvas.height = rect.height * scale;
+            const ctx = canvas.getContext("2d");
+    
+            // Scale the context for higher resolution
+            ctx.scale(scale, scale);
+    
+            // Use Canvg to render the SVG onto the canvas
+            const canvgInstance = Canvg.fromString(ctx, svgString);
+            await canvgInstance.render();
+    
+            // Convert the canvas to a PNG and download
+            const link = document.createElement("a");
+            link.download = "network.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        };
+    </script>
+    
+</body>
+
+</html>
