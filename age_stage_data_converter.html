@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Age-Stage Two-Sex Life Table</title>
+    <title>Age-stage converter</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -14,7 +14,8 @@
             padding: 20px;
         }
 
-        h1 {
+        h1,
+        h3 {
             text-align: center;
         }
 
@@ -85,7 +86,10 @@
 </head>
 
 <body>
-    <h1>Life Table with Stages and Individuals</h1>
+    <h1>Age-stage data converter</h1>
+    <h3>This program converts age-stage data into survival matrix and survival curves</h3>
+    <h3>by Dr. Chun-I Chiu</h3>
+    <h3>Department of Entomology and Plant Pathology, Chiang Mai University</h3>
     <div class="container">
         <div class="button-group">
             <button onclick="addStage()">Add Stage</button>
@@ -98,6 +102,7 @@
                     <tr>
                         <th>Sex</th>
                         <th contenteditable="true">Stage 1</th>
+                        <th>Adult</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -110,31 +115,33 @@
                             </select>
                         </td>
                         <td><input type="number" min="0" placeholder="Days"></td>
+                        <td><input type="number" min="0" placeholder="Days"></td>
                     </tr>
                 </tbody>
             </table>
         </div>
         <div id="matrixOutput" class="table-container"></div>
         <canvas id="stageSurvivalCurve" width="800" height="400"></canvas>
+        <div id="downloadCurve"></div>
     </div>
 
     <script>
+        let stageSurvivalChart;
+
         function addStage() {
             const table = document.getElementById("lifeTable");
             const headerRow = table.querySelector("thead tr");
             const rows = table.querySelectorAll("tbody tr");
 
-            // Add a new header column
             const newHeader = document.createElement("th");
             newHeader.contentEditable = "true";
-            newHeader.textContent = `Stage ${headerRow.children.length}`;
-            headerRow.appendChild(newHeader);
+            newHeader.textContent = `Stage ${headerRow.children.length - 1}`;
+            headerRow.insertBefore(newHeader, headerRow.lastElementChild);
 
-            // Add a new input cell to each row
             rows.forEach(row => {
                 const newCell = document.createElement("td");
                 newCell.innerHTML = '<input type="number" min="0" placeholder="Days">';
-                row.appendChild(newCell);
+                row.insertBefore(newCell, row.lastElementChild);
             });
         }
 
@@ -143,10 +150,7 @@
             const tbody = table.querySelector("tbody");
             const columnCount = table.querySelector("thead tr").children.length;
 
-            // Create a new row
             const newRow = document.createElement("tr");
-
-            // Add the sex dropdown cell
             const sexCell = document.createElement("td");
             sexCell.innerHTML = `
                 <select>
@@ -156,7 +160,6 @@
                 </select>`;
             newRow.appendChild(sexCell);
 
-            // Add input cells for each stage
             for (let i = 1; i < columnCount; i++) {
                 const newCell = document.createElement("td");
                 newCell.innerHTML = '<input type="number" min="0" placeholder="Days">';
@@ -170,15 +173,15 @@
             const table = document.getElementById("lifeTable");
             const rows = Array.from(table.querySelectorAll("tbody tr"));
             const stages = Array.from(table.querySelector("thead tr").children).slice(1).map(th => th.textContent);
-            
-            // Calculate stage-specific survival matrices
+
             const survivalDays = rows.map(row => {
                 return Array.from(row.querySelectorAll("td input"))
                     .map(input => parseInt(input.value) || 0);
             });
 
             const totalSurvivalDays = survivalDays.map(days => days.reduce((sum, d) => sum + d, 0));
-            const maxDays = Math.max(...totalSurvivalDays);
+            const maxDays = Math.max(...totalSurvivalDays) + 1;
+            const totalIndividuals = rows.length;
 
             const stageSpecificMatrices = stages.map((_, stageIndex) => {
                 return survivalDays.map((days, individualIndex) => {
@@ -191,11 +194,16 @@
                 });
             });
 
-            displayStageSpecificMatrices(stageSpecificMatrices, stages);
-            calculateAndPlotSurvivalCurves(stageSpecificMatrices, stages);
+            const adultMatrix = stageSpecificMatrices.pop();
+            const maleMatrix = adultMatrix.filter((_, i) => rows[i].querySelector("select").value === "male");
+            const femaleMatrix = adultMatrix.filter((_, i) => rows[i].querySelector("select").value === "female");
+
+            displayStageSpecificMatrices(stageSpecificMatrices, stages.slice(0, -1), totalIndividuals);
+            displayAdultMatrices(maleMatrix, femaleMatrix, totalIndividuals);
+            calculateAndPlotSurvivalCurves(stageSpecificMatrices, stages.slice(0, -1), maleMatrix, femaleMatrix, totalIndividuals);
         }
 
-        function displayStageSpecificMatrices(matrices, stages) {
+        function displayStageSpecificMatrices(matrices, stages, totalIndividuals) {
             const outputDiv = document.getElementById("matrixOutput");
             outputDiv.innerHTML = "<h3>Stage-Specific Survival Matrices</h3>";
 
@@ -204,43 +212,109 @@
                 stageHeader.textContent = stages[index];
                 outputDiv.appendChild(stageHeader);
 
+                const tableContainer = document.createElement("div");
+                tableContainer.style.overflowX = "auto";
+                tableContainer.style.maxWidth = "100%";
+
                 const table = document.createElement("table");
                 table.innerHTML = matrix.map(row => {
                     return `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
                 }).join("");
 
-                outputDiv.appendChild(table);
+                tableContainer.appendChild(table);
+                outputDiv.appendChild(tableContainer);
             });
         }
 
-        function calculateAndPlotSurvivalCurves(matrices, stages) {
+        function displayAdultMatrices(maleMatrix, femaleMatrix, totalIndividuals) {
+            const outputDiv = document.getElementById("matrixOutput");
+
+            const maleHeader = document.createElement("h4");
+            maleHeader.textContent = "Adult - Male";
+            outputDiv.appendChild(maleHeader);
+
+            const maleContainer = document.createElement("div");
+            maleContainer.style.overflowX = "auto";
+            maleContainer.style.maxWidth = "100%";
+
+            const maleTable = document.createElement("table");
+            maleTable.innerHTML = maleMatrix.map(row => {
+                return `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
+            }).join("");
+            maleContainer.appendChild(maleTable);
+            outputDiv.appendChild(maleContainer);
+
+            const femaleHeader = document.createElement("h4");
+            femaleHeader.textContent = "Adult - Female";
+            outputDiv.appendChild(femaleHeader);
+
+            const femaleContainer = document.createElement("div");
+            femaleContainer.style.overflowX = "auto";
+            femaleContainer.style.maxWidth = "100%";
+
+            const femaleTable = document.createElement("table");
+            femaleTable.innerHTML = femaleMatrix.map(row => {
+                return `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
+            }).join("");
+            femaleContainer.appendChild(femaleTable);
+            outputDiv.appendChild(femaleContainer);
+        }
+
+        function calculateAndPlotSurvivalCurves(matrices, stages, maleMatrix, femaleMatrix, totalIndividuals) {
             const survivalCurves = matrices.map(matrix => {
                 const maxDays = matrix[0].length;
                 return Array.from({ length: maxDays }, (_, dayIndex) => {
-                    return matrix.reduce((sum, row) => sum + row[dayIndex], 0);
+                    return matrix.reduce((sum, row) => sum + row[dayIndex], 0) / totalIndividuals;
                 });
             });
 
-            plotSurvivalCurves(survivalCurves, stages);
-        }
-
-        function plotSurvivalCurves(survivalCurves, stages) {
-            const ctx = document.getElementById("stageSurvivalCurve").getContext("2d");
-            const datasets = survivalCurves.map((curve, index) => {
-                return {
-                    label: stages[index],
-                    data: curve,
-                    borderColor: `hsl(${(index / survivalCurves.length) * 360}, 70%, 50%)`,
-                    fill: false,
-                    tension: 0.1
-                };
+            const maleSurvivalCurve = Array.from({ length: maleMatrix[0].length }, (_, dayIndex) => {
+                return maleMatrix.reduce((sum, row) => sum + row[dayIndex], 0) / totalIndividuals;
             });
 
-            new Chart(ctx, {
+            const femaleSurvivalCurve = Array.from({ length: femaleMatrix[0].length }, (_, dayIndex) => {
+                return femaleMatrix.reduce((sum, row) => sum + row[dayIndex], 0) / totalIndividuals;
+            });
+
+            plotSurvivalCurves(survivalCurves, stages, maleSurvivalCurve, femaleSurvivalCurve);
+        }
+
+        function plotSurvivalCurves(survivalCurves, stages, maleSurvivalCurve, femaleSurvivalCurve) {
+            const ctx = document.getElementById("stageSurvivalCurve").getContext("2d");
+
+            if (stageSurvivalChart) {
+                stageSurvivalChart.destroy();
+            }
+
+            stageSurvivalChart = new Chart(ctx, {
                 type: "line",
                 data: {
                     labels: Array.from({ length: survivalCurves[0].length }, (_, i) => i + 1),
-                    datasets: datasets
+                    datasets: [
+                        ...survivalCurves.map((curve, index) => {
+                            return {
+                                label: stages[index],
+                                data: curve,
+                                borderColor: `hsl(${(index / survivalCurves.length) * 360}, 70%, 50%)`,
+                                fill: false,
+                                tension: 0.1
+                            };
+                        }),
+                        {
+                            label: "Adult - Male",
+                            data: maleSurvivalCurve,
+                            borderColor: "blue",
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: "Adult - Female",
+                            data: femaleSurvivalCurve,
+                            borderColor: "red",
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -250,7 +324,7 @@
                         },
                         title: {
                             display: true,
-                            text: "Stage-Specific Survival Curves"
+                            text: "Stage-Specific Survival Curves Including Adults"
                         }
                     },
                     scales: {
@@ -264,12 +338,28 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: "Number of Individuals"
+                                text: "Survival Rate"
                             }
                         }
                     }
                 }
             });
+
+            // Add the download button dynamically
+            const downloadDiv = document.getElementById("downloadCurve");
+            downloadDiv.innerHTML = ""; // Clear any existing buttons
+            const button = document.createElement("button");
+            button.textContent = "Download Figure";
+            button.style.marginTop = "10px";
+            button.onclick = downloadChart;
+            downloadDiv.appendChild(button);
+        }
+
+        function downloadChart() {
+            const link = document.createElement("a");
+            link.download = "survival_curve.png";
+            link.href = stageSurvivalChart.toBase64Image();
+            link.click();
         }
     </script>
 </body>
