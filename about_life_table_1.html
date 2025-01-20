@@ -66,6 +66,26 @@
             max-width: 100%;
             height: auto;
         }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .navigation-buttons a {
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .navigation-buttons a:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 
@@ -141,6 +161,10 @@
         <h2>Visualization of Life Table Parameters</h2>
         <div class="chart-container">
             <canvas id="lifeTableChart"></canvas>
+        </div>
+
+        <div class="navigation-buttons">
+            <a href="https://termcic.github.io/insect_ecology/about_life_table_0.html">Previous Page</a>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
