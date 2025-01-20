@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Introduction to Life Tables</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <title>Life is Not Simple</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,38 +28,18 @@
             text-align: center;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: center;
-        }
-
-        th {
-            background-color: black;
-            color: white;
-        }
-
         .explanation {
             background-color: #f9f9f9;
             padding: 15px;
             border: 1px solid #ccc;
             border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .explanation h3 {
-            margin-top: 0;
+            margin: 20px 0;
         }
 
         .chart-container {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             margin: 20px 0;
         }
 
@@ -67,9 +48,44 @@
             height: auto;
         }
 
+        .input-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .input-container input {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .input-container button {
+            padding: 8px 16px;
+            font-size: 16px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #0056b3;
+        }
+
+        #whiteboard {
+            border: 1px solid #ccc;
+            display: block;
+            width: 100%;
+            height: 400px;
+            cursor: crosshair;
+            margin-top: 20px;
+        }
+
         .navigation-buttons {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             margin-top: 20px;
         }
 
@@ -91,103 +107,68 @@
 
 <body>
     <div class="container">
-        <h1>Introduction to Life Tables</h1>
+        <h1>Life is Not Simple</h1>
 
-        <h2>What is a Life Table?</h2>
         <p>
-            A life table is a summary of the survival and reproductive patterns of a population. It is a fundamental tool
-            in ecology, demography, and population biology to study population dynamics and predict growth or decline.
+            Life is not just about mortality. It reproduces and grows. The intrinsic rate of natural increase, represented
+            by the parameter \( r \), combines survival and reproduction to determine population growth over time. 
+            This parameter is crucial to understanding population dynamics.
         </p>
-
-        <h2>Components of a Life Table</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>x</strong></td>
-                    <td>Age or stage of the individual (e.g., days, weeks, years)</td>
-                </tr>
-                <tr>
-                    <td><strong>Nx</strong></td>
-                    <td>Number of individuals surviving at age x</td>
-                </tr>
-                <tr>
-                    <td><strong>Lx</strong></td>
-                    <td>Proportion of the original cohort surviving to age x</td>
-                </tr>
-                <tr>
-                    <td><strong>Mx</strong></td>
-                    <td>Average number of offspring produced by individuals at age x</td>
-                </tr>
-                <tr>
-                    <td><strong>R<sub>0</sub></strong></td>
-                    <td>Net reproductive rate, or the average number of offspring per individual over its lifetime</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h2>Key Metrics</h2>
-        <div class="explanation">
-            <h3>1. Net Reproductive Rate (R<sub>0</sub>)</h3>
-            <p>
-                The average number of offspring an individual is expected to produce over its lifetime.
-                <em>Formula:</em> \( R_0 = \sum (L_x \times M_x) \)
-            </p>
-
-            <h3>2. Intrinsic Growth Rate (r)</h3>
-            <p>
-                The rate of population increase under ideal conditions.
-                <em>Formula:</em> Solve for \( r \) such that \( \sum (e^{-r \cdot x} \times L_x \times M_x) = 1 \)
-            </p>
-
-            <h3>3. Generation Time (T<sub>c</sub>)</h3>
-            <p>
-                The average age at which reproduction occurs.
-                <em>Formula:</em> \( T_c = \frac{\ln(R_0)}{r} \)
-            </p>
-
-            <h3>4. Doubling Time (D<sub>t</sub>)</h3>
-            <p>
-                The time required for the population to double in size.
-                <em>Formula:</em> \( D_t = \frac{\ln(2)}{r} \)
-            </p>
+        
+        <div class="whiteboard-container">
+            <h2>How?</h2>
+            <canvas id="whiteboard"></canvas>
         </div>
 
-        <h2>Visualization of Life Table Parameters</h2>
         <div class="chart-container">
-            <canvas id="lifeTableChart"></canvas>
+            <canvas id="lifeChart"></canvas>
+            <div class="input-container">
+                <label for="growthRate">Intrinsic Growth Rate (r): </label>
+                <input type="number" id="growthRate" step="0.01" value="0.1">
+                <button id="updateLifeChart">Update Chart</button>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>Key Concepts</h2>
+            <p><strong>Intrinsic Growth Rate (\( r \)):</strong> The rate at which a population grows under ideal conditions, combining survival and reproduction.</p>
+            <p><strong>Exponential Growth:</strong> When \( r \) is positive, populations grow exponentially. This can lead to rapid increases in population size if unchecked by environmental factors.</p>
+            <p><strong>Logistic Growth:</strong> Real populations are often limited by resources, leading to a slowing of growth as they approach carrying capacity.</p>
         </div>
 
         <div class="navigation-buttons">
             <a href="https://termcic.github.io/insect_ecology/about_life_table_0.html">Previous Page</a>
         </div>
 
+        <div class="navigation-buttons">
+            <a href="https://termcic.github.io/insect_ecology/about_life_table_2.html">Next Page</a>
+        </div>
+
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-                const ctx = document.getElementById("lifeTableChart").getContext("2d");
+                const ctx = document.getElementById("lifeChart").getContext("2d");
+
+                let intrinsicGrowthRate = 0.1; // Default intrinsic growth rate (r)
+                const time = Array.from({ length: 101 }, (_, i) => i); // Time steps 0 to 100
+
+                const calculatePopulationGrowth = (r) => {
+                    return time.map(t => Math.exp(r * t)); // Exponential growth formula
+                };
+
+                let populationGrowth = calculatePopulationGrowth(intrinsicGrowthRate);
+
                 const chart = new Chart(ctx, {
                     type: "line",
                     data: {
-                        labels: [0, 1, 2, 3, 4, 5], // Example ages
+                        labels: time,
                         datasets: [
                             {
-                                label: "Lx (Survival Proportion)",
-                                data: [1.0, 0.8, 0.6, 0.4, 0.2, 0.0], // Example survival data
+                                label: "Population Growth",
+                                data: populationGrowth,
                                 borderColor: "blue",
-                                fill: false
-                            },
-                            {
-                                label: "Mx (Fecundity)",
-                                data: [0, 0.5, 1.0, 1.5, 0.5, 0], // Example fecundity data
-                                borderColor: "red",
-                                fill: false
+                                fill: false,
+                                tension: 0.3
                             }
                         ]
                     },
@@ -195,28 +176,77 @@
                         responsive: true,
                         plugins: {
                             legend: {
-                                display: true
+                                display: true,
+                                position: "top"
                             },
                             title: {
                                 display: true,
-                                text: "Life Table Visualization"
+                                text: "Population Growth Over Time"
                             }
                         },
                         scales: {
                             x: {
                                 title: {
                                     display: true,
-                                    text: "Age (x)"
+                                    text: "Time (Years)"
                                 }
                             },
                             y: {
                                 title: {
                                     display: true,
-                                    text: "Values"
-                                }
+                                    text: "Population Size"
+                                },
+                                min: 0
                             }
                         }
                     }
+                });
+
+                document.getElementById("updateLifeChart").addEventListener("click", () => {
+                    const inputRate = document.getElementById("growthRate").value;
+                    intrinsicGrowthRate = parseFloat(inputRate);
+
+                    populationGrowth = calculatePopulationGrowth(intrinsicGrowthRate);
+
+                    chart.data.datasets[0].data = populationGrowth;
+                    chart.update();
+                });
+
+                // Whiteboard functionality
+                const whiteboard = document.getElementById("whiteboard");
+                const context = whiteboard.getContext("2d");
+                let drawing = false;
+
+                const resizeWhiteboard = () => {
+                    whiteboard.width = whiteboard.clientWidth;
+                    whiteboard.height = whiteboard.clientHeight;
+                };
+
+                resizeWhiteboard();
+                window.addEventListener("resize", resizeWhiteboard);
+
+                whiteboard.addEventListener("mousedown", (e) => {
+                    drawing = true;
+                    context.beginPath();
+                    context.moveTo(e.offsetX, e.offsetY);
+                });
+
+                whiteboard.addEventListener("mousemove", (e) => {
+                    if (drawing) {
+                        context.lineTo(e.offsetX, e.offsetY);
+                        context.strokeStyle = "#333";
+                        context.lineWidth = 2;
+                        context.stroke();
+                    }
+                });
+
+                whiteboard.addEventListener("mouseup", () => {
+                    drawing = false;
+                    context.closePath();
+                });
+
+                whiteboard.addEventListener("mouseleave", () => {
+                    drawing = false;
                 });
             });
         </script>
