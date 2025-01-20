@@ -37,13 +37,49 @@
 
         .chart-container {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             margin: 20px 0;
         }
 
         canvas {
             max-width: 100%;
             height: auto;
+        }
+
+        .input-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .input-container input {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .input-container button {
+            padding: 8px 16px;
+            font-size: 16px;
+            color: white;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #0056b3;
+        }
+
+        #whiteboard {
+            border: 1px solid #ccc;
+            display: block;
+            width: 100%;
+            height: 400px;
+            cursor: crosshair;
+            margin-top: 20px;
         }
 
         .navigation-buttons {
@@ -78,8 +114,18 @@
             into cumulative mortality over time.
         </p>
 
+        <div class="whiteboard-container">
+            <h2>How?</h2>
+            <canvas id="whiteboard"></canvas>
+        </div>
+
         <div class="chart-container">
             <canvas id="mortalityChart"></canvas>
+            <div class="input-container">
+                <label for="survivalRate">Daily Survival Rate (%): </label>
+                <input type="number" id="survivalRate" min="0" max="100" value="95">
+                <button id="updateChart">Update Chart</button>
+            </div>
         </div>
 
         <div class="explanation">
@@ -97,14 +143,18 @@
             document.addEventListener("DOMContentLoaded", () => {
                 const ctx = document.getElementById("mortalityChart").getContext("2d");
 
-                // Example data
+                let dailySurvivalRate = 0.95; // Default survival rate (95%)
                 const days = Array.from({ length: 31 }, (_, i) => i); // Days 0 to 30
-                const dailyMortalityRate = 0.05; // 5% daily probability of death
-                const survivalProportions = days.map(day => Math.pow(1 - dailyMortalityRate, day));
-                const cumulativeMortality = survivalProportions.map(s => 1 - s);
 
-                // Create the chart
-                new Chart(ctx, {
+                const calculateData = (survivalRate) => {
+                    const survivalProportions = days.map(day => Math.pow(survivalRate, day));
+                    const cumulativeMortality = survivalProportions.map(s => 1 - s);
+                    return { survivalProportions, cumulativeMortality };
+                };
+
+                let { survivalProportions, cumulativeMortality } = calculateData(dailySurvivalRate);
+
+                const chart = new Chart(ctx, {
                     type: "line",
                     data: {
                         labels: days,
@@ -154,6 +204,54 @@
                             }
                         }
                     }
+                });
+
+                document.getElementById("updateChart").addEventListener("click", () => {
+                    const inputRate = document.getElementById("survivalRate").value;
+                    dailySurvivalRate = parseFloat(inputRate) / 100;
+
+                    const newData = calculateData(dailySurvivalRate);
+
+                    chart.data.datasets[0].data = newData.survivalProportions;
+                    chart.data.datasets[1].data = newData.cumulativeMortality;
+                    chart.update();
+                });
+
+                // Whiteboard functionality
+                const whiteboard = document.getElementById("whiteboard");
+                const context = whiteboard.getContext("2d");
+                let drawing = false;
+
+                const resizeWhiteboard = () => {
+                    whiteboard.width = whiteboard.clientWidth;
+                    whiteboard.height = whiteboard.clientHeight;
+                };
+
+                resizeWhiteboard();
+                window.addEventListener("resize", resizeWhiteboard);
+
+                whiteboard.addEventListener("mousedown", (e) => {
+                    drawing = true;
+                    context.beginPath();
+                    context.moveTo(e.offsetX, e.offsetY);
+                });
+
+                whiteboard.addEventListener("mousemove", (e) => {
+                    if (drawing) {
+                        context.lineTo(e.offsetX, e.offsetY);
+                        context.strokeStyle = "#333";
+                        context.lineWidth = 2;
+                        context.stroke();
+                    }
+                });
+
+                whiteboard.addEventListener("mouseup", () => {
+                    drawing = false;
+                    context.closePath();
+                });
+
+                whiteboard.addEventListener("mouseleave", () => {
+                    drawing = false;
                 });
             });
         </script>
