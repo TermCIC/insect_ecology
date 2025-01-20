@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Introduction to Life Tables</title>
+    <title>Life is Simple</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,33 +27,12 @@
             text-align: center;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: center;
-        }
-
-        th {
-            background-color: black;
-            color: white;
-        }
-
         .explanation {
             background-color: #f9f9f9;
             padding: 15px;
             border: 1px solid #ccc;
             border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .explanation h3 {
-            margin-top: 0;
+            margin: 20px 0;
         }
 
         .chart-container {
@@ -69,7 +48,7 @@
 
         .navigation-buttons {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             margin-top: 20px;
         }
 
@@ -91,76 +70,22 @@
 
 <body>
     <div class="container">
-        <h1>Introduction to Life Tables</h1>
+        <h1>Life is Simple</h1>
 
-        <h2>What is a Life Table?</h2>
         <p>
-            A life table is a summary of the survival and reproductive patterns of a population. It is a fundamental tool
-            in ecology, demography, and population biology to study population dynamics and predict growth or decline.
+            Every living creature faces a daily probability of death. Over time, this accumulates into a long-term
+            mortality rate. The graphical representation below illustrates how daily mortality rates translate
+            into cumulative mortality over time.
         </p>
 
-        <h2>Components of a Life Table</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>x</strong></td>
-                    <td>Age or stage of the individual (e.g., days, weeks, years)</td>
-                </tr>
-                <tr>
-                    <td><strong>Nx</strong></td>
-                    <td>Number of individuals surviving at age x</td>
-                </tr>
-                <tr>
-                    <td><strong>Lx</strong></td>
-                    <td>Proportion of the original cohort surviving to age x</td>
-                </tr>
-                <tr>
-                    <td><strong>Mx</strong></td>
-                    <td>Average number of offspring produced by individuals at age x</td>
-                </tr>
-                <tr>
-                    <td><strong>R<sub>0</sub></strong></td>
-                    <td>Net reproductive rate, or the average number of offspring per individual over its lifetime</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h2>Key Metrics</h2>
-        <div class="explanation">
-            <h3>1. Net Reproductive Rate (R<sub>0</sub>)</h3>
-            <p>
-                The average number of offspring an individual is expected to produce over its lifetime.
-                <em>Formula:</em> \( R_0 = \sum (L_x \times M_x) \)
-            </p>
-
-            <h3>2. Intrinsic Growth Rate (r)</h3>
-            <p>
-                The rate of population increase under ideal conditions.
-                <em>Formula:</em> Solve for \( r \) such that \( \sum (e^{-r \cdot x} \times L_x \times M_x) = 1 \)
-            </p>
-
-            <h3>3. Generation Time (T<sub>c</sub>)</h3>
-            <p>
-                The average age at which reproduction occurs.
-                <em>Formula:</em> \( T_c = \frac{\ln(R_0)}{r} \)
-            </p>
-
-            <h3>4. Doubling Time (D<sub>t</sub>)</h3>
-            <p>
-                The time required for the population to double in size.
-                <em>Formula:</em> \( D_t = \frac{\ln(2)}{r} \)
-            </p>
+        <div class="chart-container">
+            <canvas id="mortalityChart"></canvas>
         </div>
 
-        <h2>Visualization of Life Table Parameters</h2>
-        <div class="chart-container">
-            <canvas id="lifeTableChart"></canvas>
+        <div class="explanation">
+            <h2>Key Concepts</h2>
+            <p><strong>Daily Mortality Rate:</strong> The probability that an individual will die on a given day.</p>
+            <p><strong>Accumulated Mortality:</strong> The cumulative effect of daily mortality over time, showing the decline in survival as time progresses.</p>
         </div>
 
         <div class="navigation-buttons">
@@ -168,26 +93,35 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-                const ctx = document.getElementById("lifeTableChart").getContext("2d");
-                const chart = new Chart(ctx, {
+                const ctx = document.getElementById("mortalityChart").getContext("2d");
+
+                // Example data
+                const days = Array.from({ length: 31 }, (_, i) => i); // Days 0 to 30
+                const dailyMortalityRate = 0.05; // 5% daily probability of death
+                const survivalProportions = days.map(day => Math.pow(1 - dailyMortalityRate, day));
+                const cumulativeMortality = survivalProportions.map(s => 1 - s);
+
+                // Create the chart
+                new Chart(ctx, {
                     type: "line",
                     data: {
-                        labels: [0, 1, 2, 3, 4, 5], // Example ages
+                        labels: days,
                         datasets: [
                             {
-                                label: "Lx (Survival Proportion)",
-                                data: [1.0, 0.8, 0.6, 0.4, 0.2, 0.0], // Example survival data
-                                borderColor: "blue",
-                                fill: false
+                                label: "Survival Proportion",
+                                data: survivalProportions,
+                                borderColor: "green",
+                                fill: false,
+                                tension: 0.3
                             },
                             {
-                                label: "Mx (Fecundity)",
-                                data: [0, 0.5, 1.0, 1.5, 0.5, 0], // Example fecundity data
+                                label: "Accumulated Mortality",
+                                data: cumulativeMortality,
                                 borderColor: "red",
-                                fill: false
+                                fill: false,
+                                tension: 0.3
                             }
                         ]
                     },
@@ -195,25 +129,28 @@
                         responsive: true,
                         plugins: {
                             legend: {
-                                display: true
+                                display: true,
+                                position: "top"
                             },
                             title: {
                                 display: true,
-                                text: "Life Table Visualization"
+                                text: "Daily Probability of Death and Accumulated Mortality"
                             }
                         },
                         scales: {
                             x: {
                                 title: {
                                     display: true,
-                                    text: "Age (x)"
+                                    text: "Time (Days)"
                                 }
                             },
                             y: {
                                 title: {
                                     display: true,
-                                    text: "Values"
-                                }
+                                    text: "Proportion"
+                                },
+                                min: 0,
+                                max: 1
                             }
                         }
                     }
