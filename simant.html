@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>JS-DOS API Example</title>
+    <style>
+        .dosbox-container {
+            width: 640px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="dosbox" class="dosbox-container"></div>
+    <br />
+    <button onclick="dosbox.requestFullScreen()">Make fullscreen</button>
+
+    <script src="https://js-dos.com/cdn/js-dos-api.js"></script>
+    <script>
+        // Initialize the Dosbox instance
+        var dosbox = new Dosbox({
+            id: "dosbox",
+            onload: function (instance) {
+                instance.run("./simant-the-electronic-ant-colony.zip", "./SIMANT.EXE");
+            },
+            onrun: function (instance, app) {
+                console.log("App '" + app + "' is running");
+            }
+        });
+    </script>
+</body>
+</html>
