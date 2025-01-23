@@ -1,33 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>JS-DOS API Example</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play SimAnt Online</title>
     <style>
-        .dosbox-container {
-            width: 640px;
-            height: 400px;
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        iframe {
+            border: none;
+            width: 90%;
+            height: 90%;
         }
     </style>
 </head>
 <body>
-    <div id="dosbox" class="dosbox-container"></div>
-    <br />
-    <button onclick="dosbox.requestFullScreen()">Make fullscreen</button>
-
-    <script src="https://js-dos.com/cdn/js-dos-api.js"></script>
-    <script>
-        // Initialize the Dosbox instance
-        var dosbox = new Dosbox({
-            id: "dosbox",
-            onload: function (instance) {
-                instance.run("./simant-the-electronic-ant-colony.zip", "./SIMANT.EXE");
-            },
-            onrun: function (instance, app) {
-                console.log("App '" + app + "' is running");
-            }
-        });
-    </script>
+    <!-- Embed code from Internet Archive -->
+    <iframe src="https://archive.org/embed/msdos_SimAnt_-_The_Electronic_Ant_Colony_1991" width="640" height="480" frameborder="0" allowfullscreen></iframe>
 </body>
 </html>
