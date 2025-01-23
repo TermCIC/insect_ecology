@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistical Analysis with Normal Distributions</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            background-color: black;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            color: black;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            flex: 1 1 150px;
+            font-size: 16px;
+        }
+
+        .input-group input {
+            flex: 1 1 200px;
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: black;
+        }
+
+        canvas {
+            margin: 20px auto;
+            display: block;
+            max-width: 100%;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .explanation {
+            margin: 20px auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid black;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Statistical Analysis with Normal Distributions</h1>
+        <p>Visualize overlapping normal distributions and learn about p-values and statistical tests.</p>
+    </header>
+
+    <div class="container">
+        <h2>Visualizing Overlapping Normal Distributions</h2>
+        <h3>Distribution 1</h3>
+        <div class="input-group">
+            <label for="mean1">Mean (μ₁):</label>
+            <input type="number" id="mean1" placeholder="Enter mean for distribution 1" value="50" step="0.1">
+            <label for="sd1">Standard Deviation (σ₁):</label>
+            <input type="number" id="sd1" placeholder="Enter standard deviation for distribution 1" value="10"
+                step="0.1">
+        </div>
+        <h3>Distribution 2</h3>
+        <div class="input-group">
+            <label for="mean2">Mean (μ₂):</label>
+            <input type="number" id="mean2" placeholder="Enter mean for distribution 2" value="55" step="0.1">
+            <label for="sd2">Standard Deviation (σ₂):</label>
+            <input type="number" id="sd2" placeholder="Enter standard deviation for distribution 2" value="10"
+                step="0.1">
+        </div>
+        <button onclick="plotDistributions()">Plot Distributions</button>
+        <canvas id="chart" width="800" height="400"></canvas>
+    </div>
+
+    <div class="container explanation">
+        <h2>Understanding P-Value and Statistical Analyses</h2>
+        <p>
+            The <strong>p-value</strong> is a statistical measure that helps you determine whether the observed differences
+            between two datasets are statistically significant. It represents the probability of obtaining results at least
+            as extreme as the observed ones, assuming the null hypothesis is true.
+        </p>
+        <h3>How is P-Value Related to Normal Distributions?</h3>
+        <p>
+            When comparing two normal distributions, the p-value corresponds to the area of overlap between their probability
+            density functions. A smaller p-value indicates less overlap and stronger evidence against the null hypothesis,
+            suggesting that the two distributions are likely different.
+        </p>
+        <h3>Statistical Analyses Based on Normal Distributions</h3>
+        <ul>
+            <li>
+                <strong>T-Test:</strong> Compares the means of two datasets to determine if they are significantly different.
+                <br><em>Example:</em> Comparing test scores of students taught by two different teaching methods.
+            </li>
+            <li>
+                <strong>ANOVA:</strong> Analyzes the variance among multiple groups to identify significant differences.
+                <br><em>Example:</em> Comparing the effectiveness of three or more medications.
+            </li>
+            <li>
+                <strong>Z-Test:</strong> Compares sample and population means when the population standard deviation is known.
+                <br><em>Example:</em> Comparing the average height of a sample group to the general population.
+            </li>
+        </ul>
+        <p>Understanding these analyses helps in drawing meaningful conclusions from data and making evidence-based decisions.</p>
+    </div>
+
+    <script>
+        let chart; // Global variable to store the chart instance
+
+        function generateNormalData(mean, sd, xValues) {
+            return xValues.map((x) => {
+                const y = (1 / (sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / sd, 2));
+                return y;
+            });
+        }
+
+        function plotDistributions() {
+            const mean1 = parseFloat(document.getElementById("mean1").value);
+            const sd1 = parseFloat(document.getElementById("sd1").value);
+            const mean2 = parseFloat(document.getElementById("mean2").value);
+            const sd2 = parseFloat(document.getElementById("sd2").value);
+
+            if (isNaN(mean1) || isNaN(sd1) || isNaN(mean2) || isNaN(sd2) || sd1 <= 0 || sd2 <= 0) {
+                alert("Please enter valid parameters.");
+                return;
+            }
+
+            const n = 100; // Number of points
+            const globalMin = Math.min(mean1 - 10 * sd1, mean2 - 10 * sd2); // Minimum x value
+            const globalMax = Math.max(mean1 + 10 * sd1, mean2 + 10 * sd2); // Maximum x value
+            const xValues = Array.from({ length: n }, (_, i) => globalMin + ((globalMax - globalMin) / (n - 1)) * i);
+
+            const dataset1 = generateNormalData(mean1, sd1, xValues);
+            const dataset2 = generateNormalData(mean2, sd2, xValues);
+
+            if (chart) {
+                chart.data.labels = xValues.map((x) => x.toFixed(2));
+                chart.data.datasets[0].data = dataset1;
+                chart.data.datasets[0].label = `Distribution 1 (μ₁=${mean1}, σ₁=${sd1})`;
+                chart.data.datasets[1].data = dataset2;
+                chart.data.datasets[1].label = `Distribution 2 (μ₂=${mean2}, σ₂=${sd2})`;
+                chart.options.scales.x.min = globalMin;
+                chart.options.scales.x.max = globalMax;
+                chart.update();
+            } else {
+                const ctx = document.getElementById("chart").getContext("2d");
+                chart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: xValues.map((x) => x.toFixed(2)),
+                        datasets: [
+                            {
+                                label: `Distribution 1 (μ₁=${mean1}, σ₁=${sd1})`,
+                                data: dataset1,
+                                borderColor: "blue",
+                                fill: false,
+                                tension: 0.1,
+                            },
+                            {
+                                label: `Distribution 2 (μ₂=${mean2}, σ₂=${sd2})`,
+                                data: dataset2,
+                                borderColor: "red",
+                                fill: false,
+                                tension: 0.1,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                            },
+                            title: {
+                                display: true,
+                                text: "Overlapping Normal Distributions",
+                            },
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Value (x)",
+                                },
+                                min: globalMin,
+                                max: globalMax,
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "Probability Density",
+                                },
+                            },
+                        },
+                    },
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>
