@@ -19,9 +19,46 @@
             height: 90%;
         }
     </style>
+    <script>
+        // Function to simulate mouse events
+        const simulateMouseEvent = (element, eventName, coordX, coordY) => {
+            element.dispatchEvent(new MouseEvent(eventName, {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: coordX,
+                clientY: coordY,
+                button: 0
+            }));
+        };
+
+        // Add touch-to-mouse event conversion
+        document.addEventListener('DOMContentLoaded', () => {
+            const iframe = document.querySelector('iframe');
+
+            iframe.addEventListener('touchstart', (event) => {
+                const touch = event.touches[0];
+                const box = iframe.getBoundingClientRect();
+                const coordX = touch.clientX - box.left;
+                const coordY = touch.clientY - box.top;
+
+                // Simulate mouse events
+                simulateMouseEvent(iframe, "mousedown", coordX, coordY);
+                simulateMouseEvent(iframe, "mouseup", coordX, coordY);
+                simulateMouseEvent(iframe, "click", coordX, coordY);
+            });
+        });
+    </script>
 </head>
 <body>
     <!-- Embed code from Internet Archive -->
-    <iframe src="https://archive.org/embed/msdos_SimAnt_-_The_Electronic_Ant_Colony_1991" width="640" height="480" frameborder="0" allowfullscreen></iframe>
+    <iframe 
+        src="https://archive.org/embed/msdos_SimAnt_-_The_Electronic_Ant_Colony_1991" 
+        width="640" 
+        height="480" 
+        frameborder="0" 
+        allowfullscreen 
+        scrolling="no">
+    </iframe>
 </body>
 </html>
