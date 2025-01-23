@@ -1,64 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play SimAnt Online</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>JS-DOS API Example</title>
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        iframe {
-            border: none;
-            width: 90%;
-            height: 90%;
+        .dosbox-container {
+            width: 640px;
+            height: 400px;
         }
     </style>
-    <script>
-        // Function to simulate mouse events
-        const simulateMouseEvent = (element, eventName, coordX, coordY) => {
-            element.dispatchEvent(new MouseEvent(eventName, {
-                view: window,
-                bubbles: true,
-                cancelable: true,
-                clientX: coordX,
-                clientY: coordY,
-                button: 0
-            }));
-        };
-
-        // Add touch-to-mouse event conversion
-        document.addEventListener('DOMContentLoaded', () => {
-            const iframe = document.querySelector('iframe');
-
-            iframe.addEventListener('touchstart', (event) => {
-                const touch = event.touches[0];
-                const box = iframe.getBoundingClientRect();
-                const coordX = touch.clientX - box.left;
-                const coordY = touch.clientY - box.top;
-
-                // Simulate mouse events
-                simulateMouseEvent(iframe, "mousedown", coordX, coordY);
-                simulateMouseEvent(iframe, "mouseup", coordX, coordY);
-                simulateMouseEvent(iframe, "click", coordX, coordY);
-            });
-        });
-    </script>
 </head>
 <body>
-    <!-- Embed code from Internet Archive -->
-    <iframe 
-        src="https://archive.org/embed/msdos_SimAnt_-_The_Electronic_Ant_Colony_1991" 
-        width="640" 
-        height="480" 
-        frameborder="0" 
-        allowfullscreen 
-        scrolling="no">
-    </iframe>
+    <div id="dosbox" class="dosbox-container"></div>
+    <br />
+    <button onclick="dosbox.requestFullScreen()">Make fullscreen</button>
+
+    <script src="https://js-dos.com/cdn/js-dos-api.js"></script>
+    <script>
+        // Initialize the Dosbox instance
+        var dosbox = new Dosbox({
+            id: "dosbox",
+            onload: function (instance) {
+                instance.run("./simant-the-electronic-ant-colony", "./SIMANT.EXE");
+            },
+            onrun: function (instance, app) {
+                console.log("App '" + app + "' is running");
+            }
+        });
+    </script>
 </body>
 </html>

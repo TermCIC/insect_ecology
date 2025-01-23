@@ -1,0 +1,272 @@
+
+
+Ralloc dump at FATAL ERROR: PROGRAM ABORTED
+Window 2340 locked when it should not be!, Tue Mar 30 14:27:56 1993
+
+Free Space:  22096,  Used Space:  111984, Total Space: 134080 
+Hard space:  33712,  Firm space:  43520, Soft Space : 34752
+Handles allocated: 143,  handles used: 126 max: 0
+By handles: 
+6CA2:FFFC->7CA5:0000: size=64, type= HARD age=768498 name=DiscardEntry
+6CA2:FFF8->7CA9:0000: size=192, type= HARD age=768497 name=malloc
+6CA2:FFF4->7CB5:0000: size=48, type= HARD age=768496 name=malloc
+6CA2:FFF0->7CB8:0000: size=48, type= HARD age=768495 name=malloc
+6CA2:FFEC->7CBB:0000: size=4064, type= HARD age=768494 name=cachetable
+6CA2:FFE8->7DB9:0000: size=3632, type= HARD age=768493 name=shared.ndx
+6CA2:FFE4->7E9C:0000: size=2208, type= HARD age=768492 name=hcegant.ndx
+6CA2:FFE0->7F26:0000: size=176, type= HARD age=768485 name=CSRPIC,0
+6CA2:FFDC->7F31:0000: size=80, type= HARD age=768484 name=CSRMASK,0
+6CA2:FFD8->7F36:0000: size=432, type= HARD age=768479 name=CSRPIC,1
+6CA2:FFD4->7F51:0000: size=144, type= HARD age=768478 name=CSRMASK,1
+6CA2:FFD0->87C1:0000: size=1120, type= FIRM age=   43 name=WIN,0
+6CA2:FFCC->8807:0000: size=1456, type= FIRM age=  235 name=WIN,1
+6CA2:FFC8->7F5A:0000: size=560, type= HARD age=768462 name=MENU,0
+6CA2:FFC4->7F7D:0000: size=288, type= HARD age=768455 name=STRS,1000
+6CA2:FFC0->7F8F:0000: size=96, type=*HARD age=768452 name=strptrs
+6CA2:FFBC->7F95:0000: size=96, type= HARD age=768449 name=STRS,1001
+6CA2:FFB8->7F9B:0000: size=64, type=*HARD age=768446 name=strptrs
+6CA2:FFB4->7F9F:0000: size=848, type= HARD age=768443 name=STRS,1010
+6CA2:FFB0->7FD4:0000: size=144, type=*HARD age=768440 name=strptrs
+6CA2:FFAC->7FDD:0000: size=224, type= HARD age=768437 name=STRS,1020
+6CA2:FFA8->7FEB:0000: size=64, type=*HARD age=768434 name=strptrs
+6CA2:FFA4->7FEF:0000: size=112, type= HARD age=768431 name=STRS,1050
+6CA2:FFA0->7FF6:0000: size=80, type=*HARD age=768428 name=strptrs
+6CA2:FF9C->7FFB:0000: size=112, type= HARD age=768425 name=STRS,1100
+6CA2:FF98->8002:0000: size=80, type=*HARD age=768422 name=strptrs
+6CA2:FF94->8007:0000: size=144, type= HARD age=768419 name=STRS,1101
+6CA2:FF90->8010:0000: size=112, type=*HARD age=768416 name=strptrs
+6CA2:FF8C->8017:0000: size=240, type= HARD age=768413 name=STRS,1102
+6CA2:FF88->8026:0000: size=160, type=*HARD age=768410 name=strptrs
+6CA2:FF84->8030:0000: size=160, type= HARD age=768407 name=STRS,1103
+6CA2:FF80->803A:0000: size=112, type=*HARD age=768404 name=strptrs
+6CA2:FF7C->8041:0000: size=704, type= HARD age=768401 name=STRS,1200
+6CA2:FF78->806D:0000: size=128, type=*HARD age=768398 name=strptrs
+6CA2:FF74->8075:0000: size=864, type= HARD age=768395 name=STRS,1210
+6CA2:FF70->80AB:0000: size=144, type=*HARD age=768392 name=strptrs
+6CA2:FF6C->80B4:0000: size=192, type= HARD age=768390 name=STRS,1220
+6CA2:FF68->80C0:0000: size=80, type=*HARD age=768388 name=strptrs
+6CA2:FF64->80C5:0000: size=176, type= HARD age=768386 name=STRS,1230
+6CA2:FF60->80D0:0000: size=80, type=*HARD age=768384 name=strptrs
+6CA2:FF5C->80D5:0000: size=416, type= HARD age=768381 name=STRS,1240
+6CA2:FF58->80EF:0000: size=96, type=*HARD age=768378 name=strptrs
+6CA2:FF54->80F5:0000: size=336, type= HARD age=768375 name=STRS,1250
+6CA2:FF50->810A:0000: size=80, type=*HARD age=768372 name=strptrs
+6CA2:FF4C->810F:0000: size=288, type= HARD age=768370 name=STRS,1260
+6CA2:FF48->8121:0000: size=80, type=*HARD age=768368 name=strptrs
+6CA2:FF44->8126:0000: size=224, type= HARD age=768366 name=STRS,1900
+6CA2:FF40->8134:0000: size=80, type=*HARD age=768364 name=strptrs
+6CA2:FF3C->8139:0000: size=384, type= HARD age=768361 name=STRS,1800
+6CA2:FF38->8151:0000: size=112, type=*HARD age=768358 name=strptrs
+6CA2:FF34->8158:0000: size=160, type= HARD age=768356 name=HEXA,1000
+6CA2:FF30->8162:0000: size=80, type= HARD age=768355 name=FontHeader
+6CA2:FF2C->8167:0000: size=80, type= HARD age=768350 name=FontHeader
+6CA2:FF28->8189:0000: size=1152, type= HARD age=768353 name=FONTIMAGE
+6CA2:FF24->81D1:0000: size=560, type= HARD age=768352 name=locTable
+6CA2:FF20->81F4:0000: size=560, type= HARD age=768351 name=owTable
+6CA2:FF1C->816C:0000: size=80, type= HARD age=768345 name=FontHeader
+6CA2:FF18->8239:0000: size=1136, type= HARD age=768348 name=FONTIMAGE
+6CA2:FF14->8280:0000: size=560, type= HARD age=768347 name=locTable
+6CA2:FF10->82A3:0000: size=560, type= HARD age=768346 name=owTable
+6CA2:FF0C->8171:0000: size=80, type= HARD age=768340 name=FontHeader
+6CA2:FF08->82C6:0000: size=2080, type= HARD age=768343 name=FONTIMAGE
+6CA2:FF04->8348:0000: size=480, type= HARD age=768342 name=locTable
+6CA2:FF00->8366:0000: size=480, type= HARD age=768341 name=owTable
+6CA2:FEFC->919F:0000: size=224, type= SOFT age=70701 name=WIN,26
+6CA2:FEF8->8384:0000: size=1536, type= HARD age=768338 name=FONTIMAGE
+6CA2:FEF4->83E4:0000: size=560, type= HARD age=768337 name=locTable
+6CA2:FEF0->8407:0000: size=560, type= HARD age=768336 name=owTable
+6CA2:FEEC->86DB:0000: size=912, type= FIRM age=  208 name=WIN,18
+6CA2:FEE8->86A1:0000: size=928, type= FIRM age=   95 name=WIN,19
+6CA2:FEE4->844B:0000: size=1104, type= FIRM age=  234 name=WIN,25
+6CA2:FEE0->8490:0000: size=8224, type= FIRM age=180070 name=Generated bu
+6CA2:FEDC->8727:0000: size=176, type= SOFT age=    3 name=BITMAP,5107
+6CA2:FED8->8783:0000: size=992, type= HARD age=768292 name=sound.ndx
+6CA2:FED4->9243:0000: size=4736, type= SOFT age=71114 name=BITMAP,4620
+6CA2:FED0->90DA:0000: size=480, type= SOFT age=70921 name=DACsample
+6CA2:FECC->9483:0000: size=2464, type= SOFT age=70797 name=DACsample
+6CA2:FEC8->8176:0000: size=48, type= FIRM age=   44 name=winClipList
+6CA2:FEC4->90F8:0000: size=432, type= SOFT age=  760 name=WIN,7
+6CA2:FEC0->8179:0000: size=48, type= FIRM age=  102 name=winClipList
+6CA2:FEBC->817C:0000: size=48, type= FIRM age=  128 name=winClipList
+6CA2:FEB8->817F:0000: size=80, type= FIRM age=767675 name=Malloc
+6CA2:FEB4->8692:0000: size=176, type= SOFT age=   24 name=BITMAP,112
+6CA2:FEB0->8217:0000: size=80, type= FIRM age=  215 name=winClipList
+6CA2:FEAC->97E5:0000: size=4544, type= SOFT age=60625 name=BITMAP,4500
+6CA2:FEA8->917C:0000: size=560, type= HARD age=    1 name=malloc
+6CA2:FEA4->873E:0000: size=48, type= FIRM age=  224 name=winClipList
+6CA2:FEA0->822E:0000: size=96, type=*FIRM age=767674 name=Malloc
+6CA2:FE9C->8184:0000: size=80, type= FIRM age=767672 name=Malloc
+6CA2:FE98->936B:0000: size=4480, type= SOFT age=71227 name=BITMAP,4600
+6CA2:FE94->9075:0000: size=160, type= SOFT age=  297 name=BITMAP,109
+6CA2:FE8C->8747:0000: size=48, type= FIRM age=  160 name=animHandle
+6CA2:FE88->88C3:0000: size=24608, type= FIRM age=60884 name=HEXA,14
+6CA2:FE84->8435:0000: size=176, type= SOFT age=   29 name=BITMAP,100
+6CA2:FE80->8722:0000: size=80, type= FIRM age=409653 name=formatStr
+6CA2:FE7C->822B:0000: size=48, type= FIRM age=409661 name=formatStr
+6CA2:FE78->8440:0000: size=176, type= SOFT age=   14 name=BITMAP,105
+6CA2:FE74->869D:0000: size=64, type= FIRM age=409645 name=formatStr
+6CA2:FE70->907F:0000: size=160, type= SOFT age=  295 name=BITMAP,111
+6CA2:FE6C->8714:0000: size=224, type= FIRM age=  129 name=WIN,5
+6CA2:FE68->821C:0000: size=80, type= FIRM age=   42 name=formatStr
+6CA2:FE64->8EF8:0000: size=6096, type= SOFT age=   35 name=BITMAP,15000
+6CA2:FE60->963C:0000: size=6688, type= SOFT age=70708 name=BITMAP,9101
+6CA2:FE5C->9089:0000: size=64, type= FIRM age=  294 name=list
+6CA2:FE58->8221:0000: size=80, type= FIRM age=60855 name=formatStr
+6CA2:FE54->8226:0000: size=80, type= FIRM age=60853 name=formatStr
+6CA2:FE50->95F7:0000: size=1104, type= HARD age=268457 name=GPutPacked
+6CA2:FE4C->8732:0000: size=192, type= SOFT age=   62 name=BITMAP,1400
+6CA2:FE48->842A:0000: size=176, type= SOFT age=   19 name=BITMAP,103
+6CA2:FE44->9983:0000: size=96, type= FIRM age=  233 name=clipout
+6CA2:FE40->8EC5:0000: size=816, type= FIRM age=  217 name=WIN,21
+6CA2:FE3C->908D:0000: size=128, type= FIRM age=  159 name=clip_Push
+6CA2:FE38->8234:0000: size=80, type= FIRM age=  140 name=formatStr
+6CA2:FE34->91AD:0000: size=1152, type=*FIRM age=  289 name=WIN,22
+6CA2:FE30->8741:0000: size=48, type= FIRM age=  288 name=formatStr
+6CA2:FE2C->9136:0000: size=64, type= FIRM age=  364 name=formatStr
+6CA2:FE28->9113:0000: size=560, type= FIRM age=  177 name=animbufs
+6CA2:FE24->874A:0000: size=48, type= FIRM age=   48 name=animHandle
+6CA2:FE20->9095:0000: size=128, type= FIRM age=   47 name=animobjs
+6CA2:FE1C->913A:0000: size=560, type= FIRM age=   65 name=animbufs
+6CA2:FE10->874D:0000: size=864, type= SOFT age=  122 name=BITMAP,21005
+6CA2:FE00->8862:0000: size=1552, type= SOFT age=  120 name=BITMAP,150
+6CA2:FDFC->91FE:0000: size=1104, type= HARD age=186477 name=GPutPacked
+6CA2:FDE4->90A8:0000: size=560, type= SOFT age=82500 name=BITMAP,9156
+6CA2:FDE0->90CB:0000: size=240, type= SOFT age=61229 name=WIN,30
+6CA2:FDD8->9170:0000: size=192, type= FIRM age=69712 name=DACsample
+
+
+By location:
+6CA2:FFFC->7CA5:0000:size=4, 64, type= HARD age=768498 name=DiscardEntry
+6CA2:FFF8->7CA9:0000:size=c, 192, type= HARD age=768497 name=malloc
+6CA2:FFF4->7CB5:0000:size=3, 48, type= HARD age=768496 name=malloc
+6CA2:FFF0->7CB8:0000:size=3, 48, type= HARD age=768495 name=malloc
+6CA2:FFEC->7CBB:0000:size=fe, 4064, type= HARD age=768494 name=cachetable
+6CA2:FFE8->7DB9:0000:size=e3, 3632, type= HARD age=768493 name=shared.ndx
+6CA2:FFE4->7E9C:0000:size=8a, 2208, type= HARD age=768492 name=hcegant.ndx
+6CA2:FFE0->7F26:0000:size=b, 176, type= HARD age=768485 name=CSRPIC,0
+6CA2:FFDC->7F31:0000:size=5, 80, type= HARD age=768484 name=CSRMASK,0
+6CA2:FFD8->7F36:0000:size=1b, 432, type= HARD age=768479 name=CSRPIC,1
+6CA2:FFD4->7F51:0000:size=9, 144, type= HARD age=768478 name=CSRMASK,1
+6CA2:FFC8->7F5A:0000:size=23, 560, type= HARD age=768462 name=MENU,0
+6CA2:FFC4->7F7D:0000:size=12, 288, type= HARD age=768455 name=STRS,1000
+6CA2:FFC0->7F8F:0000:size=6, 96, type=*HARD age=768452 name=strptrs
+6CA2:FFBC->7F95:0000:size=6, 96, type= HARD age=768449 name=STRS,1001
+6CA2:FFB8->7F9B:0000:size=4, 64, type=*HARD age=768446 name=strptrs
+6CA2:FFB4->7F9F:0000:size=35, 848, type= HARD age=768443 name=STRS,1010
+6CA2:FFB0->7FD4:0000:size=9, 144, type=*HARD age=768440 name=strptrs
+6CA2:FFAC->7FDD:0000:size=e, 224, type= HARD age=768437 name=STRS,1020
+6CA2:FFA8->7FEB:0000:size=4, 64, type=*HARD age=768434 name=strptrs
+6CA2:FFA4->7FEF:0000:size=7, 112, type= HARD age=768431 name=STRS,1050
+6CA2:FFA0->7FF6:0000:size=5, 80, type=*HARD age=768428 name=strptrs
+6CA2:FF9C->7FFB:0000:size=7, 112, type= HARD age=768425 name=STRS,1100
+6CA2:FF98->8002:0000:size=5, 80, type=*HARD age=768422 name=strptrs
+6CA2:FF94->8007:0000:size=9, 144, type= HARD age=768419 name=STRS,1101
+6CA2:FF90->8010:0000:size=7, 112, type=*HARD age=768416 name=strptrs
+6CA2:FF8C->8017:0000:size=f, 240, type= HARD age=768413 name=STRS,1102
+6CA2:FF88->8026:0000:size=a, 160, type=*HARD age=768410 name=strptrs
+6CA2:FF84->8030:0000:size=a, 160, type= HARD age=768407 name=STRS,1103
+6CA2:FF80->803A:0000:size=7, 112, type=*HARD age=768404 name=strptrs
+6CA2:FF7C->8041:0000:size=2c, 704, type= HARD age=768401 name=STRS,1200
+6CA2:FF78->806D:0000:size=8, 128, type=*HARD age=768398 name=strptrs
+6CA2:FF74->8075:0000:size=36, 864, type= HARD age=768395 name=STRS,1210
+6CA2:FF70->80AB:0000:size=9, 144, type=*HARD age=768392 name=strptrs
+6CA2:FF6C->80B4:0000:size=c, 192, type= HARD age=768390 name=STRS,1220
+6CA2:FF68->80C0:0000:size=5, 80, type=*HARD age=768388 name=strptrs
+6CA2:FF64->80C5:0000:size=b, 176, type= HARD age=768386 name=STRS,1230
+6CA2:FF60->80D0:0000:size=5, 80, type=*HARD age=768384 name=strptrs
+6CA2:FF5C->80D5:0000:size=1a, 416, type= HARD age=768381 name=STRS,1240
+6CA2:FF58->80EF:0000:size=6, 96, type=*HARD age=768378 name=strptrs
+6CA2:FF54->80F5:0000:size=15, 336, type= HARD age=768375 name=STRS,1250
+6CA2:FF50->810A:0000:size=5, 80, type=*HARD age=768372 name=strptrs
+6CA2:FF4C->810F:0000:size=12, 288, type= HARD age=768370 name=STRS,1260
+6CA2:FF48->8121:0000:size=5, 80, type=*HARD age=768368 name=strptrs
+6CA2:FF44->8126:0000:size=e, 224, type= HARD age=768366 name=STRS,1900
+6CA2:FF40->8134:0000:size=5, 80, type=*HARD age=768364 name=strptrs
+6CA2:FF3C->8139:0000:size=18, 384, type= HARD age=768361 name=STRS,1800
+6CA2:FF38->8151:0000:size=7, 112, type=*HARD age=768358 name=strptrs
+6CA2:FF34->8158:0000:size=a, 160, type= HARD age=768356 name=HEXA,1000
+6CA2:FF30->8162:0000:size=5, 80, type= HARD age=768355 name=FontHeader
+6CA2:FF2C->8167:0000:size=5, 80, type= HARD age=768350 name=FontHeader
+6CA2:FF1C->816C:0000:size=5, 80, type= HARD age=768345 name=FontHeader
+6CA2:FF0C->8171:0000:size=5, 80, type= HARD age=768340 name=FontHeader
+6CA2:FEC8->8176:0000:size=3, 48, type= FIRM age=   44 name=winClipList
+6CA2:FEC0->8179:0000:size=3, 48, type= FIRM age=  102 name=winClipList
+6CA2:FEBC->817C:0000:size=3, 48, type= FIRM age=  128 name=winClipList
+6CA2:FEB8->817F:0000:size=5, 80, type= FIRM age=767675 name=Malloc
+6CA2:FE9C->8184:0000:size=5, 80, type= FIRM age=767672 name=Malloc
+6CA2:FF28->8189:0000:size=48, 1152, type= HARD age=768353 name=FONTIMAGE
+6CA2:FF24->81D1:0000:size=23, 560, type= HARD age=768352 name=locTable
+6CA2:FF20->81F4:0000:size=23, 560, type= HARD age=768351 name=owTable
+6CA2:FEB0->8217:0000:size=5, 80, type= FIRM age=  215 name=winClipList
+6CA2:FE68->821C:0000:size=5, 80, type= FIRM age=   42 name=formatStr
+6CA2:FE58->8221:0000:size=5, 80, type= FIRM age=60855 name=formatStr
+6CA2:FE54->8226:0000:size=5, 80, type= FIRM age=60853 name=formatStr
+6CA2:FE7C->822B:0000:size=3, 48, type= FIRM age=409661 name=formatStr
+6CA2:FEA0->822E:0000:size=6, 96, type=*FIRM age=767674 name=Malloc
+6CA2:FE38->8234:0000:size=5, 80, type= FIRM age=  140 name=formatStr
+6CA2:FF18->8239:0000:size=47, 1136, type= HARD age=768348 name=FONTIMAGE
+6CA2:FF14->8280:0000:size=23, 560, type= HARD age=768347 name=locTable
+6CA2:FF10->82A3:0000:size=23, 560, type= HARD age=768346 name=owTable
+6CA2:FF08->82C6:0000:size=82, 2080, type= HARD age=768343 name=FONTIMAGE
+6CA2:FF04->8348:0000:size=1e, 480, type= HARD age=768342 name=locTable
+6CA2:FF00->8366:0000:size=1e, 480, type= HARD age=768341 name=owTable
+6CA2:FEF8->8384:0000:size=60, 1536, type= HARD age=768338 name=FONTIMAGE
+6CA2:FEF4->83E4:0000:size=23, 560, type= HARD age=768337 name=locTable
+6CA2:FEF0->8407:0000:size=23, 560, type= HARD age=768336 name=owTable
+6CA2:FE48->842A:0000:size=b, 176, type= SOFT age=   19 name=BITMAP,103
+6CA2:FE84->8435:0000:size=b, 176, type= SOFT age=   29 name=BITMAP,100
+6CA2:FE78->8440:0000:size=b, 176, type= SOFT age=   14 name=BITMAP,105
+6CA2:FEE4->844B:0000:size=45, 1104, type= FIRM age=  234 name=WIN,25
+6CA2:FEE0->8490:0000:size=202, 8224, type= FIRM age=180070 name=Generated bu
+6CA2:FEB4->8692:0000:size=b, 176, type= SOFT age=   24 name=BITMAP,112
+6CA2:FE74->869D:0000:size=4, 64, type= FIRM age=409645 name=formatStr
+6CA2:FEE8->86A1:0000:size=3a, 928, type= FIRM age=   95 name=WIN,19
+6CA2:FEEC->86DB:0000:size=39, 912, type= FIRM age=  208 name=WIN,18
+6CA2:FE6C->8714:0000:size=e, 224, type= FIRM age=  129 name=WIN,5
+6CA2:FE80->8722:0000:size=5, 80, type= FIRM age=409653 name=formatStr
+6CA2:FEDC->8727:0000:size=b, 176, type= SOFT age=    3 name=BITMAP,5107
+6CA2:FE4C->8732:0000:size=c, 192, type= SOFT age=   62 name=BITMAP,1400
+6CA2:FEA4->873E:0000:size=3, 48, type= FIRM age=  224 name=winClipList
+6CA2:FE30->8741:0000:size=3, 48, type= FIRM age=  288 name=formatStr
+----:----->8744:0000:size=3, 48, type=*FREE age=   77 name=clip_Push
+6CA2:FE8C->8747:0000:size=3, 48, type= FIRM age=  160 name=animHandle
+6CA2:FE24->874A:0000:size=3, 48, type= FIRM age=   48 name=animHandle
+6CA2:FE10->874D:0000:size=36, 864, type= SOFT age=  122 name=BITMAP,21005
+6CA2:FED8->8783:0000:size=3e, 992, type= HARD age=768292 name=sound.ndx
+6CA2:FFD0->87C1:0000:size=46, 1120, type= FIRM age=   43 name=WIN,0
+6CA2:FFCC->8807:0000:size=5b, 1456, type= FIRM age=  235 name=WIN,1
+6CA2:FE00->8862:0000:size=61, 1552, type= SOFT age=  120 name=BITMAP,150
+6CA2:FE88->88C3:0000:size=602, 24608, type= FIRM age=60884 name=HEXA,14
+6CA2:FE40->8EC5:0000:size=33, 816, type= FIRM age=  217 name=WIN,21
+6CA2:FE64->8EF8:0000:size=17d, 6096, type= SOFT age=   35 name=BITMAP,15000
+6CA2:FE94->9075:0000:size=a, 160, type= SOFT age=  297 name=BITMAP,109
+6CA2:FE70->907F:0000:size=a, 160, type= SOFT age=  295 name=BITMAP,111
+6CA2:FE5C->9089:0000:size=4, 64, type= FIRM age=  294 name=list
+6CA2:FE3C->908D:0000:size=8, 128, type= FIRM age=  159 name=clip_Push
+6CA2:FE20->9095:0000:size=8, 128, type= FIRM age=   47 name=animobjs
+----:----->909D:0000:size=b, 176, type=*FREE age=   34 name=clip_Push
+6CA2:FDE4->90A8:0000:size=23, 560, type= SOFT age=82500 name=BITMAP,9156
+6CA2:FDE0->90CB:0000:size=f, 240, type= SOFT age=61229 name=WIN,30
+6CA2:FED0->90DA:0000:size=1e, 480, type= SOFT age=70921 name=DACsample
+6CA2:FEC4->90F8:0000:size=1b, 432, type= SOFT age=  760 name=WIN,7
+6CA2:FE28->9113:0000:size=23, 560, type= FIRM age=  177 name=animbufs
+6CA2:FE2C->9136:0000:size=4, 64, type= FIRM age=  364 name=formatStr
+6CA2:FE1C->913A:0000:size=23, 560, type= FIRM age=   65 name=animbufs
+----:----->915D:0000:size=13, 304, type= FREE age=  108 name=TEXT,150
+6CA2:FDD8->9170:0000:size=c, 192, type= FIRM age=69712 name=DACsample
+6CA2:FEA8->917C:0000:size=23, 560, type= HARD age=    1 name=malloc
+6CA2:FEFC->919F:0000:size=e, 224, type= SOFT age=70701 name=WIN,26
+6CA2:FE34->91AD:0000:size=48, 1152, type=*FIRM age=  289 name=WIN,22
+----:----->91F5:0000:size=9, 144, type= FREE age=61175 name=clipout
+6CA2:FDFC->91FE:0000:size=45, 1104, type= HARD age=186477 name=GPutPacked
+6CA2:FED4->9243:0000:size=128, 4736, type= SOFT age=71114 name=BITMAP,4620
+6CA2:FE98->936B:0000:size=118, 4480, type= SOFT age=71227 name=BITMAP,4600
+6CA2:FECC->9483:0000:size=9a, 2464, type= SOFT age=70797 name=DACsample
+----:----->951D:0000:size=da, 3488, type= FREE age=  423 name=File list
+6CA2:FE50->95F7:0000:size=45, 1104, type= HARD age=268457 name=GPutPacked
+6CA2:FE60->963C:0000:size=1a2, 6688, type= SOFT age=70708 name=BITMAP,9101
+----:----->97DE:0000:size=7, 112, type= FREE age=768498 name=clipout
+6CA2:FEAC->97E5:0000:size=11c, 4544, type= SOFT age=60625 name=BITMAP,4500
+----:----->9901:0000:size=82, 2080, type=*FREE age=    6 name=subinclude
+6CA2:FE44->9983:0000:size=6, 96, type= FIRM age=  233 name=clipout
+----:----->9989:0000:size=3d8, 15744, type= FREE age=    2 name=GSaveRect
