@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Normal Distribution Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            background-color: black;
+            color: white;
+            padding: 20px 0;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            color: black;
+        }
+
+        .question {
+            margin-bottom: 20px;
+        }
+
+        .question h3 {
+            margin-bottom: 10px;
+        }
+
+        .answers {
+            margin-bottom: 20px;
+        }
+
+        .answers input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .submit-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: black;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-left: 4px solid black;
+            font-size: 16px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Normal Distribution Quiz</h1>
+        <p>Test your knowledge of the normal distribution, its parameters, and its real-world applications.</p>
+    </header>
+
+    <div class="container">
+        <h2>Quiz</h2>
+        <form id="quizForm">
+            <!-- Questions -->
+            <div class="question">
+                <h3>1. What happens to the curve when the standard deviation (σ) increases?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q1" value="A"> The curve becomes taller</label><br>
+                    <label><input type="radio" name="q1" value="B"> The curve becomes wider</label><br>
+                    <label><input type="radio" name="q1" value="C"> The curve shifts to the right</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>2. Which parameter controls the center of the normal distribution?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q2" value="A"> Mean (μ)</label><br>
+                    <label><input type="radio" name="q2" value="B"> Standard Deviation (σ)</label><br>
+                    <label><input type="radio" name="q2" value="C"> Both μ and σ</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>3. Approximately what percentage of data falls within two standard deviations (±2σ) of the mean?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q3" value="A"> 68%</label><br>
+                    <label><input type="radio" name="q3" value="B"> 95%</label><br>
+                    <label><input type="radio" name="q3" value="C"> 99.7%</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>4. What happens when the mean (μ) is increased?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q4" value="A"> The curve shifts to the left</label><br>
+                    <label><input type="radio" name="q4" value="B"> The curve shifts to the right</label><br>
+                    <label><input type="radio" name="q4" value="C"> The curve becomes narrower</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>5. What is the total area under a normal distribution curve?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q5" value="A"> 0.5</label><br>
+                    <label><input type="radio" name="q5" value="B"> 1</label><br>
+                    <label><input type="radio" name="q5" value="C"> Infinite</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>6. What does a smaller standard deviation indicate?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q6" value="A"> The data is more spread out</label><br>
+                    <label><input type="radio" name="q6" value="B"> The curve is narrower</label><br>
+                    <label><input type="radio" name="q6" value="C"> The mean increases</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>7. What is another name for the normal distribution?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q7" value="A"> Poisson distribution</label><br>
+                    <label><input type="radio" name="q7" value="B"> Gaussian distribution</label><br>
+                    <label><input type="radio" name="q7" value="C"> Binomial distribution</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>8. Which of the following is NOT a property of a normal distribution?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q8" value="A"> The curve is symmetric</label><br>
+                    <label><input type="radio" name="q8" value="B"> The mean and standard deviation are equal</label><br>
+                    <label><input type="radio" name="q8" value="C"> The total area under the curve is 1</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>9. What is the mean of a standard normal distribution?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q9" value="A"> 0</label><br>
+                    <label><input type="radio" name="q9" value="B"> 1</label><br>
+                    <label><input type="radio" name="q9" value="C"> -1</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <h3>10. Which real-world phenomenon is often modeled by a normal distribution?</h3>
+                <div class="answers">
+                    <label><input type="radio" name="q10" value="A"> Human heights</label><br>
+                    <label><input type="radio" name="q10" value="B"> Flipping a coin</label><br>
+                    <label><input type="radio" name="q10" value="C"> Rolling a die</label>
+                </div>
+            </div>
+
+            <button type="button" class="submit-btn" onclick="submitQuiz()">Submit Quiz</button>
+        </form>
+
+        <div class="result" id="result"></div>
+    </div>
+    <script>
+        function submitQuiz() {
+            const answers = {
+                q1: "B", // Wider curve
+                q2: "A", // Mean
+                q3: "B", // 95%
+                q4: "B", // Shifts right
+                q5: "B", // Total area = 1
+                q6: "B", // Narrower curve
+                q7: "B", // Gaussian distribution
+                q8: "B", // Mean != SD
+                q9: "A", // Mean = 0
+                q10: "A" // Human heights
+            };
+
+            let score = 0;
+            const totalQuestions = Object.keys(answers).length;
+            const form = document.getElementById('quizForm');
+            const result = document.getElementById('result');
+
+            // Check answers
+            Object.keys(answers).forEach((key) => {
+                const selected = form.querySelector(`input[name="${key}"]:checked`);
+                if (selected && selected.value === answers[key]) {
+                    score++;
+                }
+            });
+
+            // Display result
+            result.innerHTML = `
+                <p><strong>Your Score: ${score} / ${totalQuestions}</strong></p>
+                <p>${score === totalQuestions ? "Excellent! You have mastered the normal distribution." : "Review the concepts and try again to improve your score."}</p>
+            `;
+        }
+    </script>
+</body>
+
+</html>
