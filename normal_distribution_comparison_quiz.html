@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P-Value and Normal Distributions Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            background-color: black;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            color: black;
+            margin-bottom: 15px;
+        }
+
+        .quiz-question {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid black;
+            border-radius: 8px;
+        }
+
+        .quiz-question h3 {
+            margin-top: 0;
+        }
+
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>P-Value and Normal Distributions Quiz</h1>
+        <p>Test your knowledge about p-values and comparisons of normal distributions!</p>
+    </header>
+
+    <div class="container">
+        <h2>Quiz</h2>
+
+        <div class="quiz-question">
+            <h3>1. What does a p-value represent?</h3>
+            <ol type="A">
+                <li>The probability that the null hypothesis is true.</li>
+                <li>The probability of obtaining results as extreme as the observed ones, assuming the null hypothesis is true.</li>
+                <li>The probability of a significant difference between two distributions.</li>
+                <li>The overlap between two distributions.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>2. What condition makes two distributions more likely to have a significant difference?</h3>
+            <ol type="A">
+                <li>Small difference in means and large standard deviations.</li>
+                <li>Large difference in means and small standard deviations.</li>
+                <li>Both distributions having large sample sizes.</li>
+                <li>Both distributions having small sample sizes.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>3. How does increasing the sample size affect the p-value?</h3>
+            <ol type="A">
+                <li>The p-value increases due to more data overlap.</li>
+                <li>The p-value decreases due to increased statistical power.</li>
+                <li>The p-value stays constant regardless of sample size.</li>
+                <li>The p-value becomes invalid for large samples.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>4. Two distributions have μ₁ = 50, σ₁ = 10, and μ₂ = 70, σ₂ = 10. Why is the p-value likely to be small?</h3>
+            <ol type="A">
+                <li>The sample sizes are not specified.</li>
+                <li>The standard deviations are equal.</li>
+                <li>The means are far apart relative to the standard deviations.</li>
+                <li>The null hypothesis is true.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>5. If two distributions have the same mean but different standard deviations, how does this affect their overlap?</h3>
+            <ol type="A">
+                <li>The overlap decreases.</li>
+                <li>The overlap increases.</li>
+                <li>The overlap remains unchanged.</li>
+                <li>The p-value is invalid in this scenario.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>6. Why is the difference in means important for determining significance?</h3>
+            <ol type="A">
+                <li>It directly reduces the overlap between distributions.</li>
+                <li>It increases the overlap between distributions.</li>
+                <li>It does not affect the p-value.</li>
+                <li>It only matters for large sample sizes.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>7. Which of the following leads to a smaller p-value?</h3>
+            <ol type="A">
+                <li>Large standard deviations and small mean difference.</li>
+                <li>Large mean difference and small standard deviations.</li>
+                <li>Small sample sizes.</li>
+                <li>Both distributions having identical parameters.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>8. What happens when two distributions have no overlap?</h3>
+            <ol type="A">
+                <li>The p-value is close to 1.</li>
+                <li>The p-value is exactly 0.</li>
+                <li>The p-value is undefined.</li>
+                <li>The p-value is very small.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>9. If one distribution has a much larger standard deviation than the other, what is the likely impact on p-value?</h3>
+            <ol type="A">
+                <li>The p-value increases due to greater overlap.</li>
+                <li>The p-value decreases due to smaller overlap.</li>
+                <li>The p-value becomes invalid.</li>
+                <li>The p-value is unaffected.</li>
+            </ol>
+        </div>
+
+        <div class="quiz-question">
+            <h3>10. Which of the following combinations is most likely to result in a significant p-value?</h3>
+            <ol type="A">
+                <li>Small difference in means and large standard deviations.</li>
+                <li>Large difference in means and small standard deviations.</li>
+                <li>Identical distributions with small sample sizes.</li>
+                <li>Distributions with random parameters.</li>
+            </ol>
+        </div>
+
+        <button onclick="alert('Review your answers and check the explanations provided.')">Submit Answers</button>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Statistics Learning Center. All rights reserved.</p>
+    </footer>
+</body>
+
+</html>
