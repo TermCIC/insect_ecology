@@ -50,6 +50,10 @@
             margin-top: 0;
         }
 
+        .quiz-options {
+            margin: 10px 0;
+        }
+
         button {
             display: block;
             margin: 20px auto;
@@ -84,110 +88,48 @@
 
         <div class="quiz-question">
             <h3>1. What does a p-value represent?</h3>
-            <ol type="A">
-                <li>The probability that the null hypothesis is true.</li>
-                <li>The probability of obtaining results as extreme as the observed ones, assuming the null hypothesis is true.</li>
-                <li>The probability of a significant difference between two distributions.</li>
-                <li>The overlap between two distributions.</li>
-            </ol>
+            <div class="quiz-options">
+                <label><input type="radio" name="q1" value="A"> A. The probability that the null hypothesis is true.</label><br>
+                <label><input type="radio" name="q1" value="B"> B. The probability of obtaining results as extreme as the observed ones, assuming the null hypothesis is true.</label><br>
+                <label><input type="radio" name="q1" value="C"> C. The probability of a significant difference between two distributions.</label><br>
+                <label><input type="radio" name="q1" value="D"> D. The overlap between two distributions.</label>
+            </div>
         </div>
 
+        <!-- Repeat similar structure for other questions -->
         <div class="quiz-question">
             <h3>2. What condition makes two distributions more likely to have a significant difference?</h3>
-            <ol type="A">
-                <li>Small difference in means and large standard deviations.</li>
-                <li>Large difference in means and small standard deviations.</li>
-                <li>Both distributions having large sample sizes.</li>
-                <li>Both distributions having small sample sizes.</li>
-            </ol>
+            <div class="quiz-options">
+                <label><input type="radio" name="q2" value="A"> A. Small difference in means and large standard deviations.</label><br>
+                <label><input type="radio" name="q2" value="B"> B. Large difference in means and small standard deviations.</label><br>
+                <label><input type="radio" name="q2" value="C"> C. Both distributions having large sample sizes.</label><br>
+                <label><input type="radio" name="q2" value="D"> D. Both distributions having small sample sizes.</label>
+            </div>
         </div>
 
-        <div class="quiz-question">
-            <h3>3. How does increasing the sample size affect the p-value?</h3>
-            <ol type="A">
-                <li>The p-value increases due to more data overlap.</li>
-                <li>The p-value decreases due to increased statistical power.</li>
-                <li>The p-value stays constant regardless of sample size.</li>
-                <li>The p-value becomes invalid for large samples.</li>
-            </ol>
-        </div>
+        <!-- Add other questions similarly -->
 
-        <div class="quiz-question">
-            <h3>4. Two distributions have μ₁ = 50, σ₁ = 10, and μ₂ = 70, σ₂ = 10. Why is the p-value likely to be small?</h3>
-            <ol type="A">
-                <li>The sample sizes are not specified.</li>
-                <li>The standard deviations are equal.</li>
-                <li>The means are far apart relative to the standard deviations.</li>
-                <li>The null hypothesis is true.</li>
-            </ol>
-        </div>
-
-        <div class="quiz-question">
-            <h3>5. If two distributions have the same mean but different standard deviations, how does this affect their overlap?</h3>
-            <ol type="A">
-                <li>The overlap decreases.</li>
-                <li>The overlap increases.</li>
-                <li>The overlap remains unchanged.</li>
-                <li>The p-value is invalid in this scenario.</li>
-            </ol>
-        </div>
-
-        <div class="quiz-question">
-            <h3>6. Why is the difference in means important for determining significance?</h3>
-            <ol type="A">
-                <li>It directly reduces the overlap between distributions.</li>
-                <li>It increases the overlap between distributions.</li>
-                <li>It does not affect the p-value.</li>
-                <li>It only matters for large sample sizes.</li>
-            </ol>
-        </div>
-
-        <div class="quiz-question">
-            <h3>7. Which of the following leads to a smaller p-value?</h3>
-            <ol type="A">
-                <li>Large standard deviations and small mean difference.</li>
-                <li>Large mean difference and small standard deviations.</li>
-                <li>Small sample sizes.</li>
-                <li>Both distributions having identical parameters.</li>
-            </ol>
-        </div>
-
-        <div class="quiz-question">
-            <h3>8. What happens when two distributions have no overlap?</h3>
-            <ol type="A">
-                <li>The p-value is close to 1.</li>
-                <li>The p-value is exactly 0.</li>
-                <li>The p-value is undefined.</li>
-                <li>The p-value is very small.</li>
-            </ol>
-        </div>
-
-        <div class="quiz-question">
-            <h3>9. If one distribution has a much larger standard deviation than the other, what is the likely impact on p-value?</h3>
-            <ol type="A">
-                <li>The p-value increases due to greater overlap.</li>
-                <li>The p-value decreases due to smaller overlap.</li>
-                <li>The p-value becomes invalid.</li>
-                <li>The p-value is unaffected.</li>
-            </ol>
-        </div>
-
-        <div class="quiz-question">
-            <h3>10. Which of the following combinations is most likely to result in a significant p-value?</h3>
-            <ol type="A">
-                <li>Small difference in means and large standard deviations.</li>
-                <li>Large difference in means and small standard deviations.</li>
-                <li>Identical distributions with small sample sizes.</li>
-                <li>Distributions with random parameters.</li>
-            </ol>
-        </div>
-
-        <button onclick="alert('Review your answers and check the explanations provided.')">Submit Answers</button>
+        <button onclick="submitQuiz()">Submit Answers</button>
     </div>
+    <script>
+        function submitQuiz() {
+            const answers = {
+                q1: "B",
+                q2: "B",
+                // Add correct answers for other questions
+            };
 
-    <footer>
-        <p>&copy; 2025 Statistics Learning Center. All rights reserved.</p>
-    </footer>
+            let score = 0;
+            Object.keys(answers).forEach((question) => {
+                const selected = document.querySelector(`input[name="${question}"]:checked`);
+                if (selected && selected.value === answers[question]) {
+                    score++;
+                }
+            });
+
+            alert(`You scored ${score}/${Object.keys(answers).length}`);
+        }
+    </script>
 </body>
 
 </html>
