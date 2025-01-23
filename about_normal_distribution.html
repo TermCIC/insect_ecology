@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction to Normal Distribution</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #007bff;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul {
+            margin: 10px 0 20px 20px;
+        }
+
+        ul li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background: #f8f9fa;
+            margin-top: 20px;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Introduction to Normal Distribution</h1>
+    </header>
+
+    <div class="container">
+        <h2>History of Normal Distribution</h2>
+        <p>
+            The concept of the normal distribution originated in the early 18th century. It was first described by Abraham
+            de Moivre in 1733, who used it to approximate the distribution of probabilities for sums of independent
+            random variables. Later, Carl Friedrich Gauss expanded on this work, applying the distribution to errors in
+            astronomical observations, which is why it is sometimes called the Gaussian distribution.
+        </p>
+        <p>
+            The normal distribution has since become one of the most fundamental concepts in statistics and is used
+            extensively in scientific research, economics, psychology, and many other fields.
+        </p>
+
+        <h2>Meaning of Parameters</h2>
+        <p>The normal distribution is characterized by two main parameters:</p>
+        <ul>
+            <li>
+                <b>Mean (μ):</b> The mean represents the center of the distribution. It is the average value, indicating
+                where most of the data points are concentrated.
+            </li>
+            <li>
+                <b>Standard Deviation (σ):</b> The standard deviation determines the spread of the distribution. A
+                smaller σ results in a narrow curve, while a larger σ results in a wider curve. It measures how much the
+                data deviates from the mean.
+            </li>
+        </ul>
+        <div class="highlight">
+            The formula for the normal distribution is: <br>
+            <code>
+                f(x) = (1 / (σ * √(2π))) * e^(-(x - μ)² / (2σ²))
+            </code>
+        </div>
+
+        <h2>Key Properties</h2>
+        <ul>
+            <li>The curve is symmetric around the mean (μ).</li>
+            <li>Approximately 68% of data falls within 1σ of the mean, 95% within 2σ, and 99.7% within 3σ.</li>
+            <li>The total area under the curve is equal to 1.</li>
+        </ul>
+
+        <h2>Real-World Examples</h2>
+        <p>The normal distribution is used in various real-world applications:</p>
+        <ul>
+            <li>
+                <b>Height and Weight:</b> Human height and weight distributions closely follow a normal curve. For
+                example, most people are around the average height, with fewer individuals at extreme heights.
+            </li>
+            <li>
+                <b>IQ Scores:</b> Intelligence Quotient (IQ) scores are typically distributed normally, with an average
+                score of 100 and a standard deviation of 15.
+            </li>
+            <li>
+                <b>Measurement Errors:</b> Errors in scientific measurements often follow a normal distribution due to
+                random fluctuations in data collection.
+            </li>
+            <li>
+                <b>Stock Market Returns:</b> While not perfectly normal, the daily returns of many stocks approximate a
+                normal distribution under specific conditions.
+            </li>
+        </ul>
+
+        <h2>Conclusion</h2>
+        <p>
+            The normal distribution is a powerful tool for understanding variability in data and modeling real-world
+            phenomena. Its widespread applicability across disciplines makes it a cornerstone of statistical analysis.
+        </p>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Statistics Learning Center. All rights reserved.</p>
+    </footer>
+</body>
+
+</html>
