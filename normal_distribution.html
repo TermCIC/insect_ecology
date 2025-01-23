@@ -14,7 +14,8 @@
             padding: 20px;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             text-align: center;
         }
 
@@ -59,17 +60,57 @@
             background-color: #0056b3;
         }
 
-        canvas {
-            display: block;
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            /* Enable wrapping to the next row */
+            gap: 20px;
+            /* Space between items */
+            justify-content: flex-start;
+            /* Align items to the start */
             margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .chart-container>canvas {
+            flex: 1 1 48%;
+            /* Each item takes 48% of the container width, leaving space for gaps */
+            max-width: 48%;
+            /* Prevent items from exceeding 48% */
+            height: auto;
+            /* Maintain aspect ratio */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        canvas {
+            background-color: white;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .description {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
         }
     </style>
 </head>
 
 <body>
     <h1>Basic Statistics</h1>
-    <h2>Normal Distribution Visualizer</h2>
+    <h2>Normal Distribution Histogram Visualizer</h2>
     <div class="container">
+        <div class="description">
+            <p>Generate random data following a normal distribution and visualize it as a histogram. Enter the mean,
+                standard deviation, and the number of random points to generate the distribution. Each distribution will
+                be displayed in a grid cell.</p>
+        </div>
+
         <div class="input-group">
             <label for="mean">Mean (μ):</label>
             <input type="number" id="mean" placeholder="Enter mean" step="0.1">
@@ -83,19 +124,23 @@
             <input type="number" id="n" placeholder="Enter number of points" value="100" step="1" min="10">
         </div>
         <button onclick="addNormalDistribution()">Add Distribution</button>
-        <canvas id="normalDistributionChart" width="800" height="400"></canvas>
     </div>
+    <div class="chart-container" id="charts"></div>
 
     <script>
-        let chart; // Global chart object
-        const distributions = []; // List to store each normal distribution
-        let colorIndex = 0; // Track color for distributions
         const colors = ['blue', 'red', 'green', 'purple', 'orange', 'cyan', 'magenta', 'brown']; // Predefined colors
+        let chartCount = 0; // Counter to track the number of charts
 
-        function generateNormalData(mean, sd, n) {
-            const xValues = Array.from({ length: n }, (_, i) => mean - 4 * sd + (8 * sd / (n - 1)) * i);
-            const yValues = xValues.map(x => (1 / (sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / sd, 2)));
-            return { x: xValues, y: yValues };
+        function generateRandomNormalData(mean, sd, n) {
+            const data = [];
+            for (let i = 0; i < n; i++) {
+                // Box-Muller transform to generate random normal values
+                const u1 = Math.random();
+                const u2 = Math.random();
+                const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+                data.push(z0 * sd + mean); // Scale and shift by mean and standard deviation
+            }
+            return data;
         }
 
         function addNormalDistribution() {
@@ -108,75 +153,73 @@
                 return;
             }
 
-            // Generate data for the new distribution and store it
-            const { x, y } = generateNormalData(mean, sd, n);
-            distributions.push({ mean, sd, x, y });
+            // Generate random data
+            const randomData = generateRandomNormalData(mean, sd, n);
 
-            updateChart();
-        }
+            // Create a histogram
+            const bins = 30; // Number of bins for the histogram
+            const binWidth = (Math.max(...randomData) - Math.min(...randomData)) / bins;
+            const binCounts = Array(bins).fill(0);
+            const binLabels = Array.from({ length: bins }, (_, i) =>
+                (Math.min(...randomData) + i * binWidth).toFixed(2)
+            );
 
-        function updateChart() {
-            // Find the global x-axis range across all distributions
-            const globalXRange = distributions.reduce((acc, dist) => [...acc, ...dist.x], []);
-            const globalXValues = [...new Set(globalXRange)].sort((a, b) => a - b);
-
-            // Recompute all datasets for the chart
-            const datasets = distributions.map((dist, index) => {
-                const interpolatedY = globalXValues.map(globalX =>
-                    dist.x.includes(globalX) ? dist.y[dist.x.indexOf(globalX)] : 0
+            randomData.forEach(value => {
+                const binIndex = Math.min(
+                    Math.floor((value - Math.min(...randomData)) / binWidth),
+                    bins - 1
                 );
-
-                return {
-                    label: `μ=${dist.mean}, σ=${dist.sd}`,
-                    data: interpolatedY,
-                    borderColor: colors[index % colors.length],
-                    fill: false,
-                    tension: 0.1
-                };
+                binCounts[binIndex]++;
             });
 
-            // If the chart doesn't exist, create it
-            if (!chart) {
-                const ctx = document.getElementById('normalDistributionChart').getContext('2d');
-                chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: globalXValues,
-                        datasets: datasets
+            // Create a new canvas for this chart
+            const chartContainer = document.getElementById('charts');
+            const canvas = document.createElement('canvas');
+            canvas.id = `chart${++chartCount}`;
+            chartContainer.appendChild(canvas);
+
+            // Render the chart
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: binLabels,
+                    datasets: [{
+                        label: `μ=${mean}, σ=${sd}`,
+                        data: binCounts,
+                        backgroundColor: colors[chartCount % colors.length],
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        title: {
+                            display: true,
+                            text: `Normal Distribution Histogram (μ=${mean}, σ=${sd})`
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: true
-                            },
+                    scales: {
+                        x: {
                             title: {
                                 display: true,
-                                text: "Normal Distributions"
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: "Value (x)"
-                                }
+                                text: "Value Range (x)"
                             },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: "Probability Density"
-                                }
+                            min: 0, // Set fixed x-axis range
+                            max: 1000
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Frequency"
                             }
                         }
                     }
-                });
-            } else {
-                // Update the chart with new data and labels
-                chart.data.labels = globalXValues;
-                chart.data.datasets = datasets;
-                chart.update();
-            }
+                }
+            });
         }
     </script>
 </body>
