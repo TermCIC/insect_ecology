@@ -24,7 +24,8 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             text-align: center;
         }
 
@@ -67,10 +68,52 @@
         button:hover {
             background-color: #0056b3;
         }
-        
-        #results, #submission-status {
+
+        #results,
+        #submission-status {
             margin-top: 20px;
             font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -101,7 +144,8 @@
                 <h3>3. What does <strong>M<sub>x</sub></strong> represent?</h3>
                 <label><input type="radio" name="q3" value="a"> Mortality rate at age x</label>
                 <label><input type="radio" name="q3" value="b"> Number of individuals surviving at age x</label>
-                <label><input type="radio" name="q3" value="c"> Average number of offspring produced by an individual at age x</label>
+                <label><input type="radio" name="q3" value="c"> Average number of offspring produced by an individual at
+                    age x</label>
                 <label><input type="radio" name="q3" value="d"> Proportion of individuals surviving at age x</label>
             </div>
 
@@ -116,8 +160,10 @@
             <div class="quiz-question">
                 <h3>5. What is the significance of the intrinsic growth rate (r)?</h3>
                 <label><input type="radio" name="q5" value="a"> It measures the average reproductive output</label>
-                <label><input type="radio" name="q5" value="b"> It determines the proportion of individuals surviving to age x</label>
-                <label><input type="radio" name="q5" value="c"> It represents the exponential growth rate of the population</label>
+                <label><input type="radio" name="q5" value="b"> It determines the proportion of individuals surviving to
+                    age x</label>
+                <label><input type="radio" name="q5" value="c"> It represents the exponential growth rate of the
+                    population</label>
                 <label><input type="radio" name="q5" value="d"> It calculates the doubling time</label>
             </div>
 
@@ -139,16 +185,21 @@
 
             <div class="quiz-question">
                 <h3>8. What is the relationship between L<sub>x</sub> and survival rates?</h3>
-                <label><input type="radio" name="q8" value="a"> L<sub>x</sub> decreases as survival rates increase</label>
-                <label><input type="radio" name="q8" value="b"> L<sub>x</sub> increases as survival rates decrease</label>
-                <label><input type="radio" name="q8" value="c"> L<sub>x</sub> represents the proportion of surviving individuals</label>
-                <label><input type="radio" name="q8" value="d"> L<sub>x</sub> remains constant regardless of survival rates</label>
+                <label><input type="radio" name="q8" value="a"> L<sub>x</sub> decreases as survival rates
+                    increase</label>
+                <label><input type="radio" name="q8" value="b"> L<sub>x</sub> increases as survival rates
+                    decrease</label>
+                <label><input type="radio" name="q8" value="c"> L<sub>x</sub> represents the proportion of surviving
+                    individuals</label>
+                <label><input type="radio" name="q8" value="d"> L<sub>x</sub> remains constant regardless of survival
+                    rates</label>
             </div>
 
             <div class="quiz-question">
                 <h3>9. Why is the life table an important tool in population biology?</h3>
                 <label><input type="radio" name="q9" value="a"> To study the reproductive success of individuals</label>
-                <label><input type="radio" name="q9" value="b"> To estimate population dynamics and predict trends</label>
+                <label><input type="radio" name="q9" value="b"> To estimate population dynamics and predict
+                    trends</label>
                 <label><input type="radio" name="q9" value="c"> To calculate the lifespan of individuals</label>
                 <label><input type="radio" name="q9" value="d"> To determine population density</label>
             </div>
@@ -168,19 +219,25 @@
 
         <h2>Submit Your Score</h2>
         <form id="submission-form">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required><br>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
 
-            <label for="student_id">Student ID:</label>
-            <input type="text" id="student_id" name="student_id" required><br>
+            <div class="form-group">
+                <label for="student_id">Student ID:</label>
+                <input type="text" id="student_id" name="student_id" required>
+            </div>
 
-            <label for="score">Score:</label>
-            <input type="number" id="score" name="score" readonly><br>
+            <div class="form-group">
+                <label for="score">Score:</label>
+                <input type="number" id="score" name="score" readonly>
+            </div>
 
-            <button onclick="submitQuiz()" type="submit">Submit</button>
+            <button type="submit">Submit</button>
         </form>
     </div>
-
+    <div id="submission-status"></div>
     <script>
         function submitQuiz() {
             const correctAnswers = ["c", "a", "c", "b", "c", "b", "b", "c", "b", "c"];
@@ -197,12 +254,12 @@
             document.getElementById("score").value = score; // Set the score in the form
         }
 
-        document.getElementById("submission-form").addEventListener("submit", async function(event) {
+        document.getElementById("submission-form").addEventListener("submit", async function (event) {
             event.preventDefault();
 
             const formData = {
-                name: document.getElementById("name").value,
-                student_id: document.getElementById("student_id").value,
+                name: document.getElementById("name").value.trim(),
+                student_id: document.getElementById("student_id").value.trim(),
                 course: "Insect Ecology",
                 quiz_name: "Life Table",
                 score: parseInt(document.getElementById("score").value, 10)
@@ -223,7 +280,8 @@
                     document.getElementById("submission-status").textContent = 'Quiz data submitted successfully!';
                     document.getElementById("submission-status").style.color = 'green';
                 } else {
-                    document.getElementById("submission-status").textContent = `Error: ${result.error || 'Failed to submit data.'}`;
+                    const errorMessage = result.error || 'Failed to submit data.';
+                    document.getElementById("submission-status").textContent = `Error: ${errorMessage}`;
                     document.getElementById("submission-status").style.color = 'red';
                 }
             } catch (error) {
