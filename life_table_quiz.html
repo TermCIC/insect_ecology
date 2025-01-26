@@ -157,9 +157,23 @@
             </div>
         </div>
 
-        <button onclick="submitQuiz()">Submit Quiz</button>
+        <button onclick="submitQuiz()">Check Answer</button><br>
 
         <div id="results" style="margin-top: 20px; font-weight: bold;"></div>
+
+        <h2>Submit Your Score</h2>
+        <form id="submission-form">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required><br>
+
+            <label for="student_id">Student ID:</label>
+            <input type="text" id="student_id" name="student_id" required><br>
+
+            <label for="score">Score:</label>
+            <input type="number" id="score" name="score" readonly><br>
+
+            <button onclick="submitQuiz()" type="submit">Submit</button>
+        </form>
     </div>
 
     <script>
@@ -174,8 +188,45 @@
                 }
             });
 
-            document.getElementById("results").textContent = `Your score: ${score}/${correctAnswers.length}`;
+
+            document.getElementById("score").value = score; // Set the score in the form
         }
+
+        document.getElementById("submission-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const formData = {
+                name: document.getElementById("name").value,
+                student_id: document.getElementById("student_id").value,
+                course: "Insect Ecology",
+                quiz_name: "Life Table",
+                score: parseInt(document.getElementById("score").value, 10)
+            };
+
+            try {
+                const response = await fetch('https://sensor-storage-api.onrender.com/add_quiz_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById("submission-status").textContent = 'Quiz data submitted successfully!';
+                    document.getElementById("submission-status").style.color = 'green';
+                } else {
+                    document.getElementById("submission-status").textContent = `Error: ${result.error || 'Failed to submit data.'}`;
+                    document.getElementById("submission-status").style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById("submission-status").textContent = 'An error occurred. Please try again.';
+                document.getElementById("submission-status").style.color = 'red';
+            }
+        });
     </script>
 </body>
 
