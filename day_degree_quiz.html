@@ -61,6 +61,51 @@
         button:hover {
             background-color: #45a049;
         }
+
+        .form-group {
+            margin-top: 20px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .form-group input:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            background-color: #4CAF50;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        #submission-status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -158,13 +203,32 @@
                 </div>
             </div>
 
-            <button type="button" onclick="checkAnswers()">Submit</button>
+            <button type="button" onclick="checkAnswers()">Check Answers</button>
         </form>
 
         <div class="result" id="quizResult">
             <h3>Quiz Result</h3>
             <p>You scored <span id="score"></span>/10.</p>
         </div>
+
+        <!-- Submission Form -->
+        <h2>Submit Your Score</h2>
+        <form id="submissionForm">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="student_id">Student ID:</label>
+                <input type="text" id="student_id" name="student_id" required>
+            </div>
+            <div class="form-group">
+                <label for="scoreInput">Score:</label>
+                <input type="number" id="scoreInput" name="score" readonly>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="submission-status"></div>
     </div>
 
     <script>
@@ -186,15 +250,53 @@
             let score = 0;
 
             Object.keys(correctAnswers).forEach(question => {
-                const selected = form[question].value;
+                const selected = form[question]?.value;
                 if (selected === correctAnswers[question]) {
                     score++;
                 }
             });
 
             document.getElementById('score').textContent = score;
+            document.getElementById('scoreInput').value = score;
             document.getElementById('quizResult').style.display = 'block';
         }
+
+        document.getElementById('submissionForm').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                student_id: document.getElementById('student_id').value.trim(),
+                course: "Insect Ecology",
+                quiz_name: "Degree-Day",
+                score: parseInt(document.getElementById('scoreInput').value, 10)
+            };
+
+            try {
+                const response = await fetch('https://sensor-storage-api.onrender.com/add_quiz_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('submission-status').textContent = 'Quiz data submitted successfully!';
+                    document.getElementById('submission-status').style.color = 'green';
+                } else {
+                    const errorMessage = result.error || 'Failed to submit data.';
+                    document.getElementById('submission-status').textContent = `Error: ${errorMessage}`;
+                    document.getElementById('submission-status').style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('submission-status').textContent = 'An error occurred. Please try again.';
+                document.getElementById('submission-status').style.color = 'red';
+            }
+        });
     </script>
 </body>
 
