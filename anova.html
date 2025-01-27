@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <title>Introduction to ANOVA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1,
+        h2,
+        h3 {
+            text-align: center;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .example-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .example-section input {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .example-section button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .example-section button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f7e7;
+            border: 1px solid #b2d8b2;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Understanding ANOVA</h1>
+
+        <div class="content">
+            <p>
+                ANOVA (Analysis of Variance) is a statistical method used to compare the means of three or more groups
+                to determine whether they differ significantly. It helps identify if a factor or independent variable
+                has a significant effect on a dependent variable.
+            </p>
+
+            <h2>Types of ANOVA</h2>
+            <ul>
+                <li><strong>One-Way ANOVA:</strong> Compares the means of groups based on one factor (e.g., testing the
+                    effect of different diets on weight loss).</li>
+                <li><strong>Two-Way ANOVA:</strong> Compares the means based on two factors (e.g., testing the effect of
+                    diet and exercise on weight loss).</li>
+            </ul>
+
+            <h2>Steps for Conducting ANOVA</h2>
+            <ol>
+                <li><strong>Formulate Hypotheses:</strong>
+                    <ul>
+                        <li>Null Hypothesis (\( H_0 \)): All group means are equal.</li>
+                        <li>Alternative Hypothesis (\( H_a \)): At least one group mean is different.</li>
+                    </ul>
+                </li>
+                <li><strong>Calculate Variances:</strong> Partition the total variance into between-group and
+                    within-group variances.</li>
+                <li><strong>Compute the F-statistic:</strong> Compare the variances to calculate the F-statistic.</li>
+                <li><strong>Determine the p-value:</strong> Compare the p-value to the significance level (e.g., 0.05).
+                </li>
+            </ol>
+
+            <h2>ANOVA Formula</h2>
+            <p>
+                The F-statistic is calculated as:
+            </p>
+            <p style="text-align: center; font-weight: bold; font-size: 1.2em;">
+                \( F = \frac{\text{Variance Between Groups}}{\text{Variance Within Groups}} \)
+            </p>
+            <p>
+                Where:
+            <ul>
+                <li>Variance Between Groups = \( \frac{\text{SS}_{\text{Between}}}{\text{df}_{\text{Between}}} \)</li>
+                <li>Variance Within Groups = \( \frac{\text{SS}_{\text{Within}}}{\text{df}_{\text{Within}}} \)</li>
+            </ul>
+            </p>
+
+            <h2>Interactive Example: Perform One-Way ANOVA</h2>
+            <div class="example-section">
+                <label for="factor">Enter the factor (comma-separated):</label>
+                <input type="text" id="factor" placeholder="E.g., A, A, B, B, C, C">
+
+                <label for="values">Enter values corresponding to the factor (comma-separated):</label>
+                <input type="text" id="values" placeholder="E.g., 5, 7, 8, 6, 9, 10">
+
+                <button onclick="performAnova()">Calculate ANOVA</button>
+
+                <div class="result" id="result">
+                    <h3>Results</h3>
+                    <p id="fStatistic"></p>
+                    <p id="degreesOfFreedom"></p>
+                    <p id="varianceBetween"></p>
+                    <p id="varianceWithin"></p>
+                    <p id="pValue"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function performAnova() {
+            const factorInput = document.getElementById('factor').value;
+            const valuesInput = document.getElementById('values').value;
+
+            const factor = factorInput.split(',');
+            const values = valuesInput.split(',').map(Number);
+
+            if (!factor.length || !values.length || factor.length !== values.length || values.some(isNaN)) {
+                alert("Please enter valid factors and numeric values of the same length.");
+                return;
+            }
+
+            const groups = {};
+            factor.forEach((f, i) => {
+                if (!groups[f]) groups[f] = [];
+                groups[f].push(values[i]);
+            });
+
+            const mean = arr => arr.reduce((sum, val) => sum + val, 0) / arr.length;
+
+            const grandMean = mean(values);
+
+            const ssBetween = Object.values(groups).reduce((sum, group) => {
+                const groupMean = mean(group);
+                return sum + group.length * Math.pow(groupMean - grandMean, 2);
+            }, 0);
+
+            const ssWithin = Object.values(groups).reduce((sum, group) => {
+                const groupMean = mean(group);
+                return sum + group.reduce((subSum, val) => subSum + Math.pow(val - groupMean, 2), 0);
+            }, 0);
+
+            const dfBetween = Object.keys(groups).length - 1;
+            const dfWithin = values.length - Object.keys(groups).length;
+
+            const msBetween = ssBetween / dfBetween;
+            const msWithin = ssWithin / dfWithin;
+
+            const fStatistic = msBetween / msWithin;
+
+            const cumulativeProbability = jStat.centralF.cdf(fStatistic, dfBetween, dfWithin);
+            const pValue = 1 - cumulativeProbability;
+
+            // Handle very small p-values
+            const pValueDisplay = pValue < 0.0001 ? pValue.toExponential(4) : pValue.toFixed(4);
+
+            // Display results
+            document.getElementById('fStatistic').textContent = `F-Statistic: ${fStatistic.toFixed(2)}`;
+            document.getElementById('degreesOfFreedom').textContent = `Degrees of Freedom: Between Groups (df = ${dfBetween}), Within Groups (df = ${dfWithin})`;
+            document.getElementById('varianceBetween').textContent = `Variance Between Groups (MS Between): ${msBetween.toFixed(2)}`;
+            document.getElementById('varianceWithin').textContent = `Variance Within Groups (MS Within): ${msWithin.toFixed(2)}`;
+            document.getElementById('pValue').textContent = `p-Value: ${pValueDisplay}`;
+            document.getElementById('result').style.display = 'block';
+        }
+
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+</body>
+
+</html>

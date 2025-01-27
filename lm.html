@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Introduction to Linear Regression</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .example-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .example-section input {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .example-section button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .example-section button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f7e7;
+            border: 1px solid #b2d8b2;
+            border-radius: 8px;
+            display: none;
+        }
+
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Understanding Linear Regression</h1>
+
+        <div class="content">
+            <p>
+                Linear regression is a statistical method used to model the relationship between a dependent variable (\(y\)) and one or more independent variables (\(x\)). It aims to find the best-fitting line through the data points that minimizes the sum of squared residuals.
+            </p>
+
+            <h2>Linear Regression Formula</h2>
+            <p style="text-align: center; font-weight: bold; font-size: 1.2em;">
+                \( y = mx + b \)
+            </p>
+            <p>
+                Where:
+            <ul>
+                <li>\(m\): Slope of the regression line</li>
+                <li>\(b\): Y-intercept of the regression line</li>
+            </ul>
+            </p>
+
+            <h2>Interactive Example: Perform Linear Regression</h2>
+            <div class="example-section">
+                <label for="xValues">Enter \(x\) values (comma-separated):</label>
+                <input type="text" id="xValues" placeholder="E.g., 1, 2, 3, 4, 5">
+
+                <label for="yValues">Enter \(y\) values (comma-separated):</label>
+                <input type="text" id="yValues" placeholder="E.g., 2, 4, 5, 4, 5">
+
+                <button onclick="performLinearRegression()">Calculate Regression</button>
+
+                <div class="result" id="result">
+                    <h3>Results</h3>
+                    <p id="regressionFormula"></p>
+                    <p id="rSquared"></p>
+                    <p id="slope"></p>
+                    <p id="intercept"></p>
+                    <canvas id="regressionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function performLinearRegression() {
+            const xInput = document.getElementById('xValues').value;
+            const yInput = document.getElementById('yValues').value;
+
+            const xValues = xInput.split(',').map(Number);
+            const yValues = yInput.split(',').map(Number);
+
+            if (!xValues.length || !yValues.length || xValues.length !== yValues.length || xValues.some(isNaN) || yValues.some(isNaN)) {
+                alert("Please enter valid numeric values for both x and y, ensuring they have the same length.");
+                return;
+            }
+
+            const mean = arr => arr.reduce((sum, val) => sum + val, 0) / arr.length;
+
+            const xMean = mean(xValues);
+            const yMean = mean(yValues);
+
+            const numerator = xValues.reduce((sum, x, i) => sum + (x - xMean) * (yValues[i] - yMean), 0);
+            const denominator = xValues.reduce((sum, x) => sum + Math.pow(x - xMean, 2), 0);
+
+            const slope = numerator / denominator;
+            const intercept = yMean - slope * xMean;
+
+            const yPredicted = xValues.map(x => slope * x + intercept);
+
+            const ssTotal = yValues.reduce((sum, y) => sum + Math.pow(y - yMean, 2), 0);
+            const ssResidual = yValues.reduce((sum, y, i) => sum + Math.pow(y - yPredicted[i], 2), 0);
+            const rSquared = 1 - ssResidual / ssTotal;
+
+            // Display results
+            document.getElementById('regressionFormula').textContent = `Regression Formula: y = ${slope.toFixed(2)}x + ${intercept.toFixed(2)}`;
+            document.getElementById('rSquared').textContent = `R-Squared: ${rSquared.toFixed(4)}`;
+            document.getElementById('slope').textContent = `Slope (m): ${slope.toFixed(2)}`;
+            document.getElementById('intercept').textContent = `Intercept (b): ${intercept.toFixed(2)}`;
+            document.getElementById('result').style.display = 'block';
+
+            // Plot regression
+            const ctx = document.getElementById('regressionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Data Points',
+                            data: xValues.map((x, i) => ({ x, y: yValues[i] })),
+                            backgroundColor: 'blue'
+                        },
+                        {
+                            label: 'Regression Line',
+                            data: xValues.map(x => ({ x, y: slope * x + intercept })),
+                            type: 'line',
+                            borderColor: 'red',
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'X' } },
+                        y: { title: { display: true, text: 'Y' } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

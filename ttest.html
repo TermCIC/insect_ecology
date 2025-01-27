@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <title>Introduction to t-Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .example-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .example-section input {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .example-section button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .example-section button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f7e7;
+            border: 1px solid #b2d8b2;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Understanding the t-Test</h1>
+
+        <div class="content">
+            <p>
+                The t-test is a statistical test used to compare the means of two groups and determine if the differences between them are statistically significant. It is commonly used in hypothesis testing to analyze whether a particular variable influences an outcome.
+            </p>
+
+            <h2>Types of t-Tests</h2>
+            <ul>
+                <li><strong>Independent t-test:</strong> Compares the means of two independent groups (e.g., test scores of students in two different classes).</li>
+                <li><strong>Paired t-test:</strong> Compares the means of the same group at two different times (e.g., before and after a training session).</li>
+                <li><strong>One-sample t-test:</strong> Compares the mean of a single group to a known value or population mean.</li>
+            </ul>
+
+            <h2>Steps for Conducting a t-Test</h2>
+            <ol>
+                <li><strong>Formulate Hypotheses:</strong>
+                    <ul>
+                        <li>Null Hypothesis (\( H_0 \)): No significant difference between the means.</li>
+                        <li>Alternative Hypothesis (\( H_a \)): Significant difference between the means.</li>
+                    </ul>
+                </li>
+                <li><strong>Calculate the t-statistic:</strong> Use the formula for the type of t-test being conducted.</li>
+                <li><strong>Determine the p-value:</strong> Compare the p-value to a significance level (e.g., 0.05).</li>
+                <li><strong>Draw a Conclusion:</strong> Reject or fail to reject the null hypothesis based on the p-value.</li>
+            </ol>
+
+            <h2>t-Test Formula</h2>
+            <p>
+                For an independent t-test, the t-statistic is calculated as:
+            </p>
+            <p style="text-align: center; font-weight: bold; font-size: 1.2em;">
+                \( t = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}} \)
+            </p>
+            <p>
+                Where:
+                <ul>
+                    <li>\( \bar{X}_1 \), \( \bar{X}_2 \): Sample means</li>
+                    <li>\( s_1^2 \), \( s_2^2 \): Sample variances</li>
+                    <li>\( n_1 \), \( n_2 \): Sample sizes</li>
+                </ul>
+            </p>
+
+            <h2>Interactive Example: Perform an Independent t-Test</h2>
+            <div class="example-section">
+                <label for="group1">Enter values for Group 1 (comma-separated):</label>
+                <input type="text" id="group1" placeholder="E.g., 5, 10, 15, 20">
+
+                <label for="group2">Enter values for Group 2 (comma-separated):</label>
+                <input type="text" id="group2" placeholder="E.g., 6, 12, 14, 22">
+
+                <button onclick="performTTest()">Calculate t-Test</button>
+
+                <div class="result" id="result">
+                    <h3>Results</h3>
+                    <p id="tStatistic"></p>
+                    <p id="pValue"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function performTTest() {
+            const group1Input = document.getElementById('group1').value;
+            const group2Input = document.getElementById('group2').value;
+
+            const group1 = group1Input.split(',').map(Number);
+            const group2 = group2Input.split(',').map(Number);
+
+            if (!group1.length || !group2.length || group1.some(isNaN) || group2.some(isNaN)) {
+                alert("Please enter valid numbers for both groups.");
+                return;
+            }
+
+            const mean = arr => arr.reduce((sum, val) => sum + val, 0) / arr.length;
+
+            const variance = (arr, meanValue) => {
+                return arr.reduce((sum, val) => sum + Math.pow(val - meanValue, 2), 0) / (arr.length - 1);
+            };
+
+            const mean1 = mean(group1);
+            const mean2 = mean(group2);
+
+            const variance1 = variance(group1, mean1);
+            const variance2 = variance(group2, mean2);
+
+            const n1 = group1.length;
+            const n2 = group2.length;
+
+            const tStatistic = (mean1 - mean2) / Math.sqrt((variance1 / n1) + (variance2 / n2));
+
+            const degreesOfFreedom = Math.floor(
+                Math.pow((variance1 / n1) + (variance2 / n2), 2) /
+                (((variance1 / n1) ** 2) / (n1 - 1) + ((variance2 / n2) ** 2) / (n2 - 1))
+            );
+
+            const pValue = 2 * (1 - jStat.studentt.cdf(Math.abs(tStatistic), degreesOfFreedom));
+
+            document.getElementById('tStatistic').textContent = `t-Statistic: ${tStatistic.toFixed(2)}`;
+            document.getElementById('pValue').textContent = `p-Value: ${pValue.toFixed(4)}`;
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+</body>
+
+</html>

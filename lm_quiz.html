@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <title>Regression Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .dataset {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .dataset pre {
+            background-color: #e7f7e7;
+            padding: 10px;
+            border: 1px solid #b2d8b2;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Regression Quiz</h1>
+
+        <div class="content">
+            <p>
+                Imagine two crypto investors, Alex and Jamie, who earn money by buying and selling Bitcoin. You want to determine who is the better investor by analyzing their performance data. Each investor's profits (\(y\)) depend on general market profits (\(x\)). Use linear regression to find their regression formula and compare their intercepts (\(b\)) to determine who performs better under poor market conditions (\(x \approx 0\)).
+            </p>
+
+            <h2>Task</h2>
+            <p>
+                Below are the randomly generated datasets for Alex and Jamie. Perform the regression analysis using your preferred tool and answer:
+            </p>
+            <ul>
+                <li>What is the regression formula for each investor?</li>
+                <li>Who has the higher intercept (\(b\))?</li>
+                <li>Which investor performs better in poor market conditions?</li>
+            </ul>
+
+            <h2>Datasets</h2>
+            <div class="dataset">
+                <h3>Alex's Dataset</h3>
+                <pre id="alexDataset"></pre>
+
+                <h3>Jamie's Dataset</h3>
+                <pre id="jamieDataset"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateRandomDataset() {
+            const dataset = { x: [], y: [] };
+            const n = 10; // Number of data points
+            const slope = Math.random() * 2 + 1; // Random slope between 1 and 3
+            const intercept = Math.random() * 10 - 5; // Random intercept between -5 and 5
+
+            for (let i = 0; i < n; i++) {
+                const x = Math.random() * 10; // Random x value between 0 and 10
+                const noise = Math.random() * 2 - 1; // Random noise between -1 and 1
+                const y = slope * x + intercept + noise;
+                dataset.x.push(x.toFixed(2));
+                dataset.y.push(y.toFixed(2));
+            }
+
+            return dataset;
+        }
+
+        const alexData = generateRandomDataset();
+        const jamieData = generateRandomDataset();
+
+        document.getElementById('alexDataset').textContent = `x: [${alexData.x.join(', ')}]\ny: [${alexData.y.join(', ')}]`;
+        document.getElementById('jamieDataset').textContent = `x: [${jamieData.x.join(', ')}]\ny: [${jamieData.y.join(', ')}]`;
+    </script>
+</body>
+
+</html>
