@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction to LD50</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        .content {
+            line-height: 1.6;
+        }
+
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .navigation-buttons a {
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .navigation-buttons a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Understanding LD50</h1>
+
+        <div class="content">
+            <p>
+                LD50, or the median lethal dose, is a critical parameter in toxicology. It represents the dose of a substance required to kill 50% of a test population. LD50 values are commonly used to assess the toxicity of chemicals, drugs, and environmental contaminants.
+            </p>
+
+            <h2>Relation to Normal Distribution</h2>
+            <p>
+                The concept of LD50 is closely tied to the normal distribution. When the response of organisms to a substance is plotted, the resulting curve often follows a sigmoid shape. By transforming this curve into a probit or logit scale, it aligns with a normal distribution, allowing for easier analysis and interpretation.
+            </p>
+
+            <div class="chart-container">
+                <canvas id="normalDistribution"></canvas>
+            </div>
+
+            <p>
+                The graph above shows a normal distribution of an insect population, with the vertical line indicating the mean dose at which 50% of the population is affected. Transforming this normal distribution yields a cumulative mortality curve, as shown below.
+            </p>
+
+            <div class="chart-container">
+                <canvas id="cumulativeMortality"></canvas>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const normalCtx = document.getElementById("normalDistribution").getContext("2d");
+                const cumulativeCtx = document.getElementById("cumulativeMortality").getContext("2d");
+
+                // Data for normal distribution
+                const xValues = Array.from({ length: 101 }, (_, i) => i); // x: -50 to 50
+                const mean = 50;
+                const stdDev = 15;
+                const normalDistribution = xValues.map(x => (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - mean) / stdDev, 2)));
+
+                new Chart(normalCtx, {
+                    type: "line",
+                    data: {
+                        labels: xValues,
+                        datasets: [
+                            {
+                                label: "Mortality Frequency",
+                                data: normalDistribution,
+                                borderColor: "blue",
+                                fill: false,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: "top"
+                            },
+                            title: {
+                                display: true,
+                                text: "Distribution of Insect Mortality"
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Dose (%)"
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "Frequency"
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Data for cumulative mortality curve
+                const cumulativeMortality = xValues.map((_, i) => normalDistribution.slice(0, i + 1).reduce((a, b) => a + b, 0));
+
+                new Chart(cumulativeCtx, {
+                    type: "line",
+                    data: {
+                        labels: xValues,
+                        datasets: [
+                            {
+                                label: "Cumulative Mortality Curve",
+                                data: cumulativeMortality,
+                                borderColor: "red",
+                                fill: false,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: "top"
+                            },
+                            title: {
+                                display: true,
+                                text: "Cumulative Mortality Curve"
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Dose"
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "Cumulative Proportion"
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+    </div>
+</body>
+
+</html>

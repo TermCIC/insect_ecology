@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LD50 Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .controls input {
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+
+        .output {
+            margin-top: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .formula {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            font-family: "Courier New", Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>LD50 Calculator</h1>
+
+        <div class="controls">
+            <button id="addRow">Add Row</button>
+            <input type="number" id="controlMortality" placeholder="Control Mortality (%)" min="0" max="100">
+            <button id="calculateLD50">Calculate LD50</button>
+        </div>
+
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Dosage</th>
+                    <th>Mortality (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="number" class="dosage" placeholder="Enter dosage"></td>
+                    <td><input type="number" class="mortality" placeholder="Enter mortality" min="0" max="100"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="output">
+            <p id="ld50Result"></p>
+            <div id="formulaContainer" class="formula"></div>
+            <div class="chart-container">
+                <canvas id="probitCurve"></canvas>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.getElementById('addRow').addEventListener('click', () => {
+                const tableBody = document.querySelector('#dataTable tbody');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="number" class="dosage" placeholder="Enter dosage"></td>
+                    <td><input type="number" class="mortality" placeholder="Enter mortality" min="0" max="100"></td>
+                `;
+                tableBody.appendChild(newRow);
+            });
+
+            document.getElementById('calculateLD50').addEventListener('click', () => {
+                const dosages = Array.from(document.querySelectorAll('.dosage')).map(input => parseFloat(input.value));
+                const mortalities = Array.from(document.querySelectorAll('.mortality')).map(input => parseFloat(input.value));
+                const controlMortality = parseFloat(document.getElementById('controlMortality').value);
+
+                if (dosages.some(isNaN) || mortalities.some(isNaN) || isNaN(controlMortality)) {
+                    alert('Please fill in all fields correctly.');
+                    return;
+                }
+
+                // Adjust mortalities for control mortality
+                const adjustedMortalities = mortalities.map(m => (m - controlMortality) / (100 - controlMortality) * 100);
+
+                // Probit transformation
+                const probitValues = adjustedMortalities.map(m => 
+                    (m <= 0 || m >= 100) ? null : (5 + Math.sqrt(2) * Math.erfInverse(2 * m / 100 - 1))
+                );
+
+                // Fit linear regression
+                const logDosages = dosages.map(d => Math.log10(d));
+                const validIndices = probitValues.map((p, i) => p !== null ? i : null).filter(i => i !== null);
+                const x = validIndices.map(i => logDosages[i]);
+                const y = validIndices.map(i => probitValues[i]);
+
+                const n = x.length;
+                const sumX = x.reduce((a, b) => a + b, 0);
+                const sumY = y.reduce((a, b) => a + b, 0);
+                const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+                const sumX2 = x.reduce((sum, xi) => sum + xi ** 2, 0);
+
+                const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX ** 2);
+                const intercept = (sumY - slope * sumX) / n;
+
+                // Calculate LD50
+                const logLD50 = (5 - intercept) / slope;
+                const ld50 = Math.pow(10, logLD50);
+
+                // Update results
+                document.getElementById('ld50Result').textContent = `Estimated LD50: ${ld50.toFixed(2)}`;
+                document.getElementById('formulaContainer').textContent = `Probit = ${intercept.toFixed(2)} + ${slope.toFixed(2)} * log(Dose)`;
+
+                // Plot probit curve
+                const probitCtx = document.getElementById('probitCurve').getContext('2d');
+                new Chart(probitCtx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Probit Data',
+                            data: validIndices.map(i => ({ x: logDosages[i], y: probitValues[i] })),
+                            borderColor: 'blue',
+                            backgroundColor: 'blue',
+                            showLine: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                title: {
+                                    display: true,
+                                    text: 'log(Dose)'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Probit Value'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Approximation for inverse error function
+            Math.erfInverse = function(x) {
+                let a = 0.147;
+                let sign = x < 0 ? -1 : 1;
+                x = Math.abs(x);
+
+                let part1 = Math.log(1 - x * x);
+                let part2 = (2 / (Math.PI * a)) + (part1 / 2);
+
+                return sign * Math.sqrt(Math.sqrt(part2 * part2 - part1 / a) - part2);
+            };
+        </script>
+    </div>
+</body>
+
+</html>
