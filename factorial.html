@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factorial Design</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        canvas {
+            max-width: 90%;
+            height: 400px;
+            margin: 20px auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Factorial Design</h1>
+    </header>
+
+    <section>
+        <h2>What is Factorial Design?</h2>
+        <p>Factorial Design is an experimental setup that examines multiple factors simultaneously to understand their individual and combined effects on the outcome. Each factor is tested at different levels, and all possible combinations of factors are included in the experiment.</p>
+    </section>
+
+    <section>
+        <h2>Advantages of Factorial Design</h2>
+        <ul>
+            <li>Efficiently studies interactions between factors.</li>
+            <li>Allows researchers to examine multiple factors at once.</li>
+            <li>Improves the reliability of results by analyzing combined effects.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Applications of Factorial Design</h2>
+        <ul>
+            <li>Used in agriculture to analyze the effects of fertilizers and irrigation.</li>
+            <li>Applied in industrial processes to optimize production conditions.</li>
+            <li>Common in pharmaceutical testing for drug interactions.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Example Case: Fertilizer and Watering Effect on Crop Growth</h2>
+        <p>In this experiment, two factors are tested: <strong>Fertilizer Type (A, B)</strong> and <strong>Watering Frequency (Daily, Weekly)</strong>. This results in four treatment combinations.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Fertilizer</th>
+                    <th>Watering</th>
+                    <th>Crop Yield (kg)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Fertilizer A</td>
+                    <td>Daily</td>
+                    <td>40 kg</td>
+                </tr>
+                <tr>
+                    <td>Fertilizer A</td>
+                    <td>Weekly</td>
+                    <td>30 kg</td>
+                </tr>
+                <tr>
+                    <td>Fertilizer B</td>
+                    <td>Daily</td>
+                    <td>50 kg</td>
+                </tr>
+                <tr>
+                    <td>Fertilizer B</td>
+                    <td>Weekly</td>
+                    <td>35 kg</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <canvas id="factorialChart"></canvas>
+        <script>
+            const ctx = document.getElementById('factorialChart').getContext('2d');
+            const factorialChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Fertilizer A - Daily', 'Fertilizer A - Weekly', 'Fertilizer B - Daily', 'Fertilizer B - Weekly'],
+                    datasets: [
+                        {
+                            label: 'Crop Yield (kg)',
+                            data: [40, 30, 50, 35],
+                            backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(75, 192, 192, 0.6)', 'rgba(255, 99, 132, 0.6)', 'rgba(255, 99, 132, 0.6)']
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Factorial Design: Fertilizer and Watering Effect on Crop Yield'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Treatment Combinations'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Crop Yield (kg)'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    </section>
+
+    <section>
+        <h2>Challenges of Factorial Design</h2>
+        <ul>
+            <li>Requires a large number of experimental units when multiple factors are tested.</li>
+            <li>Data analysis can be complex due to interactions between factors.</li>
+            <li>Resource-intensive for large-scale experiments.</li>
+        </ul>
+    </section>
+</body>
+</html>

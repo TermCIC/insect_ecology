@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latin Square Design</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Latin Square Design</h1>
+    </header>
+
+    <section>
+        <h2>What is Latin Square Design?</h2>
+        <p>Latin Square Design is a type of experimental design used to control two sources of variation. The experimental units are arranged in a square, ensuring that each treatment appears exactly once in each row and each column.</p>
+    </section>
+
+    <section>
+        <h2>Advantages of Latin Square Design</h2>
+        <ul>
+            <li>Controls two sources of variability effectively.</li>
+            <li>Reduces experimental error and improves precision.</li>
+            <li>Efficient for small-scale experiments with balanced treatment distribution.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Applications of Latin Square Design</h2>
+        <ul>
+            <li>Common in agricultural research where rows represent soil conditions and columns represent planting methods.</li>
+            <li>Used in industrial experiments for testing multiple factors simultaneously.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Example Case: Fertilizer and Crop Yield</h2>
+        <p>In this example, a farm tests four fertilizers (A, B, C, D) across different soil types and planting rows. Each fertilizer appears once per row and column.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Row/Column</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>A</td>
+                    <td>B</td>
+                    <td>C</td>
+                    <td>D</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>B</td>
+                    <td>C</td>
+                    <td>D</td>
+                    <td>A</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>C</td>
+                    <td>D</td>
+                    <td>A</td>
+                    <td>B</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>D</td>
+                    <td>A</td>
+                    <td>B</td>
+                    <td>C</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Challenges of Latin Square Design</h2>
+        <ul>
+            <li>Limited to a fixed number of treatments and experimental units.</li>
+            <li>Complex to implement in large-scale experiments.</li>
+        </ul>
+    </section>
+</body>
+</html>

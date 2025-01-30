@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split-Plot Design</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        canvas {
+            max-width: 90%;
+            height: 400px;
+            margin: 20px auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Split-Plot Design</h1>
+    </header>
+
+    <section>
+        <h2>What is Split-Plot Design?</h2>
+        <p>Split-Plot Design is an experimental layout used when there are two levels of experimental factors: one factor is applied to large plots (main plots), and another factor is applied to subplots within each main plot. This design is commonly used in agricultural and industrial experiments.</p>
+    </section>
+
+    <section>
+        <h2>Advantages of Split-Plot Design</h2>
+        <ul>
+            <li>Efficient for studying interactions between factors.</li>
+            <li>Reduces the number of required resources compared to a full factorial design.</li>
+            <li>More practical for large-scale field experiments.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Applications of Split-Plot Design</h2>
+        <ul>
+            <li>Common in agricultural research where main plots receive different soil treatments and subplots receive different crop varieties.</li>
+            <li>Used in industrial experiments where temperature and pressure are controlled at different levels.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Example Case: Fertilizer and Irrigation on Crop Yield</h2>
+        <p>In this example, a farm tests three fertilizers (A, B, C) and two irrigation levels (High, Low). Fertilizers are applied to large main plots, and within each main plot, irrigation levels are applied to subplots.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Main Plot (Fertilizer)</th>
+                    <th>Subplot 1 (Irrigation High)</th>
+                    <th>Subplot 2 (Irrigation Low)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Fertilizer A</td>
+                    <td>Yield: 30 kg</td>
+                    <td>Yield: 25 kg</td>
+                </tr>
+                <tr>
+                    <td>Fertilizer B</td>
+                    <td>Yield: 35 kg</td>
+                    <td>Yield: 28 kg</td>
+                </tr>
+                <tr>
+                    <td>Fertilizer C</td>
+                    <td>Yield: 40 kg</td>
+                    <td>Yield: 32 kg</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <canvas id="splitPlotChart"></canvas>
+        <script>
+            const ctx = document.getElementById('splitPlotChart').getContext('2d');
+            const splitPlotChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Fertilizer A', 'Fertilizer B', 'Fertilizer C'],
+                    datasets: [
+                        {
+                            label: 'High Irrigation Yield (kg)',
+                            data: [30, 35, 40],
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                        },
+                        {
+                            label: 'Low Irrigation Yield (kg)',
+                            data: [25, 28, 32],
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Crop Yield under Different Fertilizer and Irrigation Treatments'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Fertilizers'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Crop Yield (kg)'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    </section>
+
+    <section>
+        <h2>Challenges of Split-Plot Design</h2>
+        <ul>
+            <li>Analysis is more complex than Completely Randomized Design (CRD) or Randomized Block Design (RBD).</li>
+            <li>Requires careful management of experimental conditions.</li>
+        </ul>
+    </section>
+</body>
+</html>

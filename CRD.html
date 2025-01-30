@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completely Randomized Design (CRD)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        canvas {
+            max-width: 90%;
+            height: 400px;
+            margin: 20px auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Completely Randomized Design (CRD)</h1>
+    </header>
+
+    <section>
+        <h2>What is CRD?</h2>
+        <p>Completely Randomized Design (CRD) is a simple experimental design where treatments are randomly assigned to experimental units without any grouping or stratification. This design assumes that all experimental units are homogeneous and equally likely to receive any treatment.</p>
+    </section>
+
+    <section>
+        <h2>Advantages of CRD</h2>
+        <ul>
+            <li>Simple to implement and analyze.</li>
+            <li>Efficient when experimental units are homogeneous.</li>
+            <li>Flexibility in the number of treatments and replicates.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Applications of CRD</h2>
+        <ul>
+            <li>Suitable for laboratory experiments with controlled conditions.</li>
+            <li>Effective when environmental variability is minimal.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Example Case: Fertilizer Effect on Plant Growth</h2>
+        <p>In this example, three types of fertilizers (A, B, and C) are tested for their effect on plant growth. Experimental units (plots) are assumed to be homogeneous, and treatments are randomly assigned to the plots.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Plot</th>
+                    <th>Treatment</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Treatment A</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Treatment B</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Treatment C</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Treatment A</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Treatment B</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>Treatment C</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <canvas id="crdChart"></canvas>
+        <script>
+            const ctx = document.getElementById('crdChart').getContext('2d');
+            const crdChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Plot 1', 'Plot 2', 'Plot 3', 'Plot 4', 'Plot 5', 'Plot 6'],
+                    datasets: [
+                        {
+                            label: 'Plant Growth (cm)',
+                            data: [20, 25, 22, 23, 27, 24],
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Plant Growth with Different Fertilizers'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Plots'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Plant Growth (cm)'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    </section>
+
+    <section>
+        <h2>Challenges of CRD</h2>
+        <ul>
+            <li>Less effective when experimental units are heterogeneous.</li>
+            <li>Sensitive to environmental variations, leading to biased results.</li>
+        </ul>
+    </section>
+</body>
+</html>

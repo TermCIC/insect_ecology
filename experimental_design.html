@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experimental Design Methods</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        canvas {
+            max-width: 90%;
+            height: 400px;
+            margin: 20px auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Experimental Design Methods</h1>
+    </header>
+
+    <section>
+        <h2>What is Experimental Design?</h2>
+        <p>Experimental design is a systematic approach to conducting experiments in order to obtain reliable and valid results. Various designs are used depending on the objectives and conditions of the experiment.</p>
+    </section>
+
+    <section>
+        <h2>1. Completely Randomized Design (CRD)</h2>
+        <p>In CRD, experimental units are randomly assigned to treatments without any grouping or stratification.</p>
+        <ul>
+            <li><strong>Advantages:</strong> Simple and easy to implement; suitable for homogeneous experimental units.</li>
+            <li><strong>Disadvantages:</strong> High variability if experimental units are not homogeneous.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>2. Randomized Block Design (RBD)</h2>
+        <p>RBD minimizes experimental error by grouping experimental units into blocks with similar characteristics and applying all treatments within each block.</p>
+        <ul>
+            <li><strong>Advantages:</strong> Reduces variation caused by known confounding factors.</li>
+            <li><strong>Disadvantages:</strong> Requires identification of appropriate blocking factors.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>3. Split-Plot Design</h2>
+        <p>This design divides the experiment into main plots and subplots, with main plots receiving one set of treatments and subplots another.</p>
+        <ul>
+            <li><strong>Advantages:</strong> Efficient for testing multiple factors.</li>
+            <li><strong>Disadvantages:</strong> Analysis is more complex.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>4. Latin Square Design</h2>
+        <p>In this design, treatments are arranged in rows and columns, ensuring each treatment appears once per row and column.</p>
+        <ul>
+            <li><strong>Advantages:</strong> Controls for two sources of variability.</li>
+            <li><strong>Disadvantages:</strong> Limited to a specific number of treatments and blocks.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>5. Factorial Design</h2>
+        <p>Factorial design investigates multiple factors simultaneously and evaluates their interaction effects.</p>
+        <ul>
+            <li><strong>Advantages:</strong> Reveals interactions between factors.</li>
+            <li><strong>Disadvantages:</strong> Can require large resources for many factors.</li>
+        </ul>
+    </section>
+</body>
+</html>
