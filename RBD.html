@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randomized Block Design (RBD)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        section {
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        canvas {
+            max-width: 90%;
+            height: 400px;
+            margin: 20px auto;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Randomized Block Design (RBD)</h1>
+    </header>
+
+    <section>
+        <h2>What is RBD?</h2>
+        <p>Randomized Block Design (RBD), also known as Randomized Complete Block Design, is a statistical method used to minimize experimental error by grouping experimental units into blocks. Each block is designed to have minimal variation within itself while covering variations across blocks.</p>
+    </section>
+
+    <section>
+        <h2>Advantages of RBD</h2>
+        <ul>
+            <li>Reduces variation caused by experimental error, improving the accuracy of results.</li>
+            <li>Allows experiments to broaden their scope by incorporating different conditions across blocks.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Applications of RBD</h2>
+        <ul>
+            <li>Helps manage one source of unwanted variation effectively.</li>
+            <li>Provides unbiased estimates of means for blocking factors.</li>
+            <li>Each treatment must have equal replicates or be represented in every block.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Example Case: Insect Infestation Rate with Fertility Factor</h2>
+        <p>Imagine a farm where the fertility levels of the soil influence insect infestation rates. Higher fertility leads to higher infestation rates. To focus the experiment on the effectiveness of different treatments, the farm is divided into blocks based on fertility levels (e.g., low, medium, high). Each block receives all treatments to reduce bias caused by fertility differences.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Block (Fertility Level)</th>
+                    <th>Plot 1</th>
+                    <th>Plot 2</th>
+                    <th>Plot 3</th>
+                    <th>Plot 4</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Low Fertility</td>
+                    <td>Treatment A</td>
+                    <td>Treatment B</td>
+                    <td>Treatment C</td>
+                    <td>Treatment D</td>
+                </tr>
+                <tr>
+                    <td>Medium Fertility</td>
+                    <td>Treatment B</td>
+                    <td>Treatment C</td>
+                    <td>Treatment D</td>
+                    <td>Treatment A</td>
+                </tr>
+                <tr>
+                    <td>High Fertility</td>
+                    <td>Treatment C</td>
+                    <td>Treatment D</td>
+                    <td>Treatment A</td>
+                    <td>Treatment B</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <canvas id="rbdChart"></canvas>
+        <script>
+            const ctx = document.getElementById('rbdChart').getContext('2d');
+            const rbdChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Low Fertility', 'Medium Fertility', 'High Fertility'],
+                    datasets: [
+                        {
+                            label: 'Treatment A',
+                            data: [10, 12, 15],
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                        },
+                        {
+                            label: 'Treatment B',
+                            data: [8, 11, 14],
+                            backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                        },
+                        {
+                            label: 'Treatment C',
+                            data: [9, 13, 16],
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                        },
+                        {
+                            label: 'Treatment D',
+                            data: [7, 10, 13],
+                            backgroundColor: 'rgba(153, 102, 255, 0.6)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Insect Infestation Rates Across Fertility Levels with Treatments'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Fertility Levels'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Infestation Rate (%)'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    </section>
+
+    <section>
+        <h2>Challenges of RBD</h2>
+        <ul>
+            <li>Missing data can complicate analysis and lead to biases.</li>
+            <li>Improper treatment assignments can create problems in interpretation.</li>
+            <li>Inefficient blocking can fail to account for key sources of variation.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Conclusion</h2>
+        <p>Randomized Block Design is a powerful tool for reducing variation and improving the accuracy of experimental results. By carefully designing blocks and randomizing treatments, researchers can control unwanted variations and obtain more reliable data.</p>
+    </section>
+</body>
+</html>
