@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Experimental Design Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .quiz-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    .question p {
+      font-weight: bold;
+    }
+    .question label {
+      display: block;
+      margin: 5px 0;
+    }
+    .submit-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .submit-btn:hover {
+      background: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+    /* Submission form styles */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    .form-group input:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+    button[type="submit"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+    #submission-status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+  <script>
+    // Answer key for the Experimental Design Quiz
+    const answerKey = {
+      q1: "A", // Completely Randomized Design
+      q2: "A", // Simple to implement and analyze
+      q3: "B", // Randomized Block Design minimizes error by grouping similar units
+      q4: "D", // High variability if experimental units are heterogeneous
+      q5: "A", // In Split-Plot Design, main plots receive the harder-to-change factor
+      q6: "A", // In Latin Square Design, each treatment appears once per row and column
+      q7: "D", // Factorial Design is best suited for studying interactions between multiple factors
+      q8: "B", // Factorial Design often requires a large number of experimental units
+      q9: "A", // CRD is effective when experimental units are homogeneous
+      q10: "B" // Latin Square Design controls two sources of variability
+    };
+
+    // Function to check quiz answers and display the score
+    function checkQuiz() {
+      const form = document.getElementById('quizForm');
+      let score = 0;
+      const totalQuestions = 10;
+
+      // Loop through each question
+      for (let i = 1; i <= totalQuestions; i++) {
+        const qName = "q" + i;
+        const selected = form.querySelector('input[name="' + qName + '"]:checked');
+        if (selected && selected.value === answerKey[qName]) {
+          score++;
+        }
+      }
+      // Update the result display and fill the submission score field
+      document.getElementById("result").innerText = "Your score is " + score + " out of " + totalQuestions + ".";
+      document.getElementById("score").value = score;
+      document.getElementById("result").style.display = "block";
+    }
+
+    // Function to handle quiz score submission
+    async function submitScore(event) {
+      event.preventDefault();
+
+      // Disable the submit button to prevent duplicate submissions
+      const submitBtn = document.getElementById("submitScoreBtn");
+      submitBtn.disabled = true;
+
+      const formData = {
+        name: document.getElementById("name").value.trim(),
+        student_id: document.getElementById("student_id").value.trim(),
+        course: "Experimental Design",
+        quiz_name: "Experimental Design Quiz",
+        score: parseInt(document.getElementById("score").value, 10)
+      };
+
+      try {
+        const response = await fetch('https://termcic-storage.onrender.com/add_quiz_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById("submission-status").innerText = 'Quiz data submitted successfully!';
+          document.getElementById("submission-status").style.color = 'green';
+        } else {
+          const errorMessage = result.error || 'Failed to submit data.';
+          document.getElementById("submission-status").innerText = `Error: ${errorMessage}`;
+          document.getElementById("submission-status").style.color = 'red';
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById("submission-status").innerText = 'An error occurred. Please try again.';
+        document.getElementById("submission-status").style.color = 'red';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // Add event listener to the submission form
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById("submission-form").addEventListener("submit", submitScore);
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Experimental Design Quiz</h1>
+  </header>
+
+  <div class="quiz-container">
+    <form id="quizForm">
+      <!-- Question 1 -->
+      <div class="question">
+        <p>1. What does CRD stand for?</p>
+        <label><input type="radio" name="q1" value="A"> Completely Randomized Design</label>
+        <label><input type="radio" name="q1" value="B"> Controlled Randomized Design</label>
+        <label><input type="radio" name="q1" value="C"> Conditional Random Design</label>
+        <label><input type="radio" name="q1" value="D"> Cumulative Random Design</label>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="question">
+        <p>2. Which of the following is an advantage of a Completely Randomized Design (CRD)?</p>
+        <label><input type="radio" name="q2" value="A"> It is simple to implement and analyze.</label>
+        <label><input type="radio" name="q2" value="B"> It reduces variability by grouping similar units.</label>
+        <label><input type="radio" name="q2" value="C"> It controls two sources of variability.</label>
+        <label><input type="radio" name="q2" value="D"> It minimizes environmental effects by blocking.</label>
+      </div>
+
+      <!-- Question 3 -->
+      <div class="question">
+        <p>3. Which experimental design minimizes error by grouping experimental units into blocks?</p>
+        <label><input type="radio" name="q3" value="A"> Completely Randomized Design (CRD)</label>
+        <label><input type="radio" name="q3" value="B"> Randomized Block Design (RBD)</label>
+        <label><input type="radio" name="q3" value="C"> Split-Plot Design</label>
+        <label><input type="radio" name="q3" value="D"> Factorial Design</label>
+      </div>
+
+      <!-- Question 4 -->
+      <div class="question">
+        <p>4. What is one challenge associated with Completely Randomized Designs?</p>
+        <label><input type="radio" name="q4" value="A"> They are complex to implement.</label>
+        <label><input type="radio" name="q4" value="B"> They are not flexible with treatment numbers.</label>
+        <label><input type="radio" name="q4" value="C"> They require blocking for error reduction.</label>
+        <label><input type="radio" name="q4" value="D"> They can produce high variability if experimental units are heterogeneous.</label>
+      </div>
+
+      <!-- Question 5 -->
+      <div class="question">
+        <p>5. In a Split-Plot Design, which factor is typically applied to the main plots?</p>
+        <label><input type="radio" name="q5" value="A"> The factor that is difficult or costly to change (e.g., soil treatment).</label>
+        <label><input type="radio" name="q5" value="B"> The factor that is easier to change (e.g., irrigation levels).</label>
+        <label><input type="radio" name="q5" value="C"> Both factors are applied equally to main plots.</label>
+        <label><input type="radio" name="q5" value="D"> None; all factors are applied to subplots only.</label>
+      </div>
+
+      <!-- Question 6 -->
+      <div class="question">
+        <p>6. In a Latin Square Design, how many times does each treatment appear per row and per column?</p>
+        <label><input type="radio" name="q6" value="A"> Once</label>
+        <label><input type="radio" name="q6" value="B"> Twice</label>
+        <label><input type="radio" name="q6" value="C"> Three times</label>
+        <label><input type="radio" name="q6" value="D"> As many times as there are treatments</label>
+      </div>
+
+      <!-- Question 7 -->
+      <div class="question">
+        <p>7. Which design is best suited for studying interactions between multiple factors?</p>
+        <label><input type="radio" name="q7" value="A"> Completely Randomized Design (CRD)</label>
+        <label><input type="radio" name="q7" value="B"> Randomized Block Design (RBD)</label>
+        <label><input type="radio" name="q7" value="C"> Latin Square Design</label>
+        <label><input type="radio" name="q7" value="D"> Factorial Design</label>
+      </div>
+
+      <!-- Question 8 -->
+      <div class="question">
+        <p>8. What is one disadvantage of Factorial Design?</p>
+        <label><input type="radio" name="q8" value="A"> It does not allow interaction effects to be analyzed.</label>
+        <label><input type="radio" name="q8" value="B"> It often requires a large number of experimental units.</label>
+        <label><input type="radio" name="q8" value="C"> It is too simple for complex experiments.</label>
+        <label><input type="radio" name="q8" value="D"> It minimizes experimental error excessively.</label>
+      </div>
+
+      <!-- Question 9 -->
+      <div class="question">
+        <p>9. Which design is most appropriate when experimental units are homogeneous?</p>
+        <label><input type="radio" name="q9" value="A"> Completely Randomized Design (CRD)</label>
+        <label><input type="radio" name="q9" value="B"> Randomized Block Design (RBD)</label>
+        <label><input type="radio" name="q9" value="C"> Split-Plot Design</label>
+        <label><input type="radio" name="q9" value="D"> Latin Square Design</label>
+      </div>
+
+      <!-- Question 10 -->
+      <div class="question">
+        <p>10. Which design best controls for two sources of variability simultaneously?</p>
+        <label><input type="radio" name="q10" value="A"> Completely Randomized Design (CRD)</label>
+        <label><input type="radio" name="q10" value="B"> Latin Square Design</label>
+        <label><input type="radio" name="q10" value="C"> Factorial Design</label>
+        <label><input type="radio" name="q10" value="D"> Randomized Block Design (RBD)</label>
+      </div>
+
+      <div style="text-align: center;">
+        <button type="button" class="submit-btn" onclick="checkQuiz()">Submit Quiz</button>
+      </div>
+    </form>
+    <div class="result" id="result" style="display:none;"></div>
+
+    <h2>Submit Your Score</h2>
+    <form id="submission-form">
+      <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="student_id">Student ID:</label>
+        <input type="text" id="student_id" name="student_id" required>
+      </div>
+
+      <div class="form-group">
+        <label for="score">Score:</label>
+        <input type="number" id="score" name="score" readonly>
+      </div>
+
+      <button type="submit" id="submitScoreBtn">Submit</button>
+    </form>
+
+    <div id="submission-status"></div>
+  </div>
+
+  <script>
+    // Function to check quiz answers and display the score
+    function checkQuiz() {
+      const form = document.getElementById('quizForm');
+      let score = 0;
+      const totalQuestions = 10;
+
+      // Loop through each question and compare with answer key
+      for (let i = 1; i <= totalQuestions; i++) {
+        const qName = "q" + i;
+        const selected = form.querySelector('input[name="' + qName + '"]:checked');
+        if (selected && selected.value === answerKey[qName]) {
+          score++;
+        }
+      }
+      // Update the result display and fill the submission score field
+      document.getElementById("result").innerText = "Your score is " + score + " out of " + totalQuestions + ".";
+      document.getElementById("score").value = score;
+      document.getElementById("result").style.display = "block";
+    }
+
+    // Function to handle quiz score submission
+    async function submitScore(event) {
+      event.preventDefault();
+
+      // Disable the submit button to prevent duplicate submissions
+      const submitBtn = document.getElementById("submitScoreBtn");
+      submitBtn.disabled = true;
+
+      const formData = {
+        name: document.getElementById("name").value.trim(),
+        student_id: document.getElementById("student_id").value.trim(),
+        course: "Insect Ecology",
+        quiz_name: "Experimental Design Quiz",
+        score: parseInt(document.getElementById("score").value, 10)
+      };
+
+      try {
+        const response = await fetch('https://termcic-storage.onrender.com/add_quiz_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById("submission-status").innerText = 'Quiz data submitted successfully!';
+          document.getElementById("submission-status").style.color = 'green';
+        } else {
+          const errorMessage = result.error || 'Failed to submit data.';
+          document.getElementById("submission-status").innerText = `Error: ${errorMessage}`;
+          document.getElementById("submission-status").style.color = 'red';
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById("submission-status").innerText = 'An error occurred. Please try again.';
+        document.getElementById("submission-status").style.color = 'red';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // Add event listener to the submission form
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById("submission-form").addEventListener("submit", submitScore);
+    });
+  </script>
+</body>
+</html>
