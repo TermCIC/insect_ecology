@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi-Square Test Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1, h2, h3 {
+            text-align: center;
+        }
+        .content {
+            line-height: 1.6;
+        }
+        .example-section {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .example-section button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .example-section button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f7e7;
+            border: 1px solid #b2d8b2;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chi-Square Test Calculator</h1>
+        <h2>Introduction to the Chi-Square Test</h2>
+        <p>The Chi-square test is a statistical method used to determine if there is a significant association between categorical variables. It is widely used in research to analyze frequency data and assess whether observed frequencies differ from expected frequencies due to chance.</p>
+        
+        <p>The test statistic is calculated as:</p>
+        <p style="text-align: center; font-weight: bold; font-size: 1.2em;">
+            \( \chi^2 = \sum \frac{(O - E)^2}{E} \)
+        </p>
+        <p>Where:</p>
+        <ul>
+            <li>\( O \) = Observed frequency</li>
+            <li>\( E \) = Expected frequency</li>
+        </ul>
+        
+        <h2>Enter Your Data</h2>
+        <p>Fill in the contingency table below with observed frequencies:</p>
+        
+        <div class="example-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Dataset 1</th>
+                        <th>Dataset 2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>True</th>
+                        <td><input type="number" id="trueDataset1" min="0"></td>
+                        <td><input type="number" id="trueDataset2" min="0"></td>
+                    </tr>
+                    <tr>
+                        <th>False</th>
+                        <td><input type="number" id="falseDataset1" min="0"></td>
+                        <td><input type="number" id="falseDataset2" min="0"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button onclick="performChiSquareTest()">Calculate Chi-Square</button>
+        </div>
+
+        <div class="result" id="result">
+            <h3>Results</h3>
+            <p id="chiSquare"></p>
+            <p id="degreesOfFreedom"></p>
+            <p id="pValue"></p>
+        </div>
+    </div>
+
+    <script>
+        function performChiSquareTest() {
+            const observed = [
+                [parseInt(document.getElementById('trueDataset1').value) || 0, parseInt(document.getElementById('trueDataset2').value) || 0],
+                [parseInt(document.getElementById('falseDataset1').value) || 0, parseInt(document.getElementById('falseDataset2').value) || 0]
+            ];
+
+            const rowSums = observed.map(row => row.reduce((a, b) => a + b, 0));
+            const colSums = [
+                observed[0][0] + observed[1][0],
+                observed[0][1] + observed[1][1]
+            ];
+            const total = rowSums.reduce((a, b) => a + b, 0);
+            
+            let chiSquare = 0;
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const expected = (rowSums[i] * colSums[j]) / total;
+                    chiSquare += Math.pow(observed[i][j] - expected, 2) / expected;
+                }
+            }
+            
+            const df = (2 - 1) * (2 - 1);
+            const pValue = 1 - jStat.chisquare.cdf(chiSquare, df);
+            
+            document.getElementById('chiSquare').textContent = `Chi-Square Value: ${chiSquare.toFixed(2)}`;
+            document.getElementById('degreesOfFreedom').textContent = `Degrees of Freedom: ${df}`;
+            document.getElementById('pValue').textContent = `p-Value: ${pValue.toFixed(4)}`;
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
