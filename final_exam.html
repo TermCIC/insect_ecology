@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+  <title>Combined Quiz Page - 20 Questions</title>
+  <style>
+    /* Basic styling for the quizzes */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    section {
+      margin-bottom: 40px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .question,
+    .quiz-question {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Degree-Day Concept Quiz Section (Selected Questions: 1, 2, 3, 5, 8) -->
+  <section id="degree-day-quiz">
+    <h1>Degree-Day Concept</h1>
+    <form id="quizForm">
+      <div class="question">
+        <h3>1. What is the lower development threshold (T<sub>min</sub>)?</h3>
+        <div class="options">
+          <label><input type="radio" name="q1" value="a"> The minimum temperature below which development stops.</label>
+          <label><input type="radio" name="q1" value="b"> The maximum temperature above which development stops.</label>
+          <label><input type="radio" name="q1" value="c"> The average temperature required for development.</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>2. What does "degree-day" represent?</h3>
+        <div class="options">
+          <label><input type="radio" name="q2" value="a"> The total number of days in a year.</label>
+          <label><input type="radio" name="q2" value="b"> The heat accumulated above a threshold in one day.</label>
+          <label><input type="radio" name="q2" value="c"> The average daily temperature.</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>3. How is the degree-day for a single day calculated using the simple average method?</h3>
+        <div class="options">
+          <label><input type="radio" name="q3" value="a"> (Max Temp + Min Temp) / 2 - T<sub>min</sub></label>
+          <label><input type="radio" name="q3" value="b"> Max Temp - T<sub>min</sub></label>
+          <label><input type="radio" name="q3" value="c"> Min Temp - T<sub>min</sub></label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>4. Why are degree-days important in insect development?</h3>
+        <div class="options">
+          <label><input type="radio" name="q5" value="a"> To predict development stages based on temperature.</label>
+          <label><input type="radio" name="q5" value="b"> To measure annual rainfall.</label>
+          <label><input type="radio" name="q5" value="c"> To calculate soil pH.</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>5. What does the term "thermal constant" mean?</h3>
+        <div class="options">
+          <label><input type="radio" name="q8" value="a"> The number of degree-days required for a specific stage of development.</label>
+          <label><input type="radio" name="q8" value="b"> The temperature at which development is fastest.</label>
+          <label><input type="radio" name="q8" value="c"> The constant speed of development.</label>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- Life Table Quiz Section (Selected Questions: 1, 2, 3, 6, 9) -->
+  <section id="life-table-quiz">
+    <h1>Life Table</h1>
+    <form id="lifeTableQuiz">
+      <div class="quiz-question">
+        <h3>6. What does the symbol <strong>L<sub>x</sub></strong> represent in a life table?</h3>
+        <label><input type="radio" name="q1" value="a"> Average number of offspring produced at age x</label>
+        <label><input type="radio" name="q1" value="b"> Number of individuals surviving to age x</label>
+        <label><input type="radio" name="q1" value="c"> Proportion of individuals surviving to age x</label>
+        <label><input type="radio" name="q1" value="d"> Net reproductive rate</label>
+      </div>
+
+      <div class="quiz-question">
+        <h3>7. Which formula is used to calculate the net reproductive rate (R<sub>0</sub>)?</h3>
+        <label><input type="radio" name="q2" value="a"> \( R_0 = \sum (L_x \times M_x) \)</label>
+        <label><input type="radio" name="q2" value="b"> \( T_c = \frac{\ln(R_0)}{r} \)</label>
+        <label><input type="radio" name="q2" value="c"> \( D_t = \frac{\ln(2)}{r} \)</label>
+        <label><input type="radio" name="q2" value="d"> \( r = \frac{\ln(N)}{T} \)</label>
+      </div>
+
+      <div class="quiz-question">
+        <h3>8. What does <strong>M<sub>x</sub></strong> represent?</h3>
+        <label><input type="radio" name="q3" value="a"> Mortality rate at age x</label>
+        <label><input type="radio" name="q3" value="b"> Number of individuals surviving at age x</label>
+        <label><input type="radio" name="q3" value="c"> Average number of offspring produced by an individual at age x</label>
+        <label><input type="radio" name="q3" value="d"> Proportion of individuals surviving at age x</label>
+      </div>
+
+      <div class="quiz-question">
+        <h3>9. How is generation time (T<sub>c</sub>) calculated?</h3>
+        <label><input type="radio" name="q6" value="a"> \( T_c = \frac{\ln(2)}{r} \)</label>
+        <label><input type="radio" name="q6" value="b"> \( T_c = \frac{\ln(R_0)}{r} \)</label>
+        <label><input type="radio" name="q6" value="c"> \( T_c = \sum (L_x \times M_x) \)</label>
+        <label><input type="radio" name="q6" value="d"> \( T_c = L_x + M_x \)</label>
+      </div>
+
+      <div class="quiz-question">
+        <h3>10. Why is the life table an important tool in population biology?</h3>
+        <label><input type="radio" name="q9" value="a"> To study the reproductive success of individuals</label>
+        <label><input type="radio" name="q9" value="b"> To estimate population dynamics and predict trends</label>
+        <label><input type="radio" name="q9" value="c"> To calculate the lifespan of individuals</label>
+        <label><input type="radio" name="q9" value="d"> To determine population density</label>
+      </div>
+    </form>
+  </section>
+
+  <!-- Growth Models Quiz Section (Selected Questions: 1, 2, 3, 4, 7) -->
+  <section id="growth-model-quiz">
+    <h1>Growth Models</h1>
+    <form id="growthModelQuiz">
+      <div class="question">
+        <h3>11. What is the formula for the Linear Growth Model?</h3>
+        <div class="options">
+          <label><input type="radio" name="q1" value="a"> \( N(t) = N_0 \cdot e^{r \cdot t} \)</label>
+          <label><input type="radio" name="q1" value="b"> \( N(t) = N_0 + r \cdot t \)</label>
+          <label><input type="radio" name="q1" value="c"> \( N(t) = \frac{K}{1 + \frac{K - N_0}{N_0} \cdot e^{-r \cdot t}} \)</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>12. Which model describes rapid, unchecked growth?</h3>
+        <div class="options">
+          <label><input type="radio" name="q2" value="a"> Logistic Growth Model</label>
+          <label><input type="radio" name="q2" value="b"> Exponential Growth Model</label>
+          <label><input type="radio" name="q2" value="c"> Linear Growth Model</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>13. What parameter represents the carrying capacity in the Logistic Growth Model?</h3>
+        <div class="options">
+          <label><input type="radio" name="q3" value="a"> \( N_0 \)</label>
+          <label><input type="radio" name="q3" value="b"> \( K \)</label>
+          <label><input type="radio" name="q3" value="c"> \( r \)</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>14. What happens to growth in the Logistic Model as the population approaches carrying capacity?</h3>
+        <div class="options">
+          <label><input type="radio" name="q4" value="a"> It accelerates.</label>
+          <label><input type="radio" name="q4" value="b"> It slows down.</label>
+          <label><input type="radio" name="q4" value="c"> It remains constant.</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>15. What does the parameter \( r \) represent?</h3>
+        <div class="options">
+          <label><input type="radio" name="q7" value="a"> Carrying capacity</label>
+          <label><input type="radio" name="q7" value="b"> Growth rate</label>
+          <label><input type="radio" name="q7" value="c"> Initial population</label>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- r vs K Selected Species Quiz Section (Selected Questions: 1, 2, 3, 4, 10) -->
+  <section id="species-selection-quiz">
+    <h1>r vs K Selection</h1>
+    <form id="speciesQuiz">
+      <div class="question">
+        <h3>16. Which type of species typically has a high reproductive rate?</h3>
+        <div class="options">
+          <label><input type="radio" name="q1" value="r"> r-selected species</label>
+          <label><input type="radio" name="q1" value="k"> K-selected species</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>17. Which type of species invests more in parental care?</h3>
+        <div class="options">
+          <label><input type="radio" name="q2" value="r"> r-selected species</label>
+          <label><input type="radio" name="q2" value="k"> K-selected species</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>18. In an unstable environment, which type of species is more likely to thrive?</h3>
+        <div class="options">
+          <label><input type="radio" name="q3" value="r"> r-selected species</label>
+          <label><input type="radio" name="q3" value="k"> K-selected species</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>19. Which type of species typically has a shorter lifespan?</h3>
+        <div class="options">
+          <label><input type="radio" name="q4" value="r"> r-selected species</label>
+          <label><input type="radio" name="q4" value="k"> K-selected species</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <h3>20. Which type of species is most associated with stable environments?</h3>
+        <div class="options">
+          <label><input type="radio" name="q10" value="r"> r-selected species</label>
+          <label><input type="radio" name="q10" value="k"> K-selected species</label>
+        </div>
+      </div>
+    </form>
+  </section>
+
+</body>
+</html>
