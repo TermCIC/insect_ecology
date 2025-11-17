@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Climate Data Viewer</title>
+  <title>Climate Data Viewer (Daily)</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -11,25 +11,22 @@
 <body class="bg-gray-100 text-gray-800 min-h-screen p-6">
   <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-8">
     
-    <h1 class="text-3xl font-bold mb-4 text-blue-700">Climate Data Viewer</h1>
-    <p class="mb-6 text-gray-600">Enter coordinates to fetch temperature and humidity for a full year.</p>
+    <h1 class="text-3xl font-bold mb-4 text-blue-700">Climate Data Viewer (Daily)</h1>
+    <p class="mb-6 text-gray-600">Enter coordinates to fetch daily mean temperature and humidity for a full year.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <input id="lat" type="number" step="0.0001" placeholder="Latitude" 
-             class="border rounded-lg p-3" />
-      <input id="lon" type="number" step="0.0001" placeholder="Longitude" 
-             class="border rounded-lg p-3" />
-      <input id="year" type="number" min="1950" max="2100" placeholder="Year" 
-             class="border rounded-lg p-3" />
+      <input id="lat" type="number" step="0.0001" placeholder="Latitude" class="border rounded-lg p-3" />
+      <input id="lon" type="number" step="0.0001" placeholder="Longitude" class="border rounded-lg p-3" />
+      <input id="year" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3" />
     </div>
 
     <button id="fetchBtn" onclick="fetchClimate()" 
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">
+      class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">
       Get Climate Data
     </button>
 
     <div id="loading" class="mt-4 text-blue-600 font-semibold hidden">
-      Loading data… Please wait.
+      Loading daily climate data… Please wait.
     </div>
 
     <div class="mt-8">
@@ -38,14 +35,15 @@
 
     <div class="mt-6 flex gap-4">
       <button id="downloadBtn" style="display:none;" 
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow" 
-              onclick="downloadData()">Download JSON</button>
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow"
+        onclick="downloadData()">Download JSON</button>
 
       <button id="downloadCsvBtn" style="display:none;" 
-              class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow" 
-              onclick="downloadCSV()">Download CSV</button>
+        class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow"
+        onclick="downloadCSV()">Download CSV</button>
     </div>
-
+    <p class="text-sm text-gray-500 mt-8">by Assistant Professor Dr. Chun-I Chiu</p>
+    <p class="text-sm text-gray-500 mt-8">Department of Entomology and Plant Pathology, Chiang Mai University</p>
     <p class="text-sm text-gray-500 mt-8">
       Climate data provided by 
       <a href="https://open-meteo.com/" target="_blank" class="text-blue-600 underline">Open-Meteo</a>.
@@ -62,22 +60,27 @@
       const lat = document.getElementById('lat').value;
       const lon = document.getElementById('lon').value;
       const year = document.getElementById('year').value;
-      const fetchBtn = document.getElementById("fetchBtn");
+      const btn = document.getElementById("fetchBtn");
       const loading = document.getElementById("loading");
 
-      if (!lat || !lon || !year) { 
-        alert('Please fill all fields'); 
-        return; 
+      if (!lat || !lon || !year) {
+        alert("Please fill all fields");
+        return;
       }
 
       const start = `${year}-01-01`;
       const end = `${year}-12-31`;
 
-      const url = `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${end}&hourly=temperature_2m,relative_humidity_2m`;
+      // DAILY endpoint:
+      const url =
+        `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}` +
+        `&start_date=${start}&end_date=${end}` +
+        `&daily=temperature_2m_mean,relative_humidity_2m_mean` +
+        `&timezone=auto`;
 
-      // UI state
-      fetchBtn.disabled = true;
-      fetchBtn.classList.add("opacity-50");
+      // UI State
+      btn.disabled = true;
+      btn.classList.add("opacity-50");
       loading.classList.remove("hidden");
 
       try {
@@ -87,12 +90,17 @@
         const data = await res.json();
         lastData = data;
 
-        if (!data.hourly || !data.hourly.time) {
-          alert("No climate data available for this location/year.");
+        // Validate daily data
+        if (!data.daily || !data.daily.time) {
+          alert("No daily climate data available for this location/year.");
           return;
         }
 
-        drawChart(data.hourly.time, data.hourly.temperature_2m, data.hourly.relative_humidity_2m);
+        drawChart(
+          data.daily.time,
+          data.daily.temperature_2m_mean,
+          data.daily.relative_humidity_2m_mean
+        );
 
         document.getElementById('downloadBtn').style.display = 'inline-block';
         document.getElementById('downloadCsvBtn').style.display = 'inline-block';
@@ -102,8 +110,8 @@
       }
 
       // Reset UI
-      fetchBtn.disabled = false;
-      fetchBtn.classList.remove("opacity-50");
+      btn.disabled = false;
+      btn.classList.remove("opacity-50");
       loading.classList.add("hidden");
     }
 
@@ -112,39 +120,41 @@
       if (chart) chart.destroy();
 
       chart = new Chart(ctx, {
-        type: 'line',
+        type: "line",
         data: {
           labels: labels,
           datasets: [
             {
-              label: 'Temperature (°C)',
+              label: "Daily Mean Temperature (°C)",
               data: temperature,
-              borderColor: 'rgba(255, 99, 132, 1)',
+              borderColor: "rgba(255, 99, 132, 1)",
               borderWidth: 2,
               fill: false
             },
             {
-              label: 'Humidity (%)',
+              label: "Daily Mean Humidity (%)",
               data: humidity,
-              borderColor: 'rgba(54, 162, 235, 1)',
+              borderColor: "rgba(54, 162, 235, 1)",
               borderWidth: 2,
               fill: false
             }
           ]
         },
-        options: { 
-          responsive: true, 
+        options: {
+          responsive: true,
           scales: { x: { display: false } }
         }
       });
     }
 
     function downloadData() {
-      const blob = new Blob([JSON.stringify(lastData, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(lastData, null, 2)], {
+        type: "application/json"
+      });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'climate_data.json';
+      a.download = "climate_data_daily.json";
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -152,20 +162,20 @@
     function downloadCSV() {
       if (!lastData) return;
 
-      const times = lastData.hourly.time;
-      const temp = lastData.hourly.temperature_2m;
-      const hum = lastData.hourly.relative_humidity_2m;
+      const times = lastData.daily.time;
+      const temp = lastData.daily.temperature_2m_mean;
+      const hum = lastData.daily.relative_humidity_2m_mean;
 
-      let csv = 'time,temperature_2m,relative_humidity_2m\n';
+      let csv = "date,temperature_2m_mean,relative_humidity_2m_mean\n";
       for (let i = 0; i < times.length; i++) {
         csv += `${times[i]},${temp[i]},${hum[i]}\n`;
       }
 
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'climate_data.csv';
+      a.download = "climate_daily.csv";
       a.click();
       URL.revokeObjectURL(url);
     }
