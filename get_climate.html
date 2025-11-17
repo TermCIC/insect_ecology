@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Climate Data Fetcher</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    input { padding: 6px; margin: 4px; }
+    button { padding: 8px 16px; }
+    #chart-container { width: 100%; height: 400px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Daily Climate Data Viewer</h2>
+  <p>Enter coordinates to fetch whole-year climate data (temperature & humidity).</p>
+
+  <div>
+    <label>Latitude: </label>
+    <input id="lat" type="number" step="0.0001" placeholder="e.g., 18.79" />
+    <label>Longitude: </label>
+    <input id="lon" type="number" step="0.0001" placeholder="e.g., 98.98" />
+    <label>Year: </label>
+    <input id="year" type="number" min="1950" max="2100" placeholder="2023" />
+    <button onclick="fetchClimate()">Get Climate Data</button>
+  </div>
+
+  <div id="chart-container">
+    <canvas id="climateChart"></canvas>
+  </div>
+
+  <button id="downloadBtn" style="display:none;" onclick="downloadData()">Download JSON</button>
+
+  <script>
+    let chart;
+    let lastData = null;
+
+    async function fetchClimate() {
+      const lat = document.getElementById('lat').value;
+      const lon = document.getElementById('lon').value;
+      const year = document.getElementById('year').value;
+      if (!lat || !lon || !year) { alert('Please fill all fields'); return; }
+
+      const start = `${year}-01-01`;
+      const end = `${year}-12-31`;
+
+      const url = `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${end}&hourly=temperature_2m,relative_humidity_2m`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+      lastData = data;
+
+      const times = data.hourly.time;
+      const temp = data.hourly.temperature_2m;
+      const hum = data.hourly.relative_humidity_2m;
+
+      drawChart(times, temp, hum);
+      document.getElementById('downloadBtn').style.display = 'inline-block';
+    }
+
+    function drawChart(labels, temperature, humidity) {
+      const ctx = document.getElementById('climateChart').getContext('2d');
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Temperature (°C)',
+              data: temperature,
+              borderWidth: 2,
+              fill: false
+            },
+            {
+              label: 'Humidity (%)',
+              data: humidity,
+              borderWidth: 2,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { display: false },
+            y: { beginAtZero: false }
+          }
+        }
+      });
+    }
+
+    function downloadData() {
+      const blob = new Blob([JSON.stringify(lastData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'climate_data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
