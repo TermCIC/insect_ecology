@@ -31,6 +31,7 @@
   </div>
 
   <button id="downloadBtn" style="display:none;" onclick="downloadData()">Download JSON</button>
+  <button id="downloadCsvBtn" style="display:none;" onclick="downloadCSV()">Download CSV</button>
 
   <script>
     let chart;
@@ -98,6 +99,26 @@
       const a = document.createElement('a');
       a.href = url;
       a.download = 'climate_data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadCSV() {
+      if (!lastData) return;
+      const times = lastData.hourly.time;
+      const temp = lastData.hourly.temperature_2m;
+      const hum = lastData.hourly.relative_humidity_2m;
+
+      let csv = 'time,temperature_2m,relative_humidity_2m\n';
+      for (let i = 0; i < times.length; i++) {
+        csv += `${times[i]},${temp[i]},${hum[i]}\n`;
+      }
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'climate_data.csv';
       a.click();
       URL.revokeObjectURL(url);
     }
