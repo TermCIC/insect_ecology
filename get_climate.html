@@ -7,29 +7,51 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-100 text-gray-800 min-h-screen p-6">
   <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-8">
+    
     <h1 class="text-3xl font-bold mb-4 text-blue-700">Climate Data Viewer</h1>
     <p class="mb-6 text-gray-600">Enter coordinates to fetch temperature and humidity for a full year.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <input id="lat" type="number" step="0.0001" placeholder="Latitude" class="border rounded-lg p-3" />
-      <input id="lon" type="number" step="0.0001" placeholder="Longitude" class="border rounded-lg p-3" />
-      <input id="year" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3" />
+      <input id="lat" type="number" step="0.0001" placeholder="Latitude" 
+             class="border rounded-lg p-3" />
+      <input id="lon" type="number" step="0.0001" placeholder="Longitude" 
+             class="border rounded-lg p-3" />
+      <input id="year" type="number" min="1950" max="2100" placeholder="Year" 
+             class="border rounded-lg p-3" />
     </div>
 
-    <button onclick="fetchClimate()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">Get Climate Data</button>
+    <button id="fetchBtn" onclick="fetchClimate()" 
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">
+      Get Climate Data
+    </button>
+
+    <div id="loading" class="mt-4 text-blue-600 font-semibold hidden">
+      Loading data… Please wait.
+    </div>
 
     <div class="mt-8">
       <canvas id="climateChart" class="w-full h-96"></canvas>
     </div>
 
     <div class="mt-6 flex gap-4">
-      <button id="downloadBtn" style="display:none;" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow" onclick="downloadData()">Download JSON</button>
-      <button id="downloadCsvBtn" style="display:none;" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow" onclick="downloadCSV()">Download CSV</button>
+      <button id="downloadBtn" style="display:none;" 
+              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow" 
+              onclick="downloadData()">Download JSON</button>
+
+      <button id="downloadCsvBtn" style="display:none;" 
+              class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg shadow" 
+              onclick="downloadCSV()">Download CSV</button>
     </div>
 
-    <p class="text-sm text-gray-500 mt-8">Climate data provided by <a href="https://open-meteo.com/" target="_blank" class="text-blue-600 underline">Open‑Meteo</a>. Thank you Open‑Meteo!</p>
+    <p class="text-sm text-gray-500 mt-8">
+      Climate data provided by 
+      <a href="https://open-meteo.com/" target="_blank" class="text-blue-600 underline">Open-Meteo</a>.
+      Thank you Open-Meteo!
+    </p>
+
   </div>
 
   <script>
@@ -40,21 +62,49 @@
       const lat = document.getElementById('lat').value;
       const lon = document.getElementById('lon').value;
       const year = document.getElementById('year').value;
-      if (!lat || !lon || !year) { alert('Please fill all fields'); return; }
+      const fetchBtn = document.getElementById("fetchBtn");
+      const loading = document.getElementById("loading");
+
+      if (!lat || !lon || !year) { 
+        alert('Please fill all fields'); 
+        return; 
+      }
 
       const start = `${year}-01-01`;
       const end = `${year}-12-31`;
 
       const url = `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${end}&hourly=temperature_2m,relative_humidity_2m`;
 
-      const res = await fetch(url);
-      const data = await res.json();
-      lastData = data;
+      // UI state
+      fetchBtn.disabled = true;
+      fetchBtn.classList.add("opacity-50");
+      loading.classList.remove("hidden");
 
-      drawChart(data.hourly.time, data.hourly.temperature_2m, data.hourly.relative_humidity_2m);
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      document.getElementById('downloadBtn').style.display = 'inline-block';
-      document.getElementById('downloadCsvBtn').style.display = 'inline-block';
+        const data = await res.json();
+        lastData = data;
+
+        if (!data.hourly || !data.hourly.time) {
+          alert("No climate data available for this location/year.");
+          return;
+        }
+
+        drawChart(data.hourly.time, data.hourly.temperature_2m, data.hourly.relative_humidity_2m);
+
+        document.getElementById('downloadBtn').style.display = 'inline-block';
+        document.getElementById('downloadCsvBtn').style.display = 'inline-block';
+
+      } catch (err) {
+        alert("Failed to fetch climate data:\n" + err);
+      }
+
+      // Reset UI
+      fetchBtn.disabled = false;
+      fetchBtn.classList.remove("opacity-50");
+      loading.classList.add("hidden");
     }
 
     function drawChart(labels, temperature, humidity) {
@@ -82,7 +132,10 @@
             }
           ]
         },
-        options: { responsive: true, scales: { x: { display: false } } }
+        options: { 
+          responsive: true, 
+          scales: { x: { display: false } }
+        }
       });
     }
 
@@ -98,16 +151,16 @@
 
     function downloadCSV() {
       if (!lastData) return;
-    
+
       const times = lastData.hourly.time;
       const temp = lastData.hourly.temperature_2m;
       const hum = lastData.hourly.relative_humidity_2m;
-    
+
       let csv = 'time,temperature_2m,relative_humidity_2m\n';
       for (let i = 0; i < times.length; i++) {
         csv += `${times[i]},${temp[i]},${hum[i]}\n`;
       }
-    
+
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -116,7 +169,7 @@
       a.click();
       URL.revokeObjectURL(url);
     }
-
   </script>
+
 </body>
 </html>
