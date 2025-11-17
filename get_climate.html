@@ -206,6 +206,10 @@
       // Draw separate charts
       drawTempChart(d.time, d.temperature_2m_mean);
       drawHumChart(d.time, d.relative_humidity_2m_mean);
+
+      // Show download buttons
+      document.getElementById('downloadBtn').style.display = 'inline-block';
+      document.getElementById('downloadCsvBtn').style.display = 'inline-block';
   
     } catch (err) {
       alert("Error: " + err);
@@ -279,6 +283,7 @@
       }
     });
   }
+  
   </script>
 
 
