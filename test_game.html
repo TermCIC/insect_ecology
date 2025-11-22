@@ -1,122 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<title>KAPLAY Raycaster 3D Example</title>
-<script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
+  <meta charset="utf-8" />
+  <title>KAPLAY – My First Game</title>
+  <script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
 </head>
 
-<body style="margin:0;background:black;">
+<body style="margin:0; padding:0; background:#87CEEB;">
 <script>
+(async () => {
+  // 初始化遊戲
+  kaplay();
 
-const k = kaplay({
-    scale: 2,
-    background: [10, 10, 10],
-});
+  // 載入精靈圖（範例中使用 "bean" 精靈）
+  await loadSprite("bean", "https://play.kaplayjs.com/bean.png");
 
-// Load assets
-await loadSprite("wall",  "https://kaboomjs.com/sprites/dungeon/wall.png");
-await loadSprite("floor", "https://kaboomjs.com/sprites/dungeon/floor.png");
-await loadSprite("hero",  "https://kaboomjs.com/sprites/dungeon/hero.png");
+  // 定義場景 “game”
+  scene("game", () => {
 
-// Map
-const map = [
-  "################",
-  "#..............#",
-  "#..............#",
-  "#......##......#",
-  "#..............#",
-  "#......##......#",
-  "#..............#",
-  "################",
-];
+    // 設定重力
+    setGravity(1600);
 
-const walls = [];
+    // 玩家角色
+    const player = add([
+      sprite("bean"),
+      pos(width()/4, 0),
+      area(),
+      body(),
+    ]);
 
-map.forEach((row, y) => {
-  [...row].forEach((ch, x) => {
-    if (ch === "#") {
-      const w = add([
-        sprite("wall"),
-        pos(x * 16, y * 16),
-        area(),
-        solid(),
-        { isWall: true },
-      ]);
-      walls.push(w);
-    }
+    // 地面平台
+    const FLOOR_HEIGHT = 48;
+    add([
+      rect(width(), FLOOR_HEIGHT),
+      pos(0, height() - FLOOR_HEIGHT),
+      anchor("botleft"),
+      area(),
+      body({ isStatic: true }),
+      color(127, 200, 255),
+    ]);
 
-    if (ch === ".") {
-      add([
-        sprite("floor"),
-        pos(x * 16, y * 16),
-      ]);
-    }
-  });
-});
-
-// Player with direction + camera
-const player = add([
-  sprite("hero"),
-  pos(48, 48),
-  area(),
-  solid(),
-  {
-    speed: 90,
-    angle: 0,
-    dir: vec2(1, 0),
-  }
-]);
-
-player.onUpdate(() => camPos(player.pos));
-
-// Rotate Left / Right
-onKeyDown("left", () => {
-  player.angle -= 3;
-  player.dir = vec2(Math.cos(rad(player.angle)), Math.sin(rad(player.angle)));
-});
-
-onKeyDown("right", () => {
-  player.angle += 3;
-  player.dir = vec2(Math.cos(rad(player.angle)), Math.sin(rad(player.angle)));
-});
-
-// Move Forward / Backward
-onKeyDown("up", () => {
-  player.move(player.dir.x * player.speed, player.dir.y * player.speed);
-});
-
-onKeyDown("down", () => {
-  player.move(-player.dir.x * player.speed, -player.dir.y * player.speed);
-});
-
-// Raycast
-function raycast() {
-  const step = 4;
-  const maxDist = 200;
-  let posRay = player.pos.clone();
-
-  for (let d = 0; d < maxDist; d += step) {
-    posRay = posRay.add(player.dir.scale(step));
-
-    for (const w of walls) {
-      if (w.area && w.area.hasPoint(posRay)) {
-        return d;
+    // 跳躍功能
+    const JUMP_FORCE = 800;
+    function jump() {
+      if (player.isGrounded()) {
+        player.jump(JUMP_FORCE);
       }
     }
-  }
-  return maxDist;
-}
+    onKeyPress("space", jump);
+    onClick(jump);
 
-// Depth shading
-onUpdate(() => {
-  for (const w of walls) {
-    const dist = w.pos.dist(player.pos);
-    const shade = Math.max(0.2, 1 - dist / 180);
-    w.color = rgb(shade * 255, shade * 255, shade * 255);
-  }
-});
+    // 障礙物生成
+    const SPEED = 480;
+    function spawnTree() {
+      add([
+        rect(48, rand(32, 96)),
+        area(),
+        pos(width(), height() - FLOOR_HEIGHT),
+        anchor("botleft"),
+        color(255, 180, 255),
+        move(LEFT, SPEED),
+        "tree",
+      ]);
+      wait(rand(0.5, 1.5), spawnTree);
+    }
+    spawnTree();
 
+    // 若撞到 “tree” 則 Game Over
+    player.onCollide("tree", () => {
+      go("lose", score);
+      addKaboom(player.pos);
+    });
+
+    // 計分系統
+    let score = 0;
+    const scoreLabel = add([
+      text(score),
+      pos(24, 24),
+      scale(2)
+    ]);
+    onUpdate(() => {
+      score++;
+      scoreLabel.text = score;
+    });
+
+  });
+
+  // 定義 “lose” 場景
+  scene("lose", (score) => {
+    add([
+      sprite("bean"),
+      pos(width()/2, height()/2 - 80),
+      scale(3),
+      anchor("center")
+    ]);
+    add([
+      text("Score: " + score),
+      pos(width()/2, height()/2 + 20),
+      scale(2),
+      anchor("center")
+    ]);
+    onKeyPress("space", () => go("game"));
+    onClick(() => go("game"));
+  });
+
+  // 啟動遊戲
+  go("game");
+
+})();
 </script>
 </body>
 </html>
