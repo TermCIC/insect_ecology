@@ -2,80 +2,131 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KAPLAY RPG Demo</title>
+<title>Kaplay Raycaster RPG (Official Assets)</title>
 <script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
 </head>
 
 <body style="margin:0;background:black;">
 <script>
 
-// Wrap the game logic in an async function and call it immediately
-(async () => {
-  const k = kaplay({
-    background: [30, 30, 30],
-    scale: 2,
+const k = kaplay({
+  background: [20, 20, 20],
+  scale: 2,
+});
+
+// Load official assets
+await loadSprite("hero",  "https://kaboomjs.com/sprites/dungeon/hero.png");
+await loadSprite("wall",  "https://kaboomjs.com/sprites/dungeon/wall.png");
+await loadSprite("floor", "https://kaboomjs.com/sprites/dungeon/floor.png");
+await loadSprite("door_c","https://kaboomjs.com/sprites/dungeon/door_closed.png");
+await loadSprite("door_o","https://kaboomjs.com/sprites/dungeon/door_open.png");
+
+// -------------------------
+// Tilemap
+// -------------------------
+const map = [
+  "################",
+  "#..............#",
+  "#..............#",
+  "#......##......#",
+  "#..............#",
+  "#......##......#",
+  "#..............#",
+  "################",
+];
+
+const walls = [];
+
+map.forEach((row, y) => {
+  [...row].forEach((ch, x) => {
+
+    if (ch === "#") {
+      const w = add([
+        sprite("wall"),
+        pos(x * 16, y * 16),
+        area(),
+        solid(),
+        { isWall: true }
+      ]);
+      walls.push(w);
+    }
+
+    if (ch === ".") {
+      add([
+        sprite("floor"),
+        pos(x * 16, y * 16),
+      ]);
+    }
   });
+});
 
-  // --- Load sprites ---
-  // The await calls are now valid inside this async function
-  await loadSprite("hero","https://play.kaplayjs.com/sprites/apple.png");
-  await loadSprite("wall", "https://play.kaplayjs.com/sprites/apple.png");
-  await loadSprite("floor", "https://play.kaplayjs.com/sprites/apple.png");
+// -------------------------
+// Player with Direction
+// -------------------------
+const player = add([
+  sprite("hero"),
+  pos(32, 32),
+  area(),
+  solid(),
+  {
+    speed: 90,
+    angle: 0,
+    dir: vec2(1, 0),
+  }
+]);
 
-  // --- Tilemap data ---
-  const map = [
-    "################",
-    "#..............#",
-    "#..............#",
-    "#......##......#",
-    "#..............#",
-    "#......##......#",
-    "#..............#",
-    "################",
-  ];
+player.onUpdate(() => camPos(player.pos));
 
-  // Convert tilemap to objects
-  map.forEach((row, y) => {
-    [...row].forEach((ch, x) => {
+// -------------------------
+// LEFT / RIGHT Rotate
+// -------------------------
+onKeyDown("left", () => {
+  player.angle -= 2;
+  player.dir = vec2(Math.cos(rad(player.angle)), Math.sin(rad(player.angle)));
+});
 
-      if (ch === "#") {
-        add([
-          sprite("wall"),
-          pos(x * 16, y * 16),
-          area(),
-          solid(),
-        ]);
+onKeyDown("right", () => {
+  player.angle += 2;
+  player.dir = vec2(Math.cos(rad(player.angle)), Math.sin(rad(player.angle)));
+});
+
+// -------------------------
+// Move Forward / Backward
+// -------------------------
+onKeyDown("up", () => {
+  player.move(player.dir.x * player.speed, player.dir.y * player.speed);
+});
+onKeyDown("down", () => {
+  player.move(-player.dir.x * player.speed, -player.dir.y * player.speed);
+});
+
+// -------------------------
+// Raycast + Depth Shading
+// -------------------------
+function raycast() {
+  const step = 4;
+  const maxDist = 200;
+  let posRay = player.pos.clone();
+
+  for (let d = 0; d < maxDist; d += step) {
+    posRay = posRay.add(player.dir.scale(step));
+
+    for (const w of walls) {
+      if (w.area && w.area.hasPoint(posRay)) {
+        return d;
       }
+    }
+  }
+  return maxDist;
+}
 
-      if (ch === ".") {
-        add([
-          sprite("floor"),
-          pos(x * 16, y * 16),
-        ]);
-      }
-    });
-  });
-
-  // --- Player ---
-  const player = add([
-    sprite("hero"),
-    pos(32, 32),
-    area(),
-    solid(),
-    { speed: 80 }
-  ]);
-
-  // Camera follow
-  player.onUpdate(() => {
-    camPos(player.pos);
-  });
-
-  // Movement
-  onKeyDown("left", () => player.move(-player.speed, 0));
-  onKeyDown("right", () => player.move(player.speed, 0));
-  onKeyDown("up", () => player.move(0, -player.speed));
-  onKeyDown("down", () => player.move(0, player.speed));
-})(); // Immediately invoking the async function
+onUpdate(() => {
+  for (const w of walls) {
+    const dist = w.pos.dist(player.pos);
+    const shade = Math.max(0.2, 1 - dist / 180);
+    w.color = rgb(shade * 255, shade * 255, shade * 255);
+  }
+});
 
 </script>
 </body>
