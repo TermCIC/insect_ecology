@@ -9,69 +9,73 @@
 <body style="margin:0;background:black;">
 <script>
 
-const k = kaplay({
-  background: [30, 30, 30],
-  scale: 2,
-});
-
-// --- Load sprites ---
-await loadSprite("hero", "https://i.imgur.com/Ur4JQ6L.png");
-await loadSprite("wall", "https://i.imgur.com/4LGAZ8q.png");
-await loadSprite("floor", "https://i.imgur.com/RSJhrxF.png");
-
-// --- Tilemap data ---
-const map = [
-  "################",
-  "#..............#",
-  "#..............#",
-  "#......##......#",
-  "#..............#",
-  "#......##......#",
-  "#..............#",
-  "################",
-];
-
-// Convert tilemap to objects
-map.forEach((row, y) => {
-  [...row].forEach((ch, x) => {
-
-    if (ch === "#") {
-      add([
-        sprite("wall"),
-        pos(x * 16, y * 16),
-        area(),
-        solid(),
-      ]);
-    }
-
-    if (ch === ".") {
-      add([
-        sprite("floor"),
-        pos(x * 16, y * 16),
-      ]);
-    }
+// Wrap the game logic in an async function and call it immediately
+(async () => {
+  const k = kaplay({
+    background: [30, 30, 30],
+    scale: 2,
   });
-});
 
-// --- Player ---
-const player = add([
-  sprite("hero"),
-  pos(32, 32),
-  area(),
-  solid(),
-  { speed: 80 }
-]);
+  // --- Load sprites ---
+  // The await calls are now valid inside this async function
+  await loadSprite("hero", "https://i.imgur.com/Ur4JQ6L.png");
+  await loadSprite("wall", "https://i.imgur.com/4LGAZ8q.png");
+  await loadSprite("floor", "https://i.imgur.com/RSJhrxF.png");
 
-// Camera follow
-player.onUpdate(() => {
-  camPos(player.pos);
-});
+  // --- Tilemap data ---
+  const map = [
+    "################",
+    "#..............#",
+    "#..............#",
+    "#......##......#",
+    "#..............#",
+    "#......##......#",
+    "#..............#",
+    "################",
+  ];
 
-// Movement
-onKeyDown("left", () => player.move(-player.speed, 0));
-onKeyDown("right", () => player.move(player.speed, 0));
-onKeyDown("up", () => player.move(0, -player.speed));
-onKeyDown("down", () => player.move(0, player.speed));
+  // Convert tilemap to objects
+  map.forEach((row, y) => {
+    [...row].forEach((ch, x) => {
+
+      if (ch === "#") {
+        add([
+          sprite("wall"),
+          pos(x * 16, y * 16),
+          area(),
+          solid(),
+        ]);
+      }
+
+      if (ch === ".") {
+        add([
+          sprite("floor"),
+          pos(x * 16, y * 16),
+        ]);
+      }
+    });
+  });
+
+  // --- Player ---
+  const player = add([
+    sprite("hero"),
+    pos(32, 32),
+    area(),
+    solid(),
+    { speed: 80 }
+  ]);
+
+  // Camera follow
+  player.onUpdate(() => {
+    camPos(player.pos);
+  });
+
+  // Movement
+  onKeyDown("left", () => player.move(-player.speed, 0));
+  onKeyDown("right", () => player.move(player.speed, 0));
+  onKeyDown("up", () => player.move(0, -player.speed));
+  onKeyDown("down", () => player.move(0, player.speed));
+})(); // Immediately invoking the async function
 
 </script>
 </body>
