@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>KAPLAY RPG Demo</title>
+<script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
+</head>
+
+<body style="margin:0;background:black;">
+<script>
+// --- Init ---
+kaplay({
+  background: [30, 30, 30],
+  scale: 2,
+})
+
+// --- Load sprites ---
+loadSprite("hero", "https://i.imgur.com/Ur4JQ6L.png") // 16x16 sprite
+loadSprite("wall", "https://i.imgur.com/4LGAZ8q.png")
+loadSprite("floor", "https://i.imgur.com/RSJhrxF.png")
+
+// --- Simple tilemap ---
+const map = [
+  "################",
+  "#..............#",
+  "#..............#",
+  "#......##......#",
+  "#..............#",
+  "#......##......#",
+  "#..............#",
+  "################",
+]
+
+// Convert symbols to game objects
+const level = addLevel(map, {
+  width: 16,
+  height: 16,
+  "#": () => [
+    sprite("wall"),
+    area(),
+    solid(),
+  ],
+  ".": () => [
+    sprite("floor"),
+  ],
+})
+
+// --- Player ---
+const player = add([
+  sprite("hero"),
+  pos(32, 32),
+  area(),
+  solid(),
+  {
+    speed: 80,
+  }
+])
+
+// Camera follow
+player.onUpdate(() => {
+  camPos(player.pos)
+})
+
+// --- Movement ---
+onKeyDown("left",  () => player.move(-player.speed, 0))
+onKeyDown("right", () => player.move(player.speed, 0))
+onKeyDown("up",    () => player.move(0, -player.speed))
+onKeyDown("down",  () => player.move(0, player.speed))
+
+</script>
+</body>
+</html>
