@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Kaplay Raycaster RPG (Official Assets)</title>
+<title>KAPLAY Raycaster 3D Example</title>
 <script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
 </head>
 
@@ -10,20 +10,16 @@
 <script>
 
 const k = kaplay({
-  background: [20, 20, 20],
-  scale: 2,
+    scale: 2,
+    background: [10, 10, 10],
 });
 
-// Load official assets
-await loadSprite("hero",  "https://kaboomjs.com/sprites/dungeon/hero.png");
+// Load assets
 await loadSprite("wall",  "https://kaboomjs.com/sprites/dungeon/wall.png");
 await loadSprite("floor", "https://kaboomjs.com/sprites/dungeon/floor.png");
-await loadSprite("door_c","https://kaboomjs.com/sprites/dungeon/door_closed.png");
-await loadSprite("door_o","https://kaboomjs.com/sprites/dungeon/door_open.png");
+await loadSprite("hero",  "https://kaboomjs.com/sprites/dungeon/hero.png");
 
-// -------------------------
-// Tilemap
-// -------------------------
+// Map
 const map = [
   "################",
   "#..............#",
@@ -39,14 +35,13 @@ const walls = [];
 
 map.forEach((row, y) => {
   [...row].forEach((ch, x) => {
-
     if (ch === "#") {
       const w = add([
         sprite("wall"),
         pos(x * 16, y * 16),
         area(),
         solid(),
-        { isWall: true }
+        { isWall: true },
       ]);
       walls.push(w);
     }
@@ -60,12 +55,10 @@ map.forEach((row, y) => {
   });
 });
 
-// -------------------------
-// Player with Direction
-// -------------------------
+// Player with direction + camera
 const player = add([
   sprite("hero"),
-  pos(32, 32),
+  pos(48, 48),
   area(),
   solid(),
   {
@@ -77,32 +70,27 @@ const player = add([
 
 player.onUpdate(() => camPos(player.pos));
 
-// -------------------------
-// LEFT / RIGHT Rotate
-// -------------------------
+// Rotate Left / Right
 onKeyDown("left", () => {
-  player.angle -= 2;
+  player.angle -= 3;
   player.dir = vec2(Math.cos(rad(player.angle)), Math.sin(rad(player.angle)));
 });
 
 onKeyDown("right", () => {
-  player.angle += 2;
+  player.angle += 3;
   player.dir = vec2(Math.cos(rad(player.angle)), Math.sin(rad(player.angle)));
 });
 
-// -------------------------
 // Move Forward / Backward
-// -------------------------
 onKeyDown("up", () => {
   player.move(player.dir.x * player.speed, player.dir.y * player.speed);
 });
+
 onKeyDown("down", () => {
   player.move(-player.dir.x * player.speed, -player.dir.y * player.speed);
 });
 
-// -------------------------
-// Raycast + Depth Shading
-// -------------------------
+// Raycast
 function raycast() {
   const step = 4;
   const maxDist = 200;
@@ -120,6 +108,7 @@ function raycast() {
   return maxDist;
 }
 
+// Depth shading
 onUpdate(() => {
   for (const w of walls) {
     const dist = w.pos.dist(player.pos);
