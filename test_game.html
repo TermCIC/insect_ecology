@@ -239,7 +239,9 @@ const camera = add([
                 color: RED,
             });
 
-            pushTranslate(this.pos.scale(-1).add(300, 50));
+            //pushTranslate(this.pos.scale(-1).add(300, 50));
+            // 小地圖放上面中央
+             pushTranslate(vec2( windowWidth() / 2 - 120, 20 ));
 
             drawRect({
                 width: 240,
