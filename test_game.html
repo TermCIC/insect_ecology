@@ -13,11 +13,14 @@ kaplay();
 // Load sprites using ABSOLUTE URLs from play.kaplayjs.com
 loadSprite("bean", "https://play.kaplayjs.com/sprites/bean.png");
 loadSprite("wall", "https://play.kaplayjs.com/sprites/brick_wall.png");
+loadSprite("floor", "https://play.kaplayjs.com/sprites/floor.png");   // ★ NEW
 
 let bean;
 let objSlices = [];
 let wall;
 let slices = [];
+let floor;
+let floorSlices = [];   // ★ NEW
 
 onLoad(() => {
     bean = getSprite("bean").data;
@@ -37,10 +40,24 @@ onLoad(() => {
             ),
         );
     }
+
+    // ★ FLOOR TEXTURE SLICES
+    floor = getSprite("floor").data;
+    for (let i = 0; i < floor.width; i++) {
+        floorSlices.push(
+            floor.frames[0].scale(
+                new Quad(i / floor.width, 0, 1 / floor.width, 1),
+            ),
+        );
+    }
 });
 
+
+// ============================
+//  (原本的 raycast functions 保留)
+// ============================
+
 function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
-    const pos = origin;
     const len = direction.len();
     const dir = direction.scale(1 / len);
     let t = 0;
@@ -61,18 +78,13 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
         const hit = gridPosHit(gridPos);
         if (hit === true) {
             return {
-                point: pos.add(dir.scale(t)),
-                normal: vec2(
-                    steppedIndex === 0 ? -step.x : 0,
-                    steppedIndex === 1 ? -step.y : 0,
-                ),
+                point: origin.add(dir.scale(t)),
+                normal: vec2(steppedIndex === 0 ? -step.x : 0, steppedIndex === 1 ? -step.y : 0),
                 t: t / len,
                 gridPos,
             };
         }
-        else if (hit) {
-            return hit;
-        }
+        else if (hit) return hit;
 
         if (tMax.x < tMax.y) {
             gridPos.x += step.x;
@@ -93,10 +105,11 @@ function raycastEdge(origin, direction, line) {
     const a = origin;
     const c = line.p1.add(line.pos);
     const d = line.p2.add(line.pos);
+
     const ab = direction;
     const cd = d.sub(c);
-    let abxcd = ab.cross(cd);
 
+    let abxcd = ab.cross(cd);
     if (Math.abs(abxcd) < Number.EPSILON) return false;
 
     const ac = c.sub(a);
@@ -106,10 +119,7 @@ function raycastEdge(origin, direction, line) {
     if (t <= 0 || t >= 1) return false;
 
     const normal = cd.normal().unit();
-    if (direction.dot(normal) > 0) {
-        normal.x *= -1;
-        normal.y *= -1;
-    }
+    if (direction.dot(normal) > 0) normal.x *= -1, normal.y *= -1;
 
     return {
         point: a.add(ab.scale(s)),
@@ -121,8 +131,10 @@ function raycastEdge(origin, direction, line) {
 }
 
 function rayCastAsciiGrid(origin, direction, grid) {
+
     origin = origin.scale(1 / 16);
     direction = direction.scale(1 / 16);
+
     const objects = [];
 
     const hit = rayCastGrid(origin, direction, ({ x, y }) => {
@@ -134,15 +146,14 @@ function rayCastAsciiGrid(origin, direction, grid) {
                     const perp = direction.normal().unit();
                     const planeP1 = perp.scale(-0.2);
                     const planeP2 = perp.scale(0.2);
-
                     const objectHit = raycastEdge(origin, direction, {
                         pos: vec2(x + 0.5, y + 0.5),
                         p1: planeP1,
                         p2: planeP2,
                     });
-
                     if (objectHit) objects.push(objectHit);
                 }
+
                 return row[x] !== " " && row[x] !== "&";
             }
         }
@@ -156,6 +167,10 @@ function rayCastAsciiGrid(origin, direction, grid) {
     return hit;
 }
 
+
+// ======================
+// Colors
+// ======================
 const colors = {
     "#": RED,
     "$": GREEN,
@@ -163,6 +178,10 @@ const colors = {
     "&": YELLOW,
 };
 
+
+// ======================
+// MAP
+// ======================
 const grid = [
     "##################",
     "#                #",
@@ -179,6 +198,10 @@ const grid = [
     "##################",
 ];
 
+
+// ======================
+// CAMERA / RAYCAST RENDER
+// ======================
 const camera = add([
     pos(7 * 16, 11 * 16 + 8),
     rotate(0),
@@ -190,89 +213,101 @@ const camera = add([
     body(),
     {
         draw() {
+
             pushTransform();
             pushRotate(-this.angle);
 
-            drawCircle({
-                pos: vec2(),
-                radius: 4,
-                color: RED,
-            });
-
+            // Player direction / camera plane
             const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
-
             const planeP1 = this.pos.add(dir.scale(this.focalLength)).add(perp.scale(this.fov)).sub(this.pos);
             const planeP2 = this.pos.add(dir.scale(this.focalLength)).sub(perp.scale(this.fov)).sub(this.pos);
 
-            drawLine({
-                p1: planeP1,
-                p2: planeP2,
-                width: 1,
-                color: RED,
-            });
-
-            pushTranslate(this.pos.scale(-1).add(300, 50));
-
+            // === SKY ===
             drawRect({
                 width: 240,
                 height: 120,
                 color: rgb(100, 100, 100),
             });
 
-            drawRect({
-                pos: vec2(0, 120),
-                width: 240,
-                height: 120,
-                color: rgb(128, 128, 128),
-            });
+            // === FLOOR TEXTURE (NEW!) ===
+            for (let x = 0; x <= 120; x++) {
+                for (let y = 120; y <= 240; y += 2) {
 
+                    // pseudo perspective
+                    let rowDist = 240 / (y - 120);
+
+                    let floorPos = this.pos.add(
+                        dir.scale(rowDist)
+                           .add(perp.scale((x - 60) / 60 * this.fov))
+                    );
+
+                    // texture sampling UV
+                    let u = ((floorPos.x % 16) + 16) % 16 / 16;
+                    let v = ((floorPos.y % 16) + 16) % 16 / 16;
+
+                    let quad = floorSlices[Math.floor(u * (floor.width - 1))];
+
+                    drawUVQuad({
+                        width: 2,
+                        height: 2,
+                        pos: vec2(x * 2, y),
+                        tex: floor.tex,
+                        quad: quad,
+                    });
+                }
+            }
+
+            // ============================
+            // WALL RENDERING
+            // ============================
             for (let x = 0; x <= 120; x++) {
                 let direction = lerp(planeP1, planeP2, x / 120).scale(6);
 
                 const hit = rayCastAsciiGrid(this.pos, direction, grid);
-                if (hit) {
-                    const t = hit.t;
-                    const d = (1 - t) * ((hit.normal.x + hit.normal.y) < 0 ? 0.5 : 1);
+                if (!hit) continue;
 
-                    let u = Math.abs(hit.normal.x) > Math.abs(hit.normal.y)
-                        ? hit.point.y
-                        : hit.point.x;
+                const t = hit.t;
+                const d = (1 - t) * ((hit.normal.x + hit.normal.y) < 0 ? 0.5 : 1);
 
-                    u = (u % 16) / 16;
-                    u = u - Math.floor(u);
+                let u = Math.abs(hit.normal.x) > Math.abs(hit.normal.y)
+                    ? hit.point.y
+                    : hit.point.x;
 
-                    const h = 240 / (t * direction.len() / 16);
+                u = (u % 16) / 16;
+                u = u - Math.floor(u);
 
-                    drawUVQuad({
-                        width: 2,
-                        height: h,
-                        pos: vec2(x * 2, 120 - h / 2),
-                        tex: wall.tex,
-                        quad: slices[Math.round(u * (wall.width - 1))],
-                        color: BLACK.lerp(WHITE, d),
-                    });
+                const h = 240 / (t * direction.len() / 16);
 
-                    if (hit.objects) {
-                        hit.objects.reverse().forEach(o => {
-                            const t = o.t;
-                            const wh = 240 / (t * direction.len() / 16);
-                            const oh = 140 / (t * direction.len() / 16);
+                drawUVQuad({
+                    width: 2,
+                    height: h,
+                    pos: vec2(x * 2, 120 - h / 2),
+                    tex: wall.tex,
+                    quad: slices[Math.round(u * (wall.width - 1))],
+                    color: BLACK.lerp(WHITE, d),
+                });
 
-                            let u = o.s;
+                if (hit.objects) {
+                    hit.objects.reverse().forEach(o => {
+                        const t = o.t;
+                        const wh = 240 / (t * direction.len() / 16);
+                        const oh = 140 / (t * direction.len() / 16);
 
-                            drawUVQuad({
-                                width: 2,
-                                height: oh,
-                                pos: vec2(x * 2, 120 + wh / 2 - oh),
-                                tex: bean.tex,
-                                quad: objSlices[Math.round(u * (bean.width - 1))],
-                                color: BLACK.lerp(WHITE, u),
-                            });
+                        let u = o.s;
+
+                        drawUVQuad({
+                            width: 2,
+                            height: oh,
+                            pos: vec2(x * 2, 120 + wh / 2 - oh),
+                            tex: bean.tex,
+                            quad: objSlices[Math.round(u * (bean.width - 1))],
+                            color: BLACK.lerp(WHITE, u),
                         });
-                    }
+                    });
                 }
             }
+
             popTransform();
         },
         focalLength: 40,
@@ -280,6 +315,9 @@ const camera = add([
     },
 ]);
 
+
+// ======================
+// Physics grid (unchanged)
 addLevel(grid, {
     pos: vec2(0, 0),
     tileWidth: 16,
@@ -292,54 +330,33 @@ addLevel(grid, {
     },
 });
 
-onKeyDown("up", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(40));
-});
-onKeyDown("down", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(-40));
-});
-onKeyDown("left", () => {
-    camera.angle -= 90 * dt();
-});
-onKeyDown("right", () => {
-    camera.angle += 90 * dt();
-});
-onKeyDown("f", () => {
-    camera.focalLength = Math.max(1, camera.focalLength - 10 * dt());
-});
-onKeyDown("g", () => {
-    camera.focalLength += 10 * dt();
-});
-onKeyDown("r", () => {
-    camera.fov = Math.max(1, camera.fov - 10 * dt());
-});
-onKeyDown("t", () => {
-    camera.fov += 10 * dt();
-});
-onKeyDown("p", () => {
-    debug.paused = !debug.paused;
-});
+
+// ======================
+// CAMERA CONTROLS
+// ======================
+onKeyDown("up", () => camera.move(Vec2.fromAngle(camera.angle).scale(40)));
+onKeyDown("down", () => camera.move(Vec2.fromAngle(camera.angle).scale(-40)));
+onKeyDown("left", () => camera.angle -= 90 * dt());
+onKeyDown("right", () => camera.angle += 90 * dt());
+onKeyDown("f", () => camera.focalLength = Math.max(1, camera.focalLength - 10 * dt()));
+onKeyDown("g", () => camera.focalLength += 10 * dt());
+onKeyDown("r", () => camera.fov = Math.max(1, camera.fov - 10 * dt()));
+onKeyDown("t", () => camera.fov += 10 * dt());
+onKeyDown("p", () => debug.paused = !debug.paused);
+
 
 let lastPos = vec2();
 
-onTouchStart(pos => {
-    lastPos = pos;
-});
+onTouchStart(pos => lastPos = pos);
 
 onTouchMove(pos => {
     const delta = pos.sub(lastPos);
 
-    if (delta.x < 0) {
-        camera.angle -= 90 * dt();
-    } else if (delta.x > 0) {
-        camera.angle += 90 * dt();
-    }
+    if (delta.x < 0) camera.angle -= 90 * dt();
+    else if (delta.x > 0) camera.angle += 90 * dt();
 
-    if (delta.y < 0) {
-        camera.move(Vec2.fromAngle(camera.angle).scale(40));
-    } else if (delta.y > 0) {
-        camera.move(Vec2.fromAngle(camera.angle).scale(-40));
-    }
+    if (delta.y < 0) camera.move(Vec2.fromAngle(camera.angle).scale(40));
+    else if (delta.y > 0) camera.move(Vec2.fromAngle(camera.angle).scale(-40));
 
     lastPos = pos;
 });
