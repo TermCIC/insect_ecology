@@ -9,12 +9,7 @@
 
 <body style="margin:0;background:black;">
 <script>
-kaplay({
-    width: 1024,
-    height: 768,
-    letterbox: true,
-    stretch: false,
-});
+kaplay();
 
 // Load sprites using ABSOLUTE URLs from play.kaplayjs.com
 loadSprite("bean", "https://play.kaplayjs.com/sprites/bean.png");
@@ -233,7 +228,7 @@ const camera = add([
                 color: rgb(128, 128, 128),
             });
 
-            for (let x = 0; x <= 120; x++) {
+            for (let x = 0; x <= 256; x++) {
                 let direction = lerp(planeP1, planeP2, x / 120).scale(6);
 
                 const hit = rayCastAsciiGrid(this.pos, direction, grid);
