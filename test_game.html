@@ -216,19 +216,19 @@ const camera = add([
 
             drawRect({
                 width: 240,
-                height: 256,
+                height: 120,
                 color: rgb(100, 100, 100),
             });
 
             drawRect({
-                pos: vec2(0, 256),
+                pos: vec2(0, 120),
                 width: 240,
-                height: 256,
+                height: 120,
                 color: rgb(128, 128, 128),
             });
 
-            for (let x = 0; x <= 256; x++) {
-                let direction = lerp(planeP1, planeP2, x / 256).scale(6);
+            for (let x = 0; x <= 120; x++) {
+                let direction = lerp(planeP1, planeP2, x / 120).scale(6);
 
                 const hit = rayCastAsciiGrid(this.pos, direction, grid);
                 if (hit) {
@@ -247,7 +247,7 @@ const camera = add([
                     drawUVQuad({
                         width: 2,
                         height: h,
-                        pos: vec2(x * 2, 256 - h / 2),
+                        pos: vec2(x * 2, 120 - h / 2),
                         tex: wall.tex,
                         quad: slices[Math.round(u * (wall.width - 1))],
                         color: BLACK.lerp(WHITE, d),
@@ -264,7 +264,7 @@ const camera = add([
                             drawUVQuad({
                                 width: 2,
                                 height: oh,
-                                pos: vec2(x * 2, 256 + wh / 2 - oh),
+                                pos: vec2(x * 2, 120 + wh / 2 - oh),
                                 tex: bean.tex,
                                 quad: objSlices[Math.round(u * (bean.width - 1))],
                                 color: BLACK.lerp(WHITE, u),
