@@ -2,84 +2,158 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KAPLAY 3D Fullscreen Stable</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KAPLAY 3D Example</title>
 <script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
-<style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: black;
-        width: 100%;
-        height: 100%;
-    }
-</style>
 </head>
 
-<body>
+<body style="margin:0;background:black;">
 <script>
-kaplay({
-    stretch: true,
-    letterbox: false,
-    scale: 1,
-});
+kaplay();
 
-// Load textures
+// Load sprites using ABSOLUTE URLs from play.kaplayjs.com
 loadSprite("bean", "https://play.kaplayjs.com/sprites/bean.png");
 loadSprite("wall", "https://play.kaplayjs.com/sprites/brick_wall.png");
 
-let bean, objSlices = [];
-let wall, wallSlices = [];
+let bean;
+let objSlices = [];
+let wall;
+let slices = [];
 
-// Load textures
 onLoad(() => {
     bean = getSprite("bean").data;
     for (let i = 0; i < bean.width; i++) {
         objSlices.push(
-            bean.frames[0].scale(new Quad(i / bean.width, 0, 1 / bean.width, 1))
+            bean.frames[0].scale(
+                new Quad(i / bean.width, 0, 1 / bean.width, 1),
+            ),
         );
     }
 
     wall = getSprite("wall").data;
     for (let i = 0; i < wall.width; i++) {
-        wallSlices.push(
-            wall.frames[0].scale(new Quad(i / wall.width, 0, 1 / wall.width, 1))
+        slices.push(
+            wall.frames[0].scale(
+                new Quad(i / wall.width, 0, 1 / wall.width, 1),
+            ),
         );
     }
 });
 
-// ---- Raycaster core (unchanged except safe math) ----
-
-function rayCastGrid(origin, direction, hitFunc, maxDist = 64) {
-    const step = vec2(direction.x > 0 ? 1 : -1, direction.y > 0 ? 1 : -1);
-    const grid = vec2(Math.floor(origin.x), Math.floor(origin.y));
-    const inv = vec2(
-        direction.x === 0 ? 1e9 : Math.abs(1 / direction.x),
-        direction.y === 0 ? 1e9 : Math.abs(1 / direction.y)
+function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
+    const pos = origin;
+    const len = direction.len();
+    const dir = direction.scale(1 / len);
+    let t = 0;
+    let gridPos = vec2(Math.floor(origin.x), Math.floor(origin.y));
+    const step = vec2(dir.x > 0 ? 1 : -1, dir.y > 0 ? 1 : -1);
+    const tDelta = vec2(Math.abs(1 / dir.x), Math.abs(1 / dir.y));
+    let dist = vec2(
+        (step.x > 0) ? (gridPos.x + 1 - origin.x) : (origin.x - gridPos.x),
+        (step.y > 0) ? (gridPos.y + 1 - origin.y) : (origin.y - gridPos.y),
     );
-    let distX = (step.x > 0) ? (grid.x + 1 - origin.x) : (origin.x - grid.x);
-    let distY = (step.y > 0) ? (grid.y + 1 - origin.y) : (origin.y - grid.y);
-    let maxX = inv.x * distX;
-    let maxY = inv.y * distY;
+    let tMax = vec2(
+        (tDelta.x < Infinity) ? tDelta.x * dist.x : Infinity,
+        (tDelta.y < Infinity) ? tDelta.y * dist.y : Infinity,
+    );
+    let steppedIndex = -1;
 
-    while (true) {
-        const hit = hitFunc(grid);
-        if (hit) {
+    while (t <= maxDistance) {
+        const hit = gridPosHit(gridPos);
+        if (hit === true) {
             return {
-                t: Math.min(maxX, maxY),
-                gridPos: vec2(grid.x, grid.y),
+                point: pos.add(dir.scale(t)),
+                normal: vec2(
+                    steppedIndex === 0 ? -step.x : 0,
+                    steppedIndex === 1 ? -step.y : 0,
+                ),
+                t: t / len,
+                gridPos,
             };
         }
-        if (maxX < maxY) {
-            grid.x += step.x;
-            maxX += inv.x;
-        } else {
-            grid.y += step.y;
-            maxY += inv.y;
+        else if (hit) {
+            return hit;
         }
-        if (grid.x < 0 || grid.y < 0 || grid.x > 50 || grid.y > 50) return null;
+
+        if (tMax.x < tMax.y) {
+            gridPos.x += step.x;
+            t = tMax.x;
+            tMax.x += tDelta.x;
+            steppedIndex = 0;
+        } else {
+            gridPos.y += step.y;
+            t = tMax.y;
+            tMax.y += tDelta.y;
+            steppedIndex = 1;
+        }
     }
+    return null;
+}
+
+function raycastEdge(origin, direction, line) {
+    const a = origin;
+    const c = line.p1.add(line.pos);
+    const d = line.p2.add(line.pos);
+    const ab = direction;
+    const cd = d.sub(c);
+    let abxcd = ab.cross(cd);
+
+    if (Math.abs(abxcd) < Number.EPSILON) return false;
+
+    const ac = c.sub(a);
+    const s = ac.cross(cd) / abxcd;
+    if (s <= 0 || s >= 1) return false;
+    const t = ac.cross(ab) / abxcd;
+    if (t <= 0 || t >= 1) return false;
+
+    const normal = cd.normal().unit();
+    if (direction.dot(normal) > 0) {
+        normal.x *= -1;
+        normal.y *= -1;
+    }
+
+    return {
+        point: a.add(ab.scale(s)),
+        normal,
+        t: s,
+        s: t,
+        object: line,
+    };
+}
+
+function rayCastAsciiGrid(origin, direction, grid) {
+    origin = origin.scale(1 / 16);
+    direction = direction.scale(1 / 16);
+    const objects = [];
+
+    const hit = rayCastGrid(origin, direction, ({ x, y }) => {
+        if (y >= 0 && y < grid.length) {
+            const row = grid[y];
+            if (x >= 0 && x < row.length) {
+
+                if (row[x] === "&") {
+                    const perp = direction.normal().unit();
+                    const planeP1 = perp.scale(-0.2);
+                    const planeP2 = perp.scale(0.2);
+
+                    const objectHit = raycastEdge(origin, direction, {
+                        pos: vec2(x + 0.5, y + 0.5),
+                        p1: planeP1,
+                        p2: planeP2,
+                    });
+
+                    if (objectHit) objects.push(objectHit);
+                }
+                return row[x] !== " " && row[x] !== "&";
+            }
+        }
+    }, direction.len());
+
+    if (hit) {
+        hit.point = hit.point.scale(16);
+        hit.object = { color: colors[grid[hit.gridPos.y][hit.gridPos.x]] };
+        hit.objects = objects;
+    }
+    return hit;
 }
 
 const colors = {
@@ -90,104 +164,185 @@ const colors = {
 };
 
 const grid = [
-"##################",
-"#                #",
-"# $$$$$$$ $$$$$$ #",
-"# $            $ #",
-"# $ %% %%%%%%% $ #",
-"# $ %        % $ #",
-"#&$&%%%%%  %%%&$&#",
-"# $ %          $ #",
-"# $ %%%%%%%%%%   #",
-"# $            $ #",
-"# $$$$$$$ $$$$$$ #",
-"#          &     #",
-"##################",
+    "##################",
+    "#                #",
+    "# $$$$$$$ $$$$$$ #",
+    "# $            $ #",
+    "# $ %% %%%%%%% $ #",
+    "# $ %        % $ #",
+    "#&$&%%%%%  %%%&$&#",
+    "# $ %          $ #",
+    "# $ %%%%%%%%%%   #",
+    "# $            $ #",
+    "# $$$$$$$ $$$$$$ #",
+    "#          &     #",
+    "##################",
 ];
 
-function isWall(x, y) {
-    if (y < 0 || y >= grid.length) return false;
-    if (x < 0 || x >= grid[0].length) return false;
-    return grid[y][x] !== " " && grid[y][x] !== "&";
-}
-
-// ---- Camera ----
-
-const cam = add([
-    pos(7 * 16, 11 * 16),
+const camera = add([
+    pos(7 * 16, 11 * 16 + 8),
     rotate(0),
+    z(-1),
+    rect(8, 8),
+    anchor("center"),
+    area(),
+    opacity(0),
+    body(),
     {
-        fov: 0.8,          // radians
-        speed: 80,
-        height: 16,
         draw() {
-            const W = width();
-            const H = height();
-            const halfH = H / 2;
-
             pushTransform();
+            pushRotate(-this.angle);
 
-            // Sky
-            drawRect({
-                width: W,
-                height: halfH,
-                color: rgb(100,100,100)
+            drawCircle({
+                pos: vec2(),
+                radius: 4,
+                color: RED,
             });
 
-            // Floor
-            drawRect({
-                pos: vec2(0, halfH),
-                width: W,
-                height: halfH,
-                color: rgb(60,60,60)
+            const dir = Vec2.fromAngle(this.angle);
+            const perp = dir.normal();
+
+            const planeP1 = this.pos.add(dir.scale(this.focalLength)).add(perp.scale(this.fov)).sub(this.pos);
+            const planeP2 = this.pos.add(dir.scale(this.focalLength)).sub(perp.scale(this.fov)).sub(this.pos);
+
+            drawLine({
+                p1: planeP1,
+                p2: planeP2,
+                width: 1,
+                color: RED,
             });
 
-            // Cast one ray per vertical column
-            for (let x = 0; x < W; x++) {
+            pushTranslate(this.pos.scale(-1).add(300, 50));
 
-                const cameraX = (2 * x) / W - 1;
-                const angle = this.angle + cameraX * this.fov;
+            drawRect({
+                width: 240,
+                height: 256,
+                color: rgb(100, 100, 100),
+            });
 
-                const dir = Vec2.fromAngle(angle);
+            drawRect({
+                pos: vec2(0, 256),
+                width: 240,
+                height: 256,
+                color: rgb(128, 128, 128),
+            });
 
-                const hit = rayCastGrid(
-                    this.pos.scale(1/16),
-                    dir,
-                    ({x,y})=>isWall(x,y)
-                );
+            for (let x = 0; x <= 256; x++) {
+                let direction = lerp(planeP1, planeP2, x / 256).scale(6);
 
-                if (!hit) continue;
+                const hit = rayCastAsciiGrid(this.pos, direction, grid);
+                if (hit) {
+                    const t = hit.t;
+                    const d = (1 - t) * ((hit.normal.x + hit.normal.y) < 0 ? 0.5 : 1);
 
-                const dist = hit.t * 16;
+                    let u = Math.abs(hit.normal.x) > Math.abs(hit.normal.y)
+                        ? hit.point.y
+                        : hit.point.x;
 
-                // Projection
-                const wallHeight = Math.min(H, (1000 / (dist + 0.0001)));
+                    u = (u % 16) / 16;
+                    u = u - Math.floor(u);
 
-                let u = ((this.pos.y + dir.y * dist) % 16) / 16;
-                if (u < 0) u += 1;
+                    const h = 240 / (t * direction.len() / 16);
 
-                const slice = wallSlices[Math.floor(u * (wall.width-1))];
+                    drawUVQuad({
+                        width: 2,
+                        height: h,
+                        pos: vec2(x * 2, 256 - h / 2),
+                        tex: wall.tex,
+                        quad: slices[Math.round(u * (wall.width - 1))],
+                        color: BLACK.lerp(WHITE, d),
+                    });
 
-                drawUVQuad({
-                    pos: vec2(x, halfH - wallHeight/2),
-                    width: 1,
-                    height: wallHeight,
-                    tex: wall.tex,
-                    quad: slice,
-                    color: WHITE,
-                });
+                    if (hit.objects) {
+                        hit.objects.reverse().forEach(o => {
+                            const t = o.t;
+                            const wh = 240 / (t * direction.len() / 16);
+                            const oh = 140 / (t * direction.len() / 16);
+
+                            let u = o.s;
+
+                            drawUVQuad({
+                                width: 2,
+                                height: oh,
+                                pos: vec2(x * 2, 256 + wh / 2 - oh),
+                                tex: bean.tex,
+                                quad: objSlices[Math.round(u * (bean.width - 1))],
+                                color: BLACK.lerp(WHITE, u),
+                            });
+                        });
+                    }
+                }
             }
-
             popTransform();
-        }
-    }
+        },
+        focalLength: 40,
+        fov: 10,
+    },
 ]);
 
-// Movement
-onKeyDown("up",   ()=> cam.pos = cam.pos.add(Vec2.fromAngle(cam.angle).scale(cam.speed * dt())));
-onKeyDown("down", ()=> cam.pos = cam.pos.add(Vec2.fromAngle(cam.angle).scale(-cam.speed * dt())));
-onKeyDown("left", ()=> cam.angle -= 1.5 * dt());
-onKeyDown("right",()=> cam.angle += 1.5 * dt());
+addLevel(grid, {
+    pos: vec2(0, 0),
+    tileWidth: 16,
+    tileHeight: 16,
+    tiles: {
+        "#": () => [rect(16, 16), color(RED), area(), body({ isStatic: true })],
+        "$": () => [rect(16, 16), color(GREEN), area(), body({ isStatic: true })],
+        "%": () => [rect(16, 16), color(BLUE), area(), body({ isStatic: true })],
+        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW)],
+    },
+});
+
+onKeyDown("up", () => {
+    camera.move(Vec2.fromAngle(camera.angle).scale(40));
+});
+onKeyDown("down", () => {
+    camera.move(Vec2.fromAngle(camera.angle).scale(-40));
+});
+onKeyDown("left", () => {
+    camera.angle -= 90 * dt();
+});
+onKeyDown("right", () => {
+    camera.angle += 90 * dt();
+});
+onKeyDown("f", () => {
+    camera.focalLength = Math.max(1, camera.focalLength - 10 * dt());
+});
+onKeyDown("g", () => {
+    camera.focalLength += 10 * dt();
+});
+onKeyDown("r", () => {
+    camera.fov = Math.max(1, camera.fov - 10 * dt());
+});
+onKeyDown("t", () => {
+    camera.fov += 10 * dt();
+});
+onKeyDown("p", () => {
+    debug.paused = !debug.paused;
+});
+
+let lastPos = vec2();
+
+onTouchStart(pos => {
+    lastPos = pos;
+});
+
+onTouchMove(pos => {
+    const delta = pos.sub(lastPos);
+
+    if (delta.x < 0) {
+        camera.angle -= 90 * dt();
+    } else if (delta.x > 0) {
+        camera.angle += 90 * dt();
+    }
+
+    if (delta.y < 0) {
+        camera.move(Vec2.fromAngle(camera.angle).scale(40));
+    } else if (delta.y > 0) {
+        camera.move(Vec2.fromAngle(camera.angle).scale(-40));
+    }
+
+    lastPos = pos;
+});
 
 </script>
 </body>
