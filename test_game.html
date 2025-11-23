@@ -8,7 +8,10 @@
 
 <body style="margin:0;background:black;">
 <script>
-kaplay();
+kaplay({
+    stretch: true,
+    letterbox: false,
+});
 
 // Load sprites using ABSOLUTE URLs from play.kaplayjs.com
 loadSprite("bean", "https://play.kaplayjs.com/sprites/bean.png");
