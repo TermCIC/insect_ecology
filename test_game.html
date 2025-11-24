@@ -314,8 +314,8 @@ const camera = add([
 
 addLevel(grid, {
     pos: vec2(0, 0),
-    tileWidth: 16,
-    tileHeight: 16,
+    tileWidth: 8,
+    tileHeight: 8,
     tiles: {
         "#": () => [rect(16, 16), color(RED), area(), body({ isStatic: true })],
         "$": () => [rect(16, 16), color(GREEN), area(), body({ isStatic: true })],
