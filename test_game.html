@@ -47,7 +47,8 @@ let enemy;
 let objSlices = [];
 let wall;
 let slices = [];
-let sky, floorTex;
+let sky;
+let floorTex;
     
 onLoad(() => {
     enemy = getSprite("enemy").data;
@@ -67,6 +68,9 @@ onLoad(() => {
             ),
         );
     }
+
+    sky = getSprite("sky").data;
+    floorTex = getSprite("floor").data;
 });
 
 function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
