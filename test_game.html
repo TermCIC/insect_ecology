@@ -289,7 +289,7 @@ const camera = add([
                         hit.objects.reverse().forEach(o => {
                             const t = o.t;
                             const wh = 240 / (t * direction.len() / 16);
-                            const oh = 140 / (t * direction.len() / 16);
+                            const oh = wh * 0.9;
 
                             let u = o.s;
 
@@ -299,11 +299,7 @@ const camera = add([
                                 pos: vec2(x * 2, 120 + wh / 2 - oh),
                                 tex: bean.tex,
                                 quad: objSlices[Math.round(u * (bean.width - 1))],
-                                // keep bean sprite shading but darken with distance
-                                color: rgb(
-                                    255 * brightness,
-                                    255 * brightness,
-                                    255 * brightness,
+                                color: WHITE,   // 保留原本 sprite 的立體陰影
                             });
                         });
                     }
