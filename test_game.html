@@ -7,11 +7,13 @@
     body {
         margin: 0;
         background: #111;
-        /* center the game box on screen, optional */
         display: flex;
+        flex-direction: column;   /* game on top, buttons below */
         justify-content: center;
         align-items: center;
         height: 100vh;
+        gap: 12px;
+        font-family: system-ui, sans-serif;
     }
 
     #game {
@@ -28,6 +30,33 @@
         height: 100%;
         image-rendering: pixelated;
     }
+
+    #controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    #controls .row {
+        display: flex;
+        gap: 4px;
+    }
+
+    #controls button {
+        min-width: 60px;
+        padding: 6px 10px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: #222;
+        color: #eee;
+        cursor: pointer;
+    }
+
+    #controls button:active {
+        background: #444;
+    }
 </style>
 
 <script src="https://unpkg.com/kaplay/dist/kaplay.js"></script>
@@ -35,6 +64,15 @@
 
 <body>
 <div id="game"></div>
+
+<div id="controls">
+    <button id="btn-forward">↑</button>
+    <div class="row">
+        <button id="btn-turn-left">↺</button>
+        <button id="btn-back">↓</button>
+        <button id="btn-turn-right">↻</button>
+    </div>
+</div>
 
 <script>
 kaplay({
@@ -349,6 +387,23 @@ onKeyDown("t", () => {
 });
 onKeyDown("p", () => {
     debug.paused = !debug.paused;
+});
+
+// === HTML button controls ===
+const MOVE_STEP = 40;
+const TURN_STEP = Math.PI / 24; // about 7.5 degrees
+
+document.getElementById("btn-forward").addEventListener("click", () => {
+    camera.move(Vec2.fromAngle(camera.angle).scale(MOVE_STEP));
+});
+document.getElementById("btn-back").addEventListener("click", () => {
+    camera.move(Vec2.fromAngle(camera.angle).scale(-MOVE_STEP));
+});
+document.getElementById("btn-turn-left").addEventListener("click", () => {
+    camera.angle -= TURN_STEP;
+});
+document.getElementById("btn-turn-right").addEventListener("click", () => {
+    camera.angle += TURN_STEP;
 });
 
 let lastPos = vec2();
