@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Climate Data Viewer</title>
 
-  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -17,122 +16,90 @@
 <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-8">
 
   <h1 class="text-3xl font-bold mb-4 text-blue-700">Climate Data Viewer</h1>
-  <p class="mb-6 text-gray-600">Enter coordinates to fetch daily mean temperature and humidity.</p>
 
-  <!-- Coordinate Format Switcher -->
+  <!-- Coordinate Format -->
   <div class="mb-4">
-    <label class="font-semibold text-gray-700">Coordinate Format</label>
-    <select id="coordFormat" onchange="switchFormat()"
-            class="border rounded-lg p-3 w-full mt-1">
+    <label class="font-semibold">Coordinate Format</label>
+    <select id="coordFormat" onchange="switchFormat()" class="border p-3 rounded w-full mt-1">
       <option value="wgs84">WGS84 (Decimal Degrees)</option>
       <option value="dms">DMS (Degrees Minutes Seconds)</option>
       <option value="utm">UTM</option>
     </select>
   </div>
 
-  <!-- WGS84 INPUT -->
+  <!-- WGS84 -->
   <div id="inputWGS84" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-    <input id="lat" type="number" step="0.0001" placeholder="Latitude"
-           class="border rounded-lg p-3" />
-    <input id="lon" type="number" step="0.0001" placeholder="Longitude"
-           class="border rounded-lg p-3" />
+    <input id="lat" type="number" step="0.0001" placeholder="Latitude" class="border p-3 rounded" />
+    <input id="lon" type="number" step="0.0001" placeholder="Longitude" class="border p-3 rounded" />
   </div>
 
-  <!-- DMS INPUT -->
+  <!-- DMS -->
   <div id="inputDMS" class="hidden mb-4">
-
-    <!-- Latitude -->
+    <!-- Lat -->
     <div class="grid grid-cols-4 gap-2 mb-2">
-      <select id="latDir" class="border p-3 rounded">
-        <option value="N">N</option>
-        <option value="S">S</option>
-      </select>
+      <select id="latDir" class="border p-3 rounded"><option value="N">N</option><option value="S">S</option></select>
       <input id="latD" type="number" placeholder="Lat °" class="border p-3 rounded">
       <input id="latM" type="number" placeholder="Lat ′" class="border p-3 rounded">
       <input id="latS" type="number" placeholder="Lat ″" class="border p-3 rounded">
     </div>
-
-    <!-- Longitude -->
+    <!-- Lon -->
     <div class="grid grid-cols-4 gap-2 mb-2">
-      <select id="lonDir" class="border p-3 rounded">
-        <option value="E">E</option>
-        <option value="W">W</option>
-      </select>
+      <select id="lonDir" class="border p-3 rounded"><option value="E">E</option><option value="W">W</option></select>
       <input id="lonD" type="number" placeholder="Lon °" class="border p-3 rounded">
       <input id="lonM" type="number" placeholder="Lon ′" class="border p-3 rounded">
       <input id="lonS" type="number" placeholder="Lon ″" class="border p-3 rounded">
     </div>
   </div>
 
-  <!-- UTM INPUT -->
+  <!-- UTM -->
   <div id="inputUTM" class="hidden mb-4">
     <div class="grid grid-cols-3 gap-2">
-      <input id="utmZone" type="text" placeholder="Zone (e.g., 47Q)" class="border p-3 rounded">
-      <input id="utmE"    type="number" placeholder="Easting" class="border p-3 rounded">
-      <input id="utmN"    type="number" placeholder="Northing" class="border p-3 rounded">
+      <input id="utmZone" type="text" placeholder="47Q" class="border p-3 rounded">
+      <input id="utmE" type="number" placeholder="Easting" class="border p-3 rounded">
+      <input id="utmN" type="number" placeholder="Northing" class="border p-3 rounded">
     </div>
   </div>
 
-  <!-- DATE RANGE -->
+  <!-- Date -->
   <div class="grid grid-cols-2 gap-4 mb-4">
-    <div>
-      <label class="font-semibold text-gray-700">Start Date</label>
-      <input id="startDate" type="date" class="border rounded-lg p-3 w-full" />
-    </div>
-
-    <div>
-      <label class="font-semibold text-gray-700">End Date</label>
-      <input id="endDate" type="date" class="border rounded-lg p-3 w-full" />
-    </div>
+    <div><label>Start Date</label><input id="startDate" type="date" class="border p-3 rounded w-full"></div>
+    <div><label>End Date</label><input id="endDate" type="date" class="border p-3 rounded w-full"></div>
   </div>
 
-  <button id="fetchBtn" onclick="fetchClimate()"
-    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">
+  <button onclick="fetchClimate()" id="fetchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded shadow">
     Get Climate Data
   </button>
 
-  <div id="loading" class="mt-4 text-blue-600 font-semibold hidden">
+  <div id="loading" class="hidden mt-4 text-blue-600 font-semibold">
     Loading climate data… Please wait.
   </div>
 
-  <div id="statsPanel" class="mt-10 mx-auto text-center p-6 bg-gray-50 rounded-xl shadow-lg hidden max-w-3xl"></div>
+  <div id="statsPanel" class="hidden mt-10 bg-gray-50 rounded p-6 shadow"></div>
 
-  <!-- Figures -->
-  <div class="mt-8">
-    <h3 class="font-bold text-lg text-red-600 mb-2">Temperature</h3>
-    <canvas id="tempChart" class="w-full h-80"></canvas>
+  <!-- Charts -->
+  <div class="mt-10">
+    <h3 class="font-bold text-red-600 mb-2">Temperature</h3>
+    <canvas id="tempChart"></canvas>
 
-    <h3 class="font-bold text-lg text-blue-600 mt-10 mb-2">Humidity</h3>
-    <canvas id="humChart" class="w-full h-80"></canvas>
+    <h3 class="font-bold text-blue-600 mt-10 mb-2">Humidity</h3>
+    <canvas id="humChart"></canvas>
   </div>
 
-  <!-- Download Buttons -->
-  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-    <button id="downloadBtn"        style="display:none;" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadData()">Download JSON</button>
-    <button id="downloadCsvBtn"     style="display:none;" class="bg-yellow-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadCSV()">Download CSV</button>
-    <button id="downloadXlsxBtn"    style="display:none;" class="bg-purple-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadXLSX()">Download XLSX</button>
-    <button id="downloadTempPngBtn" style="display:none;" class="bg-red-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadTempPNG()">Temperature PNG</button>
-    <button id="downloadHumPngBtn"  style="display:none;" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadHumPNG()">Humidity PNG</button>
-    <button id="downloadPdfBtn"     style="display:none;" class="bg-gray-700 text-white px-4 py-2 rounded-lg shadow" onclick="downloadPDF()">Full PDF Report</button>
-  </div>
-
-  <p class="text-sm text-gray-500 mt-8">by Assistant Professor Dr. Chun-I Chiu</p>
-  <p class="text-sm text-gray-500">Department of Entomology and Plant Pathology, Chiang Mai University</p>
 </div>
 
-<!-- CITATION BOX -->
-<div class="mt-12 p-6 bg-gray-100 rounded-lg text-sm text-gray-700 border border-gray-300">
-  <h3 class="font-bold text-gray-900 text-lg mb-3">How to Cite This Tool</h3>
+<!-- Citation -->
+<div class="mt-12 p-6 bg-gray-100 border rounded text-sm text-gray-700">
+  <h3 class="font-bold text-lg mb-3">How to Cite This Tool</h3>
 
   <p class="mb-4">
-    <strong>This Climate Data Viewer:</strong><br>
-    Chiu, C.-I. (2025). <i>Climate Data Viewer</i>. Chiang Mai University.<br>
+    <strong>This Climate Viewer:</strong><br>
+    Chiu, C.-I. (2025). Climate Data Viewer. Chiang Mai University.<br>
     Retrieved from https://termcic.github.io/insect_ecology/get_climate.html
   </p>
 
-  <p class="mb-2">
+  <p>
     <strong>Open-Meteo Weather API:</strong><br>
-    Zippenfenig, P. (2023). <i>Open-Meteo.com Weather API</i> [Computer software]. Zenodo.<br>
+    Zippenfenig, P. (2023). Open-Meteo.com Weather API [Software]. Zenodo.<br>
     https://doi.org/10.5281/zenodo.7970649
   </p>
 </div>
@@ -141,218 +108,131 @@
 let tempChart, humChart;
 let lastData = null;
 
-/* Disable future dates */
-window.addEventListener("DOMContentLoaded", () => {
-  const today = new Date().toISOString().split("T")[0];
-  document.getElementById("startDate").setAttribute("max", today);
-  document.getElementById("endDate").setAttribute("max", today);
-});
-
-/* Coordinate Format Switcher */
+/* Switch coordinate format */
 function switchFormat() {
-  const fmt = document.getElementById("coordFormat").value;
+  const f = document.getElementById("coordFormat").value;
+  inputWGS84.classList.add("hidden");
+  inputDMS.classList.add("hidden");
+  inputUTM.classList.add("hidden");
 
-  document.getElementById("inputWGS84").classList.add("hidden");
-  document.getElementById("inputDMS").classList.add("hidden");
-  document.getElementById("inputUTM").classList.add("hidden");
-
-  if (fmt === "wgs84") document.getElementById("inputWGS84").classList.remove("hidden");
-  if (fmt === "dms")   document.getElementById("inputDMS").classList.remove("hidden");
-  if (fmt === "utm")   document.getElementById("inputUTM").classList.remove("hidden");
+  if (f === "wgs84") inputWGS84.classList.remove("hidden");
+  if (f === "dms") inputDMS.classList.remove("hidden");
+  if (f === "utm") inputUTM.classList.remove("hidden");
 }
 
-/* DMS → Decimal Degrees */
-function dmsToDecimal(d, m, s) {
-  return Number(d) + Number(m)/60 + Number(s)/3600;
-}
+function dmsToDecimal(d,m,s) { return Number(d) + m/60 + s/3600; }
 
-/* UTM → WGS84 Converter */
-function utmToLatLon(zone, easting, northing) {
-  const hemisphere = zone.replace(/[0-9]/g,"") >= "N" ? "N" : "S";
-  const zoneNum = parseInt(zone);
+/* Simple UTM → Lat Lon */
+function utmToLatLon(zone, E, N) {
+  let hemisphere = zone.slice(-1).toUpperCase() >= "N" ? "N" : "S";
+  let zoneNum = parseInt(zone);
 
   const a = 6378137;
   const e = 0.081819191;
   const k0 = 0.9996;
 
-  let x = easting - 500000;
-  let y = hemisphere === "S" ? northing - 10000000 : northing;
+  let x = E - 500000;
+  let y = hemisphere === "S" ? N - 10000000 : N;
 
   const m = y / k0;
-  const mu = m / (a * (1 - e**2/4 - 3*e**4/64 - 5*e**6/256));
+  const mu = m / (a * (1 - e*e/4 - 3*e**4/64));
 
-  const e1 = (1 - Math.sqrt(1 - e*e)) / (1 + Math.sqrt(1 - e*e));
+  const phi1 = mu + (3*e/2 - 27*e**3/32)*Math.sin(2*mu);
 
-  const j1 = (3*e1/2 - 27*e1**3/32);
-  const j2 = (21*e1**2/16 - 55*e1**4/32);
-  const j3 = (151*e1**3/96);
-  const j4 = (1097*e1**4/512);
+  const lon = (x / (a*k0)) / Math.cos(phi1);
+  const lat = phi1 - (Math.tan(phi1)*(x*x)) / (2*a*a*k0*k0);
 
-  const fp = mu + j1*Math.sin(2*mu) + j2*Math.sin(4*mu) +
-             j3*Math.sin(6*mu) + j4*Math.sin(8*mu);
+  const lonDeg = lon*(180/Math.PI) + (zoneNum - 1)*6 - 180 + 3;
+  const latDeg = lat*(180/Math.PI);
 
-  const e2 = e**2 / (1 - e**2);
-  const c1 = e2 * Math.cos(fp)**2;
-  const t1 = Math.tan(fp)**2;
-  const r1 = a*(1-e**2)/Math.pow(1-e**2*Math.sin(fp)**2,1.5);
-  const n1 = a/Math.sqrt(1-e**2*Math.sin(fp)**2);
-  const d = x/(n1*k0);
-
-  let lat = fp - (n1*Math.tan(fp)/r1)*
-      (d**2/2 - (5 + 3*t1 + 10*c1 - 4*c1**2 - 9*e2)*d**4/24);
-
-  let lon = (d - (1 + 2*t1 + c1)*d**3/6) / Math.cos(fp);
-
-  lon = lon + (zoneNum - 1)*6 - 180 + 3;
-
-  return {
-    lat: lat * (180/Math.PI),
-    lon: lon * (180/Math.PI)
-  };
+  return { lat: latDeg, lon: lonDeg };
 }
 
 /* FETCH CLIMATE DATA */
 async function fetchClimate() {
-
-  /* Get coordinates */
-  const fmt = document.getElementById("coordFormat").value;
+  const fmt = coordFormat.value;
   let lat, lon;
 
   if (fmt === "wgs84") {
     lat = parseFloat(document.getElementById("lat").value);
     lon = parseFloat(document.getElementById("lon").value);
   }
-
   if (fmt === "dms") {
-    let latVal = dmsToDecimal(latD.value, latM.value, latS.value);
-    let lonVal = dmsToDecimal(lonD.value, lonM.value, lonS.value);
-
-    lat = (latDir.value === "S") ? -latVal : latVal;
-    lon = (lonDir.value === "W") ? -lonVal : lonVal;
+    lat = dmsToDecimal(latD.value, latM.value, latS.value);
+    if (latDir.value === "S") lat = -lat;
+    lon = dmsToDecimal(lonD.value, lonM.value, lonS.value);
+    if (lonDir.value === "W") lon = -lon;
   }
-
   if (fmt === "utm") {
-    const utm = utmToLatLon(
-      utmZone.value,
-      parseFloat(utmE.value),
-      parseFloat(utmN.value)
-    );
-    lat = utm.lat;
-    lon = utm.lon;
+    const r = utmToLatLon(utmZone.value, parseFloat(utmE.value), parseFloat(utmN.value));
+    lat = r.lat;
+    lon = r.lon;
   }
 
-  /* Validate coordinates */
-  if (!lat || !lon) {
-    alert("Please enter valid coordinates.");
+  if (isNaN(lat) || isNaN(lon)) {
+    alert("Invalid coordinates!");
     return;
   }
 
-  /* Date range */
-  const startDate = document.getElementById("startDate").value;
-  const endDate   = document.getElementById("endDate").value;
-  const today = new Date().toISOString().split("T")[0];
-
-  if (!startDate || !endDate) {
-    alert("Please select both start and end dates.");
-    return;
-  }
-  if (endDate > today) {
-    alert("End date cannot be in the future.");
-    return;
-  }
-  if (startDate > endDate) {
-    alert("Start date must be before end date.");
+  const start = startDate.value;
+  const end = endDate.value;
+  if (!start || !end) {
+    alert("Please choose start and end dates.");
     return;
   }
 
-  const btn = document.getElementById("fetchBtn");
-  const loading = document.getElementById("loading");
-  const statsPanel = document.getElementById("statsPanel");
-
-  btn.disabled = true;
   loading.classList.remove("hidden");
 
-  /* API Request */
   const url =
     `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}` +
-    `&start_date=${startDate}&end_date=${endDate}` +
-    `&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,` +
-    `relative_humidity_2m_mean,relative_humidity_2m_min,relative_humidity_2m_max,` +
-    `precipitation_sum,et0_fao_evapotranspiration` +
+    `&start_date=${start}&end_date=${end}` +
+    `&daily=temperature_2m_mean,relative_humidity_2m_mean` +
     `&timezone=auto`;
 
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
     const data = await res.json();
+
     lastData = data;
-
     const d = data.daily;
-    const dates = d.time.map(t => new Date(t));
 
-    const meanTemp = avg(d.temperature_2m_mean);
-    const meanHum = avg(d.relative_humidity_2m_mean);
-    const totalP = sum(d.precipitation_sum);
-    const totalPET = sum(d.et0_fao_evapotranspiration);
-    const AI = totalP / totalPET;
-
-    const minTemp = min(d.temperature_2m_min);
-    const maxTemp = max(d.temperature_2m_max);
-    const minHum  = min(d.relative_humidity_2m_min);
-    const maxHum  = max(d.relative_humidity_2m_max);
-
-    /* Monthly summary */
-    let monthly = {};
-    for (let i = 0; i < 12; i++) {
-      monthly[i] = { temp: [], tempMin: [], tempMax: [], hum: [], precip: 0, pet: 0 };
-    }
-
-    for (let i = 0; i < dates.length; i++) {
-      const m = dates[i].getMonth();
-      monthly[m].temp.push(d.temperature_2m_mean[i]);
-      monthly[m].tempMin.push(d.temperature_2m_min[i]);
-      monthly[m].tempMax.push(d.temperature_2m_max[i]);
-      monthly[m].hum.push(d.relative_humidity_2m_mean[i]);
-      monthly[m].precip += d.precipitation_sum[i];
-      monthly[m].pet += d.et0_fao_evapotranspiration[i];
-    }
-
-    /* Monthly HTML */
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-    let monthlyHTML = `
-      <table class="mx-auto mt-4 text-sm table-auto border-collapse">
-        <thead>
-          <tr class="bg-blue-100">
-            <th class="border px-2 py-1">Month</th>
-            <th class="border px-2 py-1">T Mean</th>
-            <th class="border px-2 py-1">T Min</th>
-            <th class="border px-2 py-1">T Max</th>
-            <th class="border px-2 py-1">RH Mean</th>
-            <th class="border px-2 py-1">Precip</th>
-            <th class="border px-2 py-1">PET</th>
-          </tr>
-        </thead>
-        <tbody>
+    statsPanel.classList.remove("hidden");
+    statsPanel.innerHTML = `
+      <h2 class="text-2xl font-bold text-blue-700 mb-3">
+        Climate Summary (${start} to ${end})
+      </h2>
+      <p><strong>Mean Temperature:</strong> ${avg(d.temperature_2m_mean).toFixed(2)} °C</p>
+      <p><strong>Mean Humidity:</strong> ${avg(d.relative_humidity_2m_mean).toFixed(1)} %</p>
     `;
 
-    for (let m = 0; m < 12; m++) {
-      if (monthly[m].temp.length === 0) continue;
-      monthlyHTML += `
-        <tr>
-          <td class="border px-2 py-1">${monthNames[m]}</td>
-          <td class="border px-2 py-1">${avg(monthly[m].temp).toFixed(1)}</td>
-          <td class="border px-2 py-1">${min(monthly[m].tempMin).toFixed(1)}</td>
-          <td class="border px-2 py-1">${max(monthly[m].tempMax).toFixed(1)}</td>
-          <td class="border px-2 py-1">${avg(monthly[m].hum).toFixed(1)}</td>
-          <td class="border px-2 py-1">${monthly[m].precip.toFixed(1)}</td>
-          <td class="border px-2 py-1">${monthly[m].pet.toFixed(1)}</td>
-        </tr>`;
-    }
-    monthlyHTML += "</tbody></table>";
+    drawTempChart(d.time, d.temperature_2m_mean);
+    drawHumChart(d.time, d.relative_humidity_2m_mean);
 
-    /* Stats display */
+  } catch (err) {
+    alert("Error: " + err);
+  }
+
+  loading.classList.add("hidden");
+}
+
+function avg(arr){return arr.reduce((a,b)=>a+b,0)/arr.length;}
+
+function drawTempChart(labels, data) {
+  if (tempChart) tempChart.destroy();
+  tempChart = new Chart(tempChart, {
+    type:"line",
+    data:{ labels, datasets:[{label:"Temperature (°C)", data, borderColor:"red"}] }
+  });
+}
+
+function drawHumChart(labels, data) {
+  if (humChart) humChart.destroy();
+  humChart = new Chart(humChart, {
+    type:"line",
+    data:{ labels, datasets:[{label:"Humidity (%)", data, borderColor:"blue"}] }
+  });
+}
+</script>
 
 </body>
 </html>
