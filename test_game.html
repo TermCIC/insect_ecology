@@ -314,13 +314,13 @@ const camera = add([
 
 addLevel(grid, {
     pos: vec2(0, 0),
-    tileWidth: 16,
-    tileHeight: 16,
+    tileWidth: 8,
+    tileHeight: 8,
     tiles: {
-        "#": () => [rect(16, 16), color(RED), area(), body({ isStatic: true })],
-        "$": () => [rect(16, 16), color(GREEN), area(), body({ isStatic: true })],
-        "%": () => [rect(16, 16), color(BLUE), area(), body({ isStatic: true })],
-        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW)],
+        "#": () => [rect(8, 8), color(RED), area(), body({ isStatic: true })],
+        "$": () => [rect(8, 8), color(GREEN), area(), body({ isStatic: true })],
+        "%": () => [rect(8, 8), color(BLUE), area(), body({ isStatic: true })],
+        "&": () => [pos(2, 2), rect(4, 4), color(YELLOW)],
     },
 });
 
