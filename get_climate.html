@@ -69,6 +69,12 @@
     Get Climate Data
   </button>
 
+  <button onclick="getCurrentLocation()" 
+    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg shadow ml-3">
+    Use My Location
+  </button>
+
+
   <div id="loading" class="mt-4 text-blue-600 font-semibold hidden">
     Loading daily climate data… Please wait.
   </div>
@@ -508,6 +514,38 @@ async function downloadPDF() {
   pdf.addImage(humImg,"PNG",10,20,180,90);
 
   pdf.save("climate_report.pdf");
+}
+function getCurrentLocation() {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(success, error);
+
+  function success(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    // Auto switch to WGS84 mode
+    document.getElementById("coordFormat").value = "wgs84";
+    switchFormat();
+
+    // Fill inputs
+    document.getElementById("lat").value = lat.toFixed(6);
+    document.getElementById("lon").value = lon.toFixed(6);
+
+    // Auto-fill current year
+    const y = new Date().getFullYear();
+    document.getElementById("year").value = y;
+
+    // Auto-fetch data
+    fetchClimate();
+  }
+
+  function error(err) {
+    alert("Could not get your location: " + err.message);
+  }
 }
 </script>
 
