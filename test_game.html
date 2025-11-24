@@ -229,6 +229,7 @@ const camera = add([
                 pos: vec2(),
                 radius: 4,
                 color: RED,
+                opacity(0)
             });
 
             const dir = Vec2.fromAngle(this.angle);
@@ -242,6 +243,7 @@ const camera = add([
                 p2: planeP2,
                 width: 1,
                 color: RED,
+                opacity(0)
             });
 
             pushTranslate(this.pos.scale(-1).add(120, 0));
