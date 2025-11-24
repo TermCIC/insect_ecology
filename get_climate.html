@@ -228,6 +228,20 @@ async function fetchClimate() {
     alert("Please fill all coordinate and year fields.");
     return;
   }
+  /* ============================
+   If year === current year,
+   set end_date = today
+   ============================ */
+  let start_date = `${year}-01-01`;
+  let end_date = `${year}-12-31`;
+  
+  const today = new Date();
+  const thisYear = today.getFullYear();
+  
+  if (parseInt(year) === thisYear) {
+    end_date = today.toISOString().split("T")[0];  // YYYY-MM-DD
+  }
+
 
   /* — original fetchClimate code continues here — */
   const btn = document.getElementById("fetchBtn");
@@ -236,7 +250,7 @@ async function fetchClimate() {
 
   const url =
     `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}` +
-    `&start_date=${year}-01-01&end_date=${year}-12-31` +
+    `&start_date=${start_date}&end_date=${end_date}` +
     `&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,` +
     `relative_humidity_2m_mean,relative_humidity_2m_min,relative_humidity_2m_max,` +
     `precipitation_sum,et0_fao_evapotranspiration` +
