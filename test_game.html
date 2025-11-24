@@ -390,8 +390,8 @@ onKeyDown("p", () => {
 });
 
 // === HTML button controls ===
-const MOVE_STEP = 40;
-const TURN_STEP = Math.PI / 24; // about 7.5 degrees
+const MOVE_STEP = 120;
+const TURN_STEP = Math.PI / 12; // about 7.5 degrees
 
 document.getElementById("btn-forward").addEventListener("click", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(MOVE_STEP));
