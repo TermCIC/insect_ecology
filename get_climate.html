@@ -1,1 +1,460 @@
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8" /> <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <title>Climate Data Viewer</title> <!-- Libraries --> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script src="https://cdn.tailwindcss.com"></script> <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> </head> <body class="bg-gray-100 text-gray-800 min-h-screen p-6"> <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-8"> <h1 class="text-3xl font-bold mb-4 text-blue-700">Climate Data Viewer</h1> <p class="mb-6 text-gray-600">Enter coordinates to fetch daily mean temperature and humidity for a full year.</p> <!-- ============================ NEW: Coordinate Format Switcher ============================ --> <div class="mb-4"> <label class="font-semibold text-gray-700">Coordinate Format</label> <select id="coordFormat" onchange="switchFormat()" class="border rounded-lg p-3 w-full mt-1"> <option value="wgs84">WGS84 (Decimal Degrees)</option> <option value="dms">DMS (Degrees Minutes Seconds)</option> <option value="utm">UTM</option> </select> </div> <!-- WGS84 INPUT --> <div id="inputWGS84" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"> <input id="lat" type="number" step="0.0001" placeholder="Latitude" class="border rounded-lg p-3" /> <input id="lon" type="number" step="0.0001" placeholder="Longitude" class="border rounded-lg p-3" /> <input id="year" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3" /> </div> <!-- DMS INPUT --> <div id="inputDMS" class="hidden mb-4"> <div class="grid grid-cols-3 gap-2 mb-2"> <input id="latD" type="number" placeholder="Lat °" class="border p-3 rounded"> <input id="latM" type="number" placeholder="Lat ′" class="border p-3 rounded"> <input id="latS" type="number" placeholder="Lat ″" class="border p-3 rounded"> </div> <div class="grid grid-cols-3 gap-2"> <input id="lonD" type="number" placeholder="Lon °" class="border p-3 rounded"> <input id="lonM" type="number" placeholder="Lon ′" class="border p-3 rounded"> <input id="lonS" type="number" placeholder="Lon ″" class="border p-3 rounded"> </div> <input id="yearDMS" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3 mt-3 w-full" /> </div> <!-- UTM INPUT --> <div id="inputUTM" class="hidden mb-4"> <div class="grid grid-cols-3 gap-2"> <input id="utmZone" type="text" placeholder="Zone (e.g., 47Q)" class="border p-3 rounded"> <input id="utmE" type="number" placeholder="Easting" class="border p-3 rounded"> <input id="utmN" type="number" placeholder="Northing" class="border p-3 rounded"> </div> <input id="yearUTM" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3 mt-3 w-full" /> </div> <button id="fetchBtn" onclick="fetchClimate()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow"> Get Climate Data </button> <div id="loading" class="mt-4 text-blue-600 font-semibold hidden"> Loading daily climate data… Please wait. </div> <div id="statsPanel" class="mt-10 mx-auto text-center p-6 bg-gray-50 rounded-xl shadow-lg hidden max-w-3xl"></div> <!-- Figures --> <div class="mt-8"> <h3 class="font-bold text-lg text-red-600 mb-2">Temperature</h3> <canvas id="tempChart" class="w-full h-80"></canvas> <h3 class="font-bold text-lg text-blue-600 mt-10 mb-2">Humidity</h3> <canvas id="humChart" class="w-full h-80"></canvas> </div> <!-- Download Buttons --> <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4"> <button id="downloadBtn" style="display:none;" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadData()">Download JSON</button> <button id="downloadCsvBtn" style="display:none;" class="bg-yellow-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadCSV()">Download CSV</button> <button id="downloadXlsxBtn" style="display:none;" class="bg-purple-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadXLSX()">Download Monthly XLSX</button> <button id="downloadTempPngBtn" style="display:none;" class="bg-red-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadTempPNG()">Download Temperature PNG</button> <button id="downloadHumPngBtn" style="display:none;" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadHumPNG()">Download Humidity PNG</button> <button id="downloadPdfBtn" style="display:none;" class="bg-gray-700 text-white px-4 py-2 rounded-lg shadow" onclick="downloadPDF()">Download Full Report (PDF)</button> </div> <p class="text-sm text-gray-500 mt-8">by Assistant Professor Dr. Chun-I Chiu</p> <p class="text-sm text-gray-500">Department of Entomology and Plant Pathology, Chiang Mai University</p> <p class="text-sm text-gray-500 mt-8"> Climate data provided by <a href="https://open-meteo.com/" target="_blank" class="text-blue-600 underline">Open-Meteo</a>. </p> </div> <script> let tempChart, humChart; let lastData = null; /* ============================ NEW: format switching ============================ */ function switchFormat() { const fmt = document.getElementById("coordFormat").value; document.getElementById("inputWGS84").classList.add("hidden"); document.getElementById("inputDMS").classList.add("hidden"); document.getElementById("inputUTM").classList.add("hidden"); if (fmt === "wgs84") document.getElementById("inputWGS84").classList.remove("hidden"); if (fmt === "dms") document.getElementById("inputDMS").classList.remove("hidden"); if (fmt === "utm") document.getElementById("inputUTM").classList.remove("hidden"); } /* ============================ NEW: DMS → Decimal converter ============================ */ function dmsToDecimal(d, m, s) { return Number(d) + Number(m)/60 + Number(s)/3600; } /* ============================ NEW: UTM → WGS84 ============================ */ function utmToLatLon(zone, easting, northing) { const hemisphere = zone.replace(/[0-9]/g,"") >= "N" ? "N" : "S"; const zoneNum = parseInt(zone); const a = 6378137; const e = 0.081819191; const k0 = 0.9996; let x = easting - 500000; let y = hemisphere === "S" ? northing - 10000000 : northing; const m = y / k0; const mu = m / (a * (1 - e**2/4 - 3*e**4/64 - 5*e**6/256)); const e1 = (1 - Math.sqrt(1 - e*e)) / (1 + Math.sqrt(1 - e*e)); const j1 = (3*e1/2 - 27*e1**3/32); const j2 = (21*e1**2/16 - 55*e1**4/32); const j3 = (151*e1**3/96); const j4 = (1097*e1**4/512); const fp = mu + j1*Math.sin(2*mu) + j2*Math.sin(4*mu) + j3*Math.sin(6*mu) + j4*Math.sin(8*mu); const e2 = e**2 / (1 - e**2); const c1 = e2 * Math.cos(fp)**2; const t1 = Math.tan(fp)**2; const r1 = a*(1-e**2)/Math.pow(1-e**2*Math.sin(fp)**2,1.5); const n1 = a/Math.sqrt(1-e**2*Math.sin(fp)**2); const d = x/(n1*k0); let lat = fp - (n1*Math.tan(fp)/r1)*(d**2/2 - (5 + 3*t1 + 10*c1 - 4*c1**2 - 9*e2)*d**4/24); let lon = (d - (1 + 2*t1 + c1)*d**3/6) / Math.cos(fp); lon = lon + (zoneNum - 1)*6 - 180 + 3; return { lat: lat * (180/Math.PI), lon: lon * (180/Math.PI) }; } /* ============================ Main climate fetcher ============================ */ async function fetchClimate() { /* Convert coordinates depending on format */ const fmt = document.getElementById("coordFormat").value; let lat, lon, year; if (fmt === "wgs84") { lat = parseFloat(document.getElementById("lat").value); lon = parseFloat(document.getElementById("lon").value); year = document.getElementById("year").value; } if (fmt === "dms") { lat = dmsToDecimal(latD.value, latM.value, latS.value); lon = dmsToDecimal(lonD.value, lonM.value, lonS.value); year = document.getElementById("yearDMS").value; } if (fmt === "utm") { const utm = utmToLatLon( utmZone.value, parseFloat(utmE.value), parseFloat(utmN.value) ); lat = utm.lat; lon = utm.lon; year = document.getElementById("yearUTM").value; } if (!lat || !lon || !year) { alert("Please fill all coordinate and year fields."); return; } /* — original fetchClimate code continues here — */ const btn = document.getElementById("fetchBtn"); const loading = document.getElementById("loading"); const statsPanel = document.getElementById("statsPanel"); const url = https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon} + &start_date=${year}-01-01&end_date=${year}-12-31 + &daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min, + relative_humidity_2m_mean,relative_humidity_2m_min,relative_humidity_2m_max, + precipitation_sum,et0_fao_evapotranspiration + &timezone=auto; btn.disabled = true; btn.classList.add("opacity-50"); loading.classList.remove("hidden"); try { const res = await fetch(url); if (!res.ok) throw new Error(HTTP ${res.status}); const data = await res.json(); lastData = data; /* (The rest of your original code continues unchanged) */ const d = data.daily; const dates = d.time.map(t => new Date(t)); const meanTemp = avg(d.temperature_2m_mean); const meanHum = avg(d.relative_humidity_2m_mean); const totalP = sum(d.precipitation_sum); const totalPET = sum(d.et0_fao_evapotranspiration); const AI = totalP / totalPET; const yearMinTemp = min(d.temperature_2m_min); const yearMaxTemp = max(d.temperature_2m_max); const yearMinHum = min(d.relative_humidity_2m_min); const yearMaxHum = max(d.relative_humidity_2m_max); let monthly = {}; for (let i = 0; i < 12; i++) { monthly[i] = { temp: [], tempMin: [], tempMax: [], hum: [], precip: 0, pet: 0 }; } for (let i = 0; i < dates.length; i++) { let m = dates[i].getMonth(); monthly[m].temp.push(d.temperature_2m_mean[i]); monthly[m].tempMin.push(d.temperature_2m_min[i]); monthly[m].tempMax.push(d.temperature_2m_max[i]); monthly[m].hum.push(d.relative_humidity_2m_mean[i]); monthly[m].precip += d.precipitation_sum[i]; monthly[m].pet += d.et0_fao_evapotranspiration[i]; } const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; let monthlyHTML = <table class="mx-auto mt-4 text-sm table-auto border-collapse"> <thead> <tr class="bg-blue-100"> <th class="border px-2 py-1">Month</th> <th class="border px-2 py-1">T Mean</th> <th class="border px-2 py-1">T Min</th> <th class="border px-2 py-1">T Max</th> <th class="border px-2 py-1">RH Mean</th> <th class="border px-2 py-1">Precip</th> <th class="border px-2 py-1">PET</th> </tr> </thead> <tbody> ; for (let m = 0; m < 12; m++) { monthlyHTML += <tr> <td class="border px-2 py-1">${monthNames[m]}</td> <td class="border px-2 py-1">${avg(monthly[m].temp).toFixed(1)}</td> <td class="border px-2 py-1">${min(monthly[m].tempMin).toFixed(1)}</td> <td class="border px-2 py-1">${max(monthly[m].tempMax).toFixed(1)}</td> <td class="border px-2 py-1">${avg(monthly[m].hum).toFixed(1)}</td> <td class="border px-2 py-1">${monthly[m].precip.toFixed(1)}</td> <td class="border px-2 py-1">${monthly[m].pet.toFixed(1)}</td> </tr>; } monthlyHTML += "</tbody></table>"; statsPanel.classList.remove("hidden"); statsPanel.innerHTML = <h2 class="text-2xl font-bold text-blue-700 mb-2">Annual Climate Summary (${year})</h2> <p><strong>Mean Temperature:</strong> ${meanTemp.toFixed(2)} °C</p> <p><strong>Lowest Temperature:</strong> ${yearMinTemp.toFixed(2)} °C</p> <p><strong>Highest Temperature:</strong> ${yearMaxTemp.toFixed(2)} °C</p> <p class="mt-4"><strong>Mean Humidity:</strong> ${meanHum.toFixed(1)} %</p> <p><strong>Lowest Humidity:</strong> ${yearMinHum.toFixed(1)} %</p> <p><strong>Highest Humidity:</strong> ${yearMaxHum.toFixed(1)} %</p> <p class="mt-4"><strong>Total Precipitation:</strong> ${totalP.toFixed(1)} mm</p> <p><strong>Total PET:</strong> ${totalPET.toFixed(1)} mm</p> <p><strong>Aridity Index (P/PET):</strong> ${AI.toFixed(3)}</p> <h3 class="text-xl font-bold text-blue-700 mt-6 mb-2">Monthly Climate Summary</h3> ${monthlyHTML} ; drawTempChart(d.time, d.temperature_2m_mean); drawHumChart(d.time, d.relative_humidity_2m_mean); document.getElementById('downloadBtn').style.display = 'inline-block'; document.getElementById('downloadCsvBtn').style.display = 'inline-block'; document.getElementById('downloadXlsxBtn').style.display = 'inline-block'; document.getElementById('downloadTempPngBtn').style.display = 'inline-block'; document.getElementById('downloadHumPngBtn').style.display = 'inline-block'; document.getElementById('downloadPdfBtn').style.display = 'inline-block'; } catch (err) { alert("Error: " + err); } btn.disabled = false; btn.classList.remove("opacity-50"); loading.classList.add("hidden"); } // Helpers const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length; const sum = arr => arr.reduce((a,b)=>a+b,0); const min = arr => Math.min(...arr); const max = arr => Math.max(...arr); // Draw charts function drawTempChart(labels, temperature) { const ctx = document.getElementById('tempChart').getContext('2d'); if (tempChart) tempChart.destroy(); tempChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label:"Temperature (°C)", data:temperature, borderColor:"red", borderWidth:2 }]}, options: { responsive: true, scales: { x: { ticks: { callback: v => new Date(labels[v]).toLocaleString("en-US",{month:"short"}) } } } } }); } function drawHumChart(labels, humidity) { const ctx = document.getElementById('humChart').getContext('2d'); if (humChart) humChart.destroy(); humChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label:"Humidity (%)", data:humidity, borderColor:"blue", borderWidth:2 }]}, options: { responsive: true, scales: { x: { ticks: { callback: v => new Date(labels[v]).toLocaleString("en-US",{month:"short"}) } } } } }); } /* Existing Download Functions (unchanged) */ function downloadData() { const blob = new Blob([JSON.stringify(lastData,null,2)],{type:"application/json"}); let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="climate_data.json"; a.click(); } function downloadCSV() { const d = lastData.daily; let csv="date,temp_mean,humidity_mean,precip_mm,pet_mm\n"; for (let i=0;i<d.time.length;i++) csv+=${d.time[i]},${d.temperature_2m_mean[i]},${d.relative_humidity_2m_mean[i]},${d.precipitation_sum[i]},${d.et0_fao_evapotranspiration[i]}\n; let blob=new Blob([csv],{type:"text/csv"}); let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="climate_daily.csv"; a.click(); } function downloadXLSX() { const d = lastData.daily; const wb = XLSX.utils.book_new(); const statsPanel=document.getElementById("statsPanel"); const tables=statsPanel.getElementsByTagName("table"); const wsData=[["Month","Temp Mean","Temp Min","Temp Max","RH Mean","Precip","PET"]]; if (tables.length>0) { const rows=tables[0].querySelectorAll("tr"); rows.forEach((row,i)=>{ if(i===0)return; const cells=[...row.children].map(x=>x.innerText); wsData.push(cells); }); } const ws = XLSX.utils.aoa_to_sheet(wsData); XLSX.utils.book_append_sheet(wb,ws,"Monthly Summary"); XLSX.writeFile(wb,"monthly_climate.xlsx"); } function downloadTempPNG(){ const a=document.createElement("a"); a.href=tempChart.toBase64Image(); a.download="temperature_chart.png"; a.click(); } function downloadHumPNG(){ const a=document.createElement("a"); a.href=humChart.toBase64Image(); a.download="humidity_chart.png"; a.click(); } async function downloadPDF() { const { jsPDF } = window.jspdf; const pdf = new jsPDF("p","mm","a4"); pdf.setFontSize(16); pdf.text("Climate Report", 10, 10); const stats = document.getElementById("statsPanel"); const statsImg = await html2canvas(stats).then(c => c.toDataURL("image/png")); pdf.addImage(statsImg,"PNG",10,20,180,0); const tempImg=tempChart.toBase64Image(); pdf.addPage(); pdf.text("Temperature", 10, 10); pdf.addImage(tempImg,"PNG",10,20,180,90); const humImg=humChart.toBase64Image(); pdf.addPage(); pdf.text("Humidity", 10, 10); pdf.addImage(humImg,"PNG",10,20,180,90); pdf.save("climate_report.pdf"); } </script> </body> </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Climate Data Viewer</title>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen p-6">
+<div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-8">
+    
+  <h1 class="text-3xl font-bold mb-4 text-blue-700">Climate Data Viewer</h1>
+  <p class="mb-6 text-gray-600">Enter coordinates to fetch daily mean temperature and humidity for a full year.</p>
+
+  <!-- ============================
+       NEW: Coordinate Format Switcher
+       ============================ -->
+  <div class="mb-4">
+    <label class="font-semibold text-gray-700">Coordinate Format</label>
+    <select id="coordFormat" onchange="switchFormat()" 
+            class="border rounded-lg p-3 w-full mt-1">
+      <option value="wgs84">WGS84 (Decimal Degrees)</option>
+      <option value="dms">DMS (Degrees Minutes Seconds)</option>
+      <option value="utm">UTM</option>
+    </select>
+  </div>
+
+  <!-- WGS84 INPUT -->
+  <div id="inputWGS84" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <input id="lat" type="number" step="0.0001" placeholder="Latitude" class="border rounded-lg p-3" />
+    <input id="lon" type="number" step="0.0001" placeholder="Longitude" class="border rounded-lg p-3" />
+    <input id="year" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3" />
+  </div>
+
+  <!-- DMS INPUT -->
+  <div id="inputDMS" class="hidden mb-4">
+    <div class="grid grid-cols-3 gap-2 mb-2">
+      <input id="latD" type="number" placeholder="Lat °" class="border p-3 rounded">
+      <input id="latM" type="number" placeholder="Lat ′" class="border p-3 rounded">
+      <input id="latS" type="number" placeholder="Lat ″" class="border p-3 rounded">
+    </div>
+    <div class="grid grid-cols-3 gap-2">
+      <input id="lonD" type="number" placeholder="Lon °" class="border p-3 rounded">
+      <input id="lonM" type="number" placeholder="Lon ′" class="border p-3 rounded">
+      <input id="lonS" type="number" placeholder="Lon ″" class="border p-3 rounded">
+    </div>
+    <input id="yearDMS" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3 mt-3 w-full" />
+  </div>
+
+  <!-- UTM INPUT -->
+  <div id="inputUTM" class="hidden mb-4">
+    <div class="grid grid-cols-3 gap-2">
+      <input id="utmZone" type="text" placeholder="Zone (e.g., 47Q)" class="border p-3 rounded">
+      <input id="utmE"    type="number" placeholder="Easting" class="border p-3 rounded">
+      <input id="utmN"    type="number" placeholder="Northing" class="border p-3 rounded">
+    </div>
+    <input id="yearUTM" type="number" min="1950" max="2100" placeholder="Year" class="border rounded-lg p-3 mt-3 w-full" />
+  </div>
+
+  <button id="fetchBtn" onclick="fetchClimate()" 
+    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">
+    Get Climate Data
+  </button>
+
+  <div id="loading" class="mt-4 text-blue-600 font-semibold hidden">
+    Loading daily climate data… Please wait.
+  </div>
+
+  <div id="statsPanel" class="mt-10 mx-auto text-center p-6 bg-gray-50 rounded-xl shadow-lg hidden max-w-3xl"></div>
+
+  <!-- Figures -->
+  <div class="mt-8">
+    <h3 class="font-bold text-lg text-red-600 mb-2">Temperature</h3>
+    <canvas id="tempChart" class="w-full h-80"></canvas>
+  
+    <h3 class="font-bold text-lg text-blue-600 mt-10 mb-2">Humidity</h3>
+    <canvas id="humChart" class="w-full h-80"></canvas>
+  </div>
+
+  <!-- Download Buttons -->
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <button id="downloadBtn"        style="display:none;" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadData()">Download JSON</button>
+    <button id="downloadCsvBtn"     style="display:none;" class="bg-yellow-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadCSV()">Download CSV</button>
+    <button id="downloadXlsxBtn"    style="display:none;" class="bg-purple-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadXLSX()">Download Monthly XLSX</button>
+    <button id="downloadTempPngBtn" style="display:none;" class="bg-red-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadTempPNG()">Download Temperature PNG</button>
+    <button id="downloadHumPngBtn"  style="display:none;" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow" onclick="downloadHumPNG()">Download Humidity PNG</button>
+    <button id="downloadPdfBtn"     style="display:none;" class="bg-gray-700 text-white px-4 py-2 rounded-lg shadow" onclick="downloadPDF()">Download Full Report (PDF)</button>
+  </div>
+
+  <p class="text-sm text-gray-500 mt-8">by Assistant Professor Dr. Chun-I Chiu</p>
+  <p class="text-sm text-gray-500">Department of Entomology and Plant Pathology, Chiang Mai University</p>
+  <p class="text-sm text-gray-500 mt-8">
+    Climate data provided by 
+    <a href="https://open-meteo.com/" target="_blank" class="text-blue-600 underline">Open-Meteo</a>.
+  </p>
+
+</div>
+
+<script>
+let tempChart, humChart;
+let lastData = null;
+
+/* ============================
+   NEW: format switching
+   ============================ */
+function switchFormat() {
+  const fmt = document.getElementById("coordFormat").value;
+
+  document.getElementById("inputWGS84").classList.add("hidden");
+  document.getElementById("inputDMS").classList.add("hidden");
+  document.getElementById("inputUTM").classList.add("hidden");
+
+  if (fmt === "wgs84") document.getElementById("inputWGS84").classList.remove("hidden");
+  if (fmt === "dms")   document.getElementById("inputDMS").classList.remove("hidden");
+  if (fmt === "utm")   document.getElementById("inputUTM").classList.remove("hidden");
+}
+
+/* ============================
+   NEW: DMS → Decimal converter
+   ============================ */
+function dmsToDecimal(d, m, s) {
+  return Number(d) + Number(m)/60 + Number(s)/3600;
+}
+
+/* ============================
+   NEW: UTM → WGS84
+   ============================ */
+function utmToLatLon(zone, easting, northing) {
+  const hemisphere = zone.replace(/[0-9]/g,"") >= "N" ? "N" : "S";
+  const zoneNum = parseInt(zone);
+
+  const a = 6378137;
+  const e = 0.081819191;
+  const k0 = 0.9996;
+
+  let x = easting - 500000;
+  let y = hemisphere === "S" ? northing - 10000000 : northing;
+
+  const m = y / k0;
+  const mu = m / (a * (1 - e**2/4 - 3*e**4/64 - 5*e**6/256));
+
+  const e1 = (1 - Math.sqrt(1 - e*e)) / (1 + Math.sqrt(1 - e*e));
+
+  const j1 = (3*e1/2 - 27*e1**3/32);
+  const j2 = (21*e1**2/16 - 55*e1**4/32);
+  const j3 = (151*e1**3/96);
+  const j4 = (1097*e1**4/512);
+
+  const fp = mu + j1*Math.sin(2*mu) + j2*Math.sin(4*mu) +
+             j3*Math.sin(6*mu) + j4*Math.sin(8*mu);
+
+  const e2 = e**2 / (1 - e**2);
+  const c1 = e2 * Math.cos(fp)**2;
+  const t1 = Math.tan(fp)**2;
+  const r1 = a*(1-e**2)/Math.pow(1-e**2*Math.sin(fp)**2,1.5);
+  const n1 = a/Math.sqrt(1-e**2*Math.sin(fp)**2);
+  const d = x/(n1*k0);
+
+  let lat = fp - (n1*Math.tan(fp)/r1)*(d**2/2 - (5 + 3*t1 + 10*c1 - 4*c1**2 - 9*e2)*d**4/24);
+  let lon = (d - (1 + 2*t1 + c1)*d**3/6) / Math.cos(fp);
+
+  lon = lon + (zoneNum - 1)*6 - 180 + 3;
+
+  return {
+    lat: lat * (180/Math.PI),
+    lon: lon * (180/Math.PI)
+  };
+}
+
+/* ============================
+   Main climate fetcher
+   ============================ */
+async function fetchClimate() {
+
+  /* Convert coordinates depending on format */
+  const fmt = document.getElementById("coordFormat").value;
+  let lat, lon, year;
+
+  if (fmt === "wgs84") {
+    lat  = parseFloat(document.getElementById("lat").value);
+    lon  = parseFloat(document.getElementById("lon").value);
+    year = document.getElementById("year").value;
+  }
+
+  if (fmt === "dms") {
+    lat = dmsToDecimal(latD.value, latM.value, latS.value);
+    lon = dmsToDecimal(lonD.value, lonM.value, lonS.value);
+    year = document.getElementById("yearDMS").value;
+  }
+
+  if (fmt === "utm") {
+    const utm = utmToLatLon(
+      utmZone.value,
+      parseFloat(utmE.value),
+      parseFloat(utmN.value)
+    );
+    lat = utm.lat;
+    lon = utm.lon;
+    year = document.getElementById("yearUTM").value;
+  }
+
+  if (!lat || !lon || !year) {
+    alert("Please fill all coordinate and year fields.");
+    return;
+  }
+
+  /* — original fetchClimate code continues here — */
+  const btn = document.getElementById("fetchBtn");
+  const loading = document.getElementById("loading");
+  const statsPanel = document.getElementById("statsPanel");
+
+  const url =
+    `https://archive-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}` +
+    `&start_date=${year}-01-01&end_date=${year}-12-31` +
+    `&daily=temperature_2m_mean,temperature_2m_max,temperature_2m_min,` +
+    `relative_humidity_2m_mean,relative_humidity_2m_min,relative_humidity_2m_max,` +
+    `precipitation_sum,et0_fao_evapotranspiration` +
+    `&timezone=auto`;
+
+  btn.disabled = true;
+  btn.classList.add("opacity-50");
+  loading.classList.remove("hidden");
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    lastData = data;
+
+    /* (The rest of your original code continues unchanged) */
+
+    const d = data.daily;
+    const dates = d.time.map(t => new Date(t));
+
+    const meanTemp = avg(d.temperature_2m_mean);
+    const meanHum = avg(d.relative_humidity_2m_mean);
+    const totalP = sum(d.precipitation_sum);
+    const totalPET = sum(d.et0_fao_evapotranspiration);
+    const AI = totalP / totalPET;
+
+    const yearMinTemp = min(d.temperature_2m_min);
+    const yearMaxTemp = max(d.temperature_2m_max);
+    const yearMinHum  = min(d.relative_humidity_2m_min);
+    const yearMaxHum  = max(d.relative_humidity_2m_max);
+
+    let monthly = {};
+    for (let i = 0; i < 12; i++) {
+      monthly[i] = {
+        temp: [], tempMin: [], tempMax: [],
+        hum: [], precip: 0, pet: 0
+      };
+    }
+
+    for (let i = 0; i < dates.length; i++) {
+      let m = dates[i].getMonth();
+      monthly[m].temp.push(d.temperature_2m_mean[i]);
+      monthly[m].tempMin.push(d.temperature_2m_min[i]);
+      monthly[m].tempMax.push(d.temperature_2m_max[i]);
+      monthly[m].hum.push(d.relative_humidity_2m_mean[i]);
+      monthly[m].precip += d.precipitation_sum[i];
+      monthly[m].pet += d.et0_fao_evapotranspiration[i];
+    }
+
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    let monthlyHTML = `
+      <table class="mx-auto mt-4 text-sm table-auto border-collapse">
+        <thead>
+          <tr class="bg-blue-100">
+            <th class="border px-2 py-1">Month</th>
+            <th class="border px-2 py-1">T Mean</th>
+            <th class="border px-2 py-1">T Min</th>
+            <th class="border px-2 py-1">T Max</th>
+            <th class="border px-2 py-1">RH Mean</th>
+            <th class="border px-2 py-1">Precip</th>
+            <th class="border px-2 py-1">PET</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    for (let m = 0; m < 12; m++) {
+      monthlyHTML += `
+        <tr>
+          <td class="border px-2 py-1">${monthNames[m]}</td>
+          <td class="border px-2 py-1">${avg(monthly[m].temp).toFixed(1)}</td>
+          <td class="border px-2 py-1">${min(monthly[m].tempMin).toFixed(1)}</td>
+          <td class="border px-2 py-1">${max(monthly[m].tempMax).toFixed(1)}</td>
+          <td class="border px-2 py-1">${avg(monthly[m].hum).toFixed(1)}</td>
+          <td class="border px-2 py-1">${monthly[m].precip.toFixed(1)}</td>
+          <td class="border px-2 py-1">${monthly[m].pet.toFixed(1)}</td>
+        </tr>`;
+    }
+    monthlyHTML += "</tbody></table>";
+
+    statsPanel.classList.remove("hidden");
+    statsPanel.innerHTML = `
+      <h2 class="text-2xl font-bold text-blue-700 mb-2">Annual Climate Summary (${year})</h2>
+      <p><strong>Mean Temperature:</strong> ${meanTemp.toFixed(2)} °C</p>
+      <p><strong>Lowest Temperature:</strong> ${yearMinTemp.toFixed(2)} °C</p>
+      <p><strong>Highest Temperature:</strong> ${yearMaxTemp.toFixed(2)} °C</p>
+
+      <p class="mt-4"><strong>Mean Humidity:</strong> ${meanHum.toFixed(1)} %</p>
+      <p><strong>Lowest Humidity:</strong> ${yearMinHum.toFixed(1)} %</p>
+      <p><strong>Highest Humidity:</strong> ${yearMaxHum.toFixed(1)} %</p>
+
+      <p class="mt-4"><strong>Total Precipitation:</strong> ${totalP.toFixed(1)} mm</p>
+      <p><strong>Total PET:</strong> ${totalPET.toFixed(1)} mm</p>
+      <p><strong>Aridity Index (P/PET):</strong> ${AI.toFixed(3)}</p>
+
+      <h3 class="text-xl font-bold text-blue-700 mt-6 mb-2">Monthly Climate Summary</h3>
+      ${monthlyHTML}
+    `;
+
+    drawTempChart(d.time, d.temperature_2m_mean);
+    drawHumChart(d.time, d.relative_humidity_2m_mean);
+
+    document.getElementById('downloadBtn').style.display = 'inline-block';
+    document.getElementById('downloadCsvBtn').style.display = 'inline-block';
+    document.getElementById('downloadXlsxBtn').style.display = 'inline-block';
+    document.getElementById('downloadTempPngBtn').style.display = 'inline-block';
+    document.getElementById('downloadHumPngBtn').style.display = 'inline-block';
+    document.getElementById('downloadPdfBtn').style.display = 'inline-block';
+
+  } catch (err) {
+    alert("Error: " + err);
+  }
+
+  btn.disabled = false;
+  btn.classList.remove("opacity-50");
+  loading.classList.add("hidden");
+}
+
+// Helpers
+const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+const sum = arr => arr.reduce((a,b)=>a+b,0);
+const min = arr => Math.min(...arr);
+const max = arr => Math.max(...arr);
+
+// Draw charts
+function drawTempChart(labels, temperature) {
+  const ctx = document.getElementById('tempChart').getContext('2d');
+  if (tempChart) tempChart.destroy();
+
+  tempChart = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets: [{ label:"Temperature (°C)", data:temperature, borderColor:"red", borderWidth:2 }]},
+    options: {
+      responsive: true,
+      scales: { x: { ticks: { callback: v => new Date(labels[v]).toLocaleString("en-US",{month:"short"}) } } }
+    }
+  });
+}
+
+function drawHumChart(labels, humidity) {
+  const ctx = document.getElementById('humChart').getContext('2d');
+  if (humChart) humChart.destroy();
+
+  humChart = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets: [{ label:"Humidity (%)", data:humidity, borderColor:"blue", borderWidth:2 }]},
+    options: {
+      responsive: true,
+      scales: { x: { ticks: { callback: v => new Date(labels[v]).toLocaleString("en-US",{month:"short"}) } } }
+    }
+  });
+}
+
+/* Existing Download Functions (unchanged) */
+function downloadData() {
+  const blob = new Blob([JSON.stringify(lastData,null,2)],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="climate_data.json";
+  a.click();
+}
+
+function downloadCSV() {
+  const d = lastData.daily;
+  let csv="date,temp_mean,humidity_mean,precip_mm,pet_mm\n";
+  for (let i=0;i<d.time.length;i++)
+    csv+=`${d.time[i]},${d.temperature_2m_mean[i]},${d.relative_humidity_2m_mean[i]},${d.precipitation_sum[i]},${d.et0_fao_evapotranspiration[i]}\n`;
+
+  let blob=new Blob([csv],{type:"text/csv"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="climate_daily.csv";
+  a.click();
+}
+
+function downloadXLSX() {
+  const d = lastData.daily;
+  const wb = XLSX.utils.book_new();
+  
+  const statsPanel=document.getElementById("statsPanel");
+  const tables=statsPanel.getElementsByTagName("table");
+
+  const wsData=[["Month","Temp Mean","Temp Min","Temp Max","RH Mean","Precip","PET"]];
+
+  if (tables.length>0) {
+    const rows=tables[0].querySelectorAll("tr");
+    rows.forEach((row,i)=>{
+      if(i===0)return; 
+      const cells=[...row.children].map(x=>x.innerText);
+      wsData.push(cells);
+    });
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb,ws,"Monthly Summary");
+  XLSX.writeFile(wb,"monthly_climate.xlsx");
+}
+
+function downloadTempPNG(){
+  const a=document.createElement("a");
+  a.href=tempChart.toBase64Image();
+  a.download="temperature_chart.png";
+  a.click();
+}
+
+function downloadHumPNG(){
+  const a=document.createElement("a");
+  a.href=humChart.toBase64Image();
+  a.download="humidity_chart.png";
+  a.click();
+}
+
+async function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF("p","mm","a4");
+
+  pdf.setFontSize(16);
+  pdf.text("Climate Report", 10, 10);
+
+  const stats = document.getElementById("statsPanel");
+  const statsImg = await html2canvas(stats).then(c => c.toDataURL("image/png"));
+  pdf.addImage(statsImg,"PNG",10,20,180,0);
+
+  const tempImg=tempChart.toBase64Image();
+  pdf.addPage();
+  pdf.text("Temperature", 10, 10);
+  pdf.addImage(tempImg,"PNG",10,20,180,90);
+
+  const humImg=humChart.toBase64Image();
+  pdf.addPage();
+  pdf.text("Humidity", 10, 10);
+  pdf.addImage(humImg,"PNG",10,20,180,90);
+
+  pdf.save("climate_report.pdf");
+}
+</script>
+
+</body>
+</html>
