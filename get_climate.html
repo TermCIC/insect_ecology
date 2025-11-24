@@ -239,9 +239,11 @@ async function fetchClimate() {
   const thisYear = today.getFullYear();
   
   if (parseInt(year) === thisYear) {
-    end_date = today.toISOString().split("T")[0];  // YYYY-MM-DD
+    // ERA5 archive only available up to yesterday
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    end_date = yesterday.toISOString().split("T")[0];
   }
-
 
   /* — original fetchClimate code continues here — */
   const btn = document.getElementById("fetchBtn");
