@@ -206,6 +206,11 @@ const grid = [
     "##################",
 ];
 
+function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+}
+
+
 const camera = add([
     pos(7 * 16, 11 * 16 + 8),
     rotate(0),
@@ -294,7 +299,11 @@ const camera = add([
                                 pos: vec2(x * 2, 120 + wh / 2 - oh),
                                 tex: bean.tex,
                                 quad: objSlices[Math.round(u * (bean.width - 1))],
-                                color: BLACK.lerp(WHITE, u),
+                                // keep bean sprite shading but darken with distance
+                                color: rgb(
+                                    255 * brightness,
+                                    255 * brightness,
+                                    255 * brightness,
                             });
                         });
                     }
