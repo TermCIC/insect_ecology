@@ -40,12 +40,15 @@ kaplay({
 // Load sprites using ABSOLUTE URLs from play.kaplayjs.com
 loadSprite("enemy", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978470/pixellab-monster-orc-1763978389772_tctylf.png");
 loadSprite("wall", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
-
+loadSprite("sky",   "https://your-host/sky.png");
+loadSprite("floor", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763979099/floor_etqlv6.png");
+    
 let enemy;
 let objSlices = [];
 let wall;
 let slices = [];
-
+let sky, floorTex;
+    
 onLoad(() => {
     enemy = getSprite("enemy").data;
     for (let i = 0; i < enemy.width; i++) {
@@ -248,17 +251,24 @@ const camera = add([
 
             pushTranslate(this.pos.scale(-1).add(120, 0));
 
-            drawRect({
+            // draw textured sky
+            drawUVQuad({
                 width: 240,
                 height: 120,
-                color: rgb(100, 100, 100),
+                pos: vec2(0, 0),
+                tex: sky.tex,
+                quad: new Quad(0, 0, 1, 1),  // full texture
+                color: WHITE,
             });
-
-            drawRect({
-                pos: vec2(0, 120),
+            
+            // draw textured floor
+            drawUVQuad({
                 width: 240,
                 height: 120,
-                color: rgb(128, 128, 128),
+                pos: vec2(0, 120),
+                tex: floorTex.tex,
+                quad: new Quad(0, 0, 1, 1),
+                color: WHITE,
             });
 
             for (let x = 0; x <= 120; x++) {
