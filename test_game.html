@@ -229,6 +229,32 @@ const camera = add([
     body(),
     {
         draw() {
+            if (!wall || !enemy || !sky || !floorTex) return;
+
+            // 1) Screen-space background (no pushTransform, no rotate)
+            const w = width();
+            const h = height();
+
+            // Sky: top half of the screen
+            drawUVQuad({
+                width: w,
+                height: h / 2,
+                pos: vec2(0, 0),
+                tex: sky.tex,
+                quad: new Quad(0, 0, 1, 1),
+                color: WHITE,
+            });
+    
+            // Floor: bottom half of the screen
+            drawUVQuad({
+                width: w,
+                height: h / 2,
+                pos: vec2(0, h / 2),
+                tex: floorTex.tex,
+                quad: new Quad(0, 0, 1, 1),
+                color: WHITE,
+            });
+            
             pushTransform();
             pushRotate(-this.angle);
 
@@ -254,26 +280,6 @@ const camera = add([
             });
 
             pushTranslate(this.pos.scale(-1).add(120, 0));
-
-            // draw textured sky
-            drawUVQuad({
-                width: 240,
-                height: 120,
-                pos: vec2(0, 0),
-                tex: sky.tex,
-                quad: new Quad(0, 0, 1, 1),  // full texture
-                color: WHITE,
-            });
-            
-            // draw textured floor
-            drawUVQuad({
-                width: 240,
-                height: 120,
-                pos: vec2(0, 120),
-                tex: floorTex.tex,
-                quad: new Quad(0, 0, 1, 1),
-                color: WHITE,
-            });
 
             for (let x = 0; x <= 120; x++) {
                 let direction = lerp(planeP1, planeP2, x / 120).scale(6);
