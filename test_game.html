@@ -287,7 +287,7 @@ const camera = add([
                 const hit = rayCastAsciiGrid(this.pos, direction, grid);
                 if (hit) {
                     const t = hit.t;
-                    const d = (1 - t) * ((hit.normal.x + hit.normal.y) < 0 ? 0.5 : 1);
+                    const d = clamp(1 - t * 1.2, 0.2, 1);
 
                     let u = Math.abs(hit.normal.x) > Math.abs(hit.normal.y)
                         ? hit.point.y
