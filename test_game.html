@@ -317,12 +317,13 @@ addLevel(grid, {
     tileWidth: 16,
     tileHeight: 16,
     tiles: {
-        "#": () => [rect(16, 16), color(RED), area(), body({ isStatic: true })],
-        "$": () => [rect(16, 16), color(GREEN), area(), body({ isStatic: true })],
-        "%": () => [rect(16, 16), color(BLUE), area(), body({ isStatic: true })],
-        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW)],
+        "#": () => [rect(16, 16), color(RED), opacity(0), area(), body({ isStatic: true })],
+        "$": () => [rect(16, 16), color(GREEN), opacity(0), area(), body({ isStatic: true })],
+        "%": () => [rect(16, 16), color(BLUE), opacity(0), area(), body({ isStatic: true })],
+        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)],
     },
 });
+
 
 onKeyDown("up", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(40));
