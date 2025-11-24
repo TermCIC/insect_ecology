@@ -40,15 +40,11 @@ kaplay({
 // Load sprites using ABSOLUTE URLs from play.kaplayjs.com
 loadSprite("enemy", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978470/pixellab-monster-orc-1763978389772_tctylf.png");
 loadSprite("wall", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
-loadSprite("sky",   "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763979206/sky_smium8.png");
-loadSprite("floor", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763979099/floor_etqlv6.png");
-    
+
 let enemy;
 let objSlices = [];
 let wall;
 let slices = [];
-let sky;
-let floorTex;
     
 onLoad(() => {
     enemy = getSprite("enemy").data;
@@ -68,9 +64,6 @@ onLoad(() => {
             ),
         );
     }
-
-    sky = getSprite("sky").data;
-    floorTex = getSprite("floor").data;
 });
 
 function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
@@ -229,32 +222,6 @@ const camera = add([
     body(),
     {
         draw() {
-            if (!wall || !enemy || !sky || !floorTex) return;
-
-            // 1) Screen-space background (no pushTransform, no rotate)
-            const w = width();
-            const h = height();
-
-            // Sky: top half of the screen
-            drawUVQuad({
-                width: w,
-                height: h / 2,
-                pos: vec2(0, 0),
-                tex: sky.tex,
-                quad: new Quad(0, 0, 1, 1),
-                color: WHITE,
-            });
-    
-            // Floor: bottom half of the screen
-            drawUVQuad({
-                width: w,
-                height: h / 2,
-                pos: vec2(0, h / 2),
-                tex: floorTex.tex,
-                quad: new Quad(0, 0, 1, 1),
-                color: WHITE,
-            });
-            
             pushTransform();
             pushRotate(-this.angle);
 
@@ -280,6 +247,9 @@ const camera = add([
             });
 
             pushTranslate(this.pos.scale(-1).add(120, 0));
+
+            drawRect({ width: 240, height: 120, color: rgb(50, 50, 50), });
+            drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128), });
 
             for (let x = 0; x <= 120; x++) {
                 let direction = lerp(planeP1, planeP2, x / 120).scale(6);
