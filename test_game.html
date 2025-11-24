@@ -38,20 +38,20 @@ kaplay({
 });
 
 // Load sprites using ABSOLUTE URLs from play.kaplayjs.com
-loadSprite("bean", "https://ipfs.mintgarden.io/ipfs/bafybeigzcazxeu7epmm4vtkuadrvysv74lbzzbl2evphtae6k57yhgynp4/7907.png");
+loadSprite("enemy", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763977112/warrior_rnzmut.png");
 loadSprite("wall", "https://play.kaplayjs.com/sprites/brick_wall.png");
 
-let bean;
+let enemy;
 let objSlices = [];
 let wall;
 let slices = [];
 
 onLoad(() => {
-    bean = getSprite("bean").data;
-    for (let i = 0; i < bean.width; i++) {
+    enemy = getSprite("enemy").data;
+    for (let i = 0; i < enemy.width; i++) {
         objSlices.push(
-            bean.frames[0].scale(
-                new Quad(i / bean.width, 0, 1 / bean.width, 1),
+            enemy.frames[0].scale(
+                new Quad(i / enemy.width, 0, 1 / enemy.width, 1),
             ),
         );
     }
@@ -297,8 +297,8 @@ const camera = add([
                                 width: 2,
                                 height: oh,
                                 pos: vec2(x * 2, 120 + wh / 2 - oh),
-                                tex: bean.tex,
-                                quad: objSlices[Math.round(u * (bean.width - 1))],
+                                tex: enemy.tex,
+                                quad: objSlices[Math.round(u * (enemy.width - 1))],
                                 color: WHITE,   // 保留原本 sprite 的立體陰影
                             });
                         });
