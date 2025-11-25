@@ -130,7 +130,6 @@ const colors = {
     "&": YELLOW,
 };
 
-// baseGrid is static strings (for addLevel)
 const baseGrid = [
     "####################################",
     "#                                  #",
@@ -147,12 +146,11 @@ const baseGrid = [
     "####################################",
 ];
 
-// grid is mutable 2D char array (for raycast + AI)
 const grid = baseGrid.map(row => row.split(""));
 
 const TILE_SIZE  = 16;
 
-// movement speeds, tuned to feel like the original sample
+// movement speeds
 const MOVE_SPEED = 150;  // pixels per second
 const ROT_SPEED  = 120;  // degrees per second
 
@@ -163,7 +161,6 @@ function inBounds(gx, gy) {
 function canWalkToCell(gx, gy) {
     if (!inBounds(gx, gy)) return false;
     const c = grid[gy][gx];
-    // monsters do not block movement in this example
     return c === " " || c === "&";
 }
 
@@ -188,8 +185,6 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance) {
         (tDelta.y < Infinity) ? tDelta.y * dist.y : Infinity,
     );
     let steppedIndex = -1;
-
-    const h = grid.length;
 
     while (t <= maxDistance) {
         if (!inBounds(gridPos.x, gridPos.y)) {
@@ -258,6 +253,7 @@ function raycastEdge(origin, direction, line) {
 }
 
 function rayCastAsciiGrid(origin, direction) {
+    // work in grid units
     origin = origin.scale(1 / 16);
     direction = direction.scale(1 / 16);
     const objects = [];
@@ -284,7 +280,7 @@ function rayCastAsciiGrid(origin, direction) {
                 return tile !== " " && tile !== "&";
             }
         }
-    }, direction.len()); // like original: trace as far as ray length
+    }, direction.len());
 
     if (hit) {
         hit.point = hit.point.scale(16);
@@ -295,8 +291,13 @@ function rayCastAsciiGrid(origin, direction) {
 }
 
 // ===== Camera entity (draw only) =====
+
+// put camera inside a valid empty tile, for example (8, 9)
+const startGX = 8;
+const startGY = 9;
+
 const camera = add([
-    pos(13 * TILE_SIZE + TILE_SIZE / 2, 13 * TILE_SIZE + TILE_SIZE / 2),
+    pos((startGX + 0.5) * TILE_SIZE, (startGY + 0.5) * TILE_SIZE),
     rotate(0),
     z(-1),
     rect(8, 8),
@@ -456,7 +457,7 @@ onKeyRelease("left", () => { turnLeft = false; });
 onKeyDown("right",    () => { turnRight = true; });
 onKeyRelease("right", () => { turnRight = false; });
 
-// HTML buttons: mousedown / mouseup to simulate hold
+// HTML buttons: hold movement
 function bindHoldButton(id, flagName) {
     const btn = document.getElementById(id);
     btn.addEventListener("mousedown", () => { window[flagName] = true; });
