@@ -156,11 +156,9 @@ const baseGrid = [
 // grid is mutable 2D char array (for raycast + AI)
 const grid = baseGrid.map(row => row.split(""));
 
-const TILE_SIZE = 16;
-
-// movement / turning step sizes
-const STEP_SIZE = 4;        // pixels moved per key press
-const TURN_STEP_DEG = 5;    // degrees rotated per key press
+const TILE_SIZE  = 16;
+const MOVE_SPEED = 60;  // pixels per second
+const ROT_SPEED  = 90;  // degrees per second
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
@@ -393,7 +391,7 @@ const camera = add([
     },
 ]);
 
-// level collisions use baseGrid (no moving monsters needed here)
+// level collisions use baseGrid
 addLevel(baseGrid, {
     pos: vec2(0, 0),
     tileWidth: TILE_SIZE,
@@ -402,14 +400,13 @@ addLevel(baseGrid, {
         "#": () => [rect(16, 16), color(RED), opacity(0), area(), body({ isStatic: true })],
         "$": () => [rect(16, 16), color(GREEN), opacity(0), area(), body({ isStatic: true })],
         "%": () => [rect(16, 16), color(BLUE), opacity(0), area(), body({ isStatic: true })],
-        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)], // just a marker
+        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)],
     },
 });
 
 // ===== monster data & movement =====
 const monsters = [];
 
-// collect initial monster positions from grid
 for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
         if (grid[y][x] === "&") {
@@ -430,7 +427,6 @@ function moveMonsters() {
     const py = Math.floor(camera.pos.y / TILE_SIZE);
 
     for (const m of monsters) {
-        // choose axis closer to player
         const dx = px - m.x;
         const dy = py - m.y;
         let stepX = 0, stepY = 0;
@@ -445,9 +441,7 @@ function moveMonsters() {
         const ny = m.y + stepY;
 
         if (inBounds(nx, ny) && canWalkToCell(nx, ny) && !monsterAt(nx, ny)) {
-            // clear old
             grid[m.y][m.x] = " ";
-            // move
             m.x = nx;
             m.y = ny;
             grid[m.y][m.x] = "&";
@@ -455,52 +449,75 @@ function moveMonsters() {
     }
 }
 
-// ===== global update (only monsters now) =====
+// ===== input state for continuous movement =====
+let moveForward = false;
+let moveBack    = false;
+let turnLeft    = false;
+let turnRight   = false;
+
+// keyboard: hold to move
+onKeyDown("up",    () => { moveForward = true; });
+onKeyRelease("up", () => { moveForward = false; });
+
+onKeyDown("down",    () => { moveBack = true; });
+onKeyRelease("down", () => { moveBack = false; });
+
+onKeyDown("left",    () => { turnLeft = true; });
+onKeyRelease("left", () => { turnLeft = false; });
+
+onKeyDown("right",    () => { turnRight = true; });
+onKeyRelease("right", () => { turnRight = false; });
+
+// HTML buttons: mousedown / mouseup to simulate hold
+function bindHoldButton(id, flagName) {
+    const btn = document.getElementById(id);
+    btn.addEventListener("mousedown", () => { window[flagName] = true; });
+    btn.addEventListener("mouseup",   () => { window[flagName] = false; });
+    btn.addEventListener("mouseleave",() => { window[flagName] = false; });
+    // optional touch support
+    btn.addEventListener("touchstart", e => { e.preventDefault(); window[flagName] = true; });
+    btn.addEventListener("touchend",   e => { e.preventDefault(); window[flagName] = false; });
+}
+
+bindHoldButton("btn-forward",    "moveForward");
+bindHoldButton("btn-back",       "moveBack");
+bindHoldButton("btn-turn-left",  "turnLeft");
+bindHoldButton("btn-turn-right", "turnRight");
+
+// ===== global update: movement + monsters =====
 onUpdate(() => {
     const d = dt();
+
+    // movement
+    let moveAmount = 0;
+    if (moveForward) moveAmount += MOVE_SPEED * d;
+    if (moveBack)    moveAmount -= MOVE_SPEED * d;
+
+    if (moveAmount !== 0) {
+        const dir = Vec2.fromAngle(camera.angle).unit().scale(moveAmount);
+        const newPos = camera.pos.add(dir);
+        const gx = Math.floor(newPos.x / TILE_SIZE);
+        const gy = Math.floor(newPos.y / TILE_SIZE);
+
+        if (canWalkToCell(gx, gy)) {
+            camera.pos = newPos;
+        }
+    }
+
+    // rotation
+    let rotAmount = 0;
+    if (turnLeft)  rotAmount -= ROT_SPEED * d;
+    if (turnRight) rotAmount += ROT_SPEED * d;
+    if (rotAmount !== 0) {
+        camera.angle += rotAmount;
+    }
+
+    // monster AI timer
     monsterTimer += d;
     if (monsterTimer >= MONSTER_MOVE_INTERVAL) {
         monsterTimer = 0;
         moveMonsters();
     }
-});
-
-// ===== movement / rotation helpers (step + degree) =====
-function startMoveStep(forward = 1) {
-    // step along current view direction
-    const dir = Vec2.fromAngle(camera.angle).unit().scale(STEP_SIZE * forward);
-    const newPos = camera.pos.add(dir);
-
-    const gx = Math.floor(newPos.x / TILE_SIZE);
-    const gy = Math.floor(newPos.y / TILE_SIZE);
-
-    if (!canWalkToCell(gx, gy)) return;
-
-    camera.pos = newPos;
-}
-
-function startTurnStep(direction) { // -1 left, +1 right
-    camera.angle += direction * TURN_STEP_DEG;
-}
-
-// keyboard
-onKeyPress("up", () => startMoveStep(1));
-onKeyPress("down", () => startMoveStep(-1));
-onKeyPress("left", () => startTurnStep(-1));
-onKeyPress("right", () => startTurnStep(1));
-
-// HTML buttons
-document.getElementById("btn-forward").addEventListener("click", () => {
-    startMoveStep(1);
-});
-document.getElementById("btn-back").addEventListener("click", () => {
-    startMoveStep(-1);
-});
-document.getElementById("btn-turn-left").addEventListener("click", () => {
-    startTurnStep(-1);
-});
-document.getElementById("btn-turn-right").addEventListener("click", () => {
-    startTurnStep(1);
 });
 </script>
 
