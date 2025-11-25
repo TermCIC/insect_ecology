@@ -159,8 +159,8 @@ const grid = baseGrid.map(row => row.split(""));
 const TILE_SIZE  = 16;
 
 // movement speeds, tuned to feel like the original sample
-const MOVE_SPEED = 150;  // pixels per second
-const ROT_SPEED  = 120;  // degrees per second
+const MOVE_SPEED = 40;  // pixels per second
+const ROT_SPEED  = 90;  // degrees per second
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
