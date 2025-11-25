@@ -265,10 +265,59 @@ const grid = [
     "##################",
 ];
 
+const TILE_SIZE = 16;
+const TURN_STEP = Math.PI / 4;   // 45 degrees
+
+function canWalkToCell(gx, gy) {
+    if (gy < 0 || gy >= grid.length) return false;
+    const row = grid[gy];
+    if (gx < 0 || gx >= row.length) return false;
+    const c = row[gx];
+    // passable tiles: space or & (enemy)
+    return c === " " || c === "&";
+}
+
+function moveByGrid(deltaX, deltaY) {
+    // current grid cell
+    const gx = Math.floor(camera.pos.x / TILE_SIZE);
+    const gy = Math.floor(camera.pos.y / TILE_SIZE);
+
+    const nx = gx + deltaX;
+    const ny = gy + deltaY;
+
+    if (!canWalkToCell(nx, ny)) return; // hit wall, do nothing
+
+    // snap camera to center of new cell
+    camera.pos = vec2(
+        (nx + 0.5) * TILE_SIZE,
+        (ny + 0.5) * TILE_SIZE,
+    );
+}
+
+// quantize facing direction into 8 directions (45° each)
+function getFacingDir() {
+    const full = Math.PI * 2;
+    let a = camera.angle;
+    a = ((a % full) + full) % full;        // wrap to 0..2π
+    const sector = Math.round(a / TURN_STEP) & 7; // 0..7
+
+    const dirs = [
+        vec2(1, 0),   // 0°  east
+        vec2(1, 1),   // 45°
+        vec2(0, 1),   // 90°  south
+        vec2(-1, 1),  // 135°
+        vec2(-1, 0),  // 180° west
+        vec2(-1, -1), // 225°
+        vec2(0, -1),  // 270° north
+        vec2(1, -1),  // 315°
+    ];
+
+    return dirs[sector];
+}
+
 function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
-
 
 const camera = add([
     pos(7 * 16, 11 * 16 + 8),
@@ -375,33 +424,25 @@ addLevel(grid, {
     },
 });
 
-
+// move one grid cell in facing direction
 onKeyDown("up", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(40));
+    const dir = getFacingDir();
+    moveByGrid(dir.x, dir.y);
 });
+
+// move one grid cell backward
 onKeyDown("down", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(-40));
+    const dir = getFacingDir();
+    moveByGrid(-dir.x, -dir.y);
 });
+
+// rotate exactly 45 degrees
 onKeyDown("left", () => {
-    camera.angle -= 90 * dt();
+    camera.angle -= TURN_STEP;
 });
+
 onKeyDown("right", () => {
-    camera.angle += 90 * dt();
-});
-onKeyDown("f", () => {
-    camera.focalLength = Math.max(1, camera.focalLength - 10 * dt());
-});
-onKeyDown("g", () => {
-    camera.focalLength += 10 * dt();
-});
-onKeyDown("r", () => {
-    camera.fov = Math.max(1, camera.fov - 10 * dt());
-});
-onKeyDown("t", () => {
-    camera.fov += 10 * dt();
-});
-onKeyDown("p", () => {
-    debug.paused = !debug.paused;
+    camera.angle += TURN_STEP;
 });
 
 // === HTML button controls ===
