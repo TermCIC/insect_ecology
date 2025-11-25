@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.2</title>
+<title>KEG v0.2.3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -139,10 +139,20 @@
 </div>
 
 <script>
+const NATIVE_GAME_WIDTH = 240;
 const defaultScale = 3;
-const portraitScale = 1.5;
+let finalScale = defaultScale;
 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-const finalScale = isPortrait ? portraitScale : defaultScale;
+
+if (isPortrait) {
+    // 95vw is the CSS width of #game in portrait mode.
+    // window.innerWidth gives the viewport width in pixels.
+    const actualGameContainerWidth = window.innerWidth * 0.95;
+    
+    // Calculate the scale needed to stretch the 240px native game resolution
+    // to fit the actual container width (95vw).
+    finalScale = actualGameContainerWidth / NATIVE_GAME_WIDTH;
+}
 
 // init
 kaplay({
