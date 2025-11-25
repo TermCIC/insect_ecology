@@ -86,6 +86,7 @@
 </div>
 
 <script>
+// init
 kaplay({
     canvas: document.querySelector("canvas") || undefined,
     root: document.getElementById("game"),
@@ -184,7 +185,7 @@ function raycastEdge(origin, direction, line) {
     const d = line.p2.add(line.pos);
     const ab = direction;
     const cd = d.sub(c);
-    let abxcd = ab.cross(cd);
+    const abxcd = ab.cross(cd);
 
     if (Math.abs(abxcd) < Number.EPSILON) return false;
 
@@ -277,10 +278,10 @@ const grid = [
 
 const TILE_SIZE = 16;
 
-// 45 degree steps
+// 45 degree steps (8 directions)
 const TURN_STEP = 45;
-const MOVE_TIME = 0.18;
-const TURN_TIME = 0.12;
+const MOVE_TIME = 0.18; // time for 1-tile move in cardinal direction
+const TURN_TIME = 0.12; // time for 45° turn
 
 function canWalkToCell(gx, gy) {
     if (gy < 0 || gy >= grid.length) return false;
@@ -297,14 +298,14 @@ function getFacingDir() {
     const sector = Math.round(a / TURN_STEP) % 8;
 
     const dirs = [
-        vec2(1, 0),   // 0°   east
-        vec2(1, 1),   // 45°  SE
-        vec2(0, 1),   // 90°  S
-        vec2(-1, 1),  // 135° SW
-        vec2(-1, 0),  // 180° W
-        vec2(-1, -1), // 225° NW
-        vec2(0, -1),  // 270° N
-        vec2(1, -1),  // 315° NE
+        vec2(1, 0),    // 0°   east
+        vec2(1, 1),    // 45°  south-east
+        vec2(0, 1),    // 90°  south
+        vec2(-1, 1),   // 135° south-west
+        vec2(-1, 0),   // 180° west
+        vec2(-1, -1),  // 225° north-west
+        vec2(0, -1),   // 270° north
+        vec2(1, -1),   // 315° north-east
     ];
 
     return dirs[sector];
@@ -314,7 +315,7 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-// ===== Camera entity with manual tween in update() =====
+// ===== Camera entity, with manual tween in update() =====
 const camera = add([
     pos(13 * TILE_SIZE + TILE_SIZE / 2, 13 * TILE_SIZE + TILE_SIZE / 2),
     rotate(0),
@@ -325,38 +326,42 @@ const camera = add([
     opacity(0),
     body(),
     {
-        moving: false,
-        rotating: false,
+        // movement tween state
+        isMoving: false,
         moveFrom: vec2(0, 0),
         moveTo: vec2(0, 0),
-        moveT: 0,
+        moveElapsed: 0,
+        moveDuration: 1,
+
+        // rotation tween state
+        isRotating: false,
         rotFrom: 0,
         rotTo: 0,
-        rotT: 0,
+        rotElapsed: 0,
+        rotDuration: 1,
 
         update() {
             const d = dt();
 
-            // move tween
-            if (this.moving) {
-                this.moveT += d / MOVE_TIME;
-                const t = Math.min(this.moveT, 1);
+            // position tween
+            if (this.isMoving) {
+                this.moveElapsed += d;
+                const t = Math.min(this.moveElapsed / this.moveDuration, 1);
                 this.pos = lerp(this.moveFrom, this.moveTo, t);
-
                 if (t >= 1) {
-                    this.moving = false;
+                    this.isMoving = false;
                     this.pos = this.moveTo;
                 }
             }
 
-            // rotate tween
-            if (this.rotating) {
-                this.rotT += d / TURN_TIME;
-                const t = Math.min(this.rotT, 1);
+            // rotation tween
+            if (this.isRotating) {
+                this.rotElapsed += d;
+                const t = Math.min(this.rotElapsed / this.rotDuration, 1);
                 this.angle = this.rotFrom + (this.rotTo - this.rotFrom) * t;
-
                 if (t >= 1) {
-                    this.rotating = false;
+                    this.isRotating = false;
+                    // snap to exact 45°
                     this.angle = Math.round(this.angle / TURN_STEP) * TURN_STEP;
                 }
             }
@@ -384,7 +389,7 @@ const camera = add([
             drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
             for (let x = 0; x <= 120; x++) {
-                let direction = lerp(planeP1, planeP2, x / 120).scale(6);
+                const direction = lerp(planeP1, planeP2, x / 120).scale(6);
 
                 const hit = rayCastAsciiGrid(this.pos, direction, grid);
                 if (hit) {
@@ -410,19 +415,19 @@ const camera = add([
                     });
 
                     if (hit.objects) {
-                        hit.objects.reverse().forEach(o => {
-                            const t = o.t;
-                            const wh = 240 / (t * direction.len() / 16);
-                            const oh = 180 / (t * direction.len() / 16);
+                        hit.objects.reverse().forEach((o) => {
+                            const t2 = o.t;
+                            const wh = 240 / (t2 * direction.len() / 16);
+                            const oh = 180 / (t2 * direction.len() / 16);
 
-                            let u = o.s;
+                            const u2 = o.s;
 
                             drawUVQuad({
                                 width: 2,
                                 height: oh,
                                 pos: vec2(x * 2, 120 + wh / 2 - oh),
                                 tex: enemy.tex,
-                                quad: objSlices[Math.round(u * (enemy.width - 1))],
+                                quad: objSlices[Math.round(u2 * (enemy.width - 1))],
                                 color: WHITE,
                             });
                         });
@@ -431,6 +436,7 @@ const camera = add([
             }
             popTransform();
         },
+
         focalLength: 40,
         fov: 10,
     },
@@ -448,15 +454,17 @@ addLevel(grid, {
     },
 });
 
-// ===== Step movement / rotation =====
+// ===== movement / rotation control =====
 function isBusy() {
-    return camera.moving || camera.rotating;
+    return camera.isMoving || camera.isRotating;
 }
 
 function startMoveStep(forward = 1) {
     if (isBusy()) return;
 
     const dir = getFacingDir().scale(forward);
+    const stepLen = dir.len(); // 1 for cardinal, sqrt(2) for diagonal
+
     const gx = Math.floor(camera.pos.x / TILE_SIZE);
     const gy = Math.floor(camera.pos.y / TILE_SIZE);
     const nx = gx + dir.x;
@@ -464,8 +472,9 @@ function startMoveStep(forward = 1) {
 
     if (!canWalkToCell(nx, ny)) return;
 
-    camera.moving = true;
-    camera.moveT = 0;
+    camera.isMoving = true;
+    camera.moveElapsed = 0;
+    camera.moveDuration = MOVE_TIME * stepLen;
     camera.moveFrom = vec2(camera.pos.x, camera.pos.y);
     camera.moveTo = vec2(
         (nx + 0.5) * TILE_SIZE,
@@ -476,8 +485,9 @@ function startMoveStep(forward = 1) {
 function startTurnStep(direction) { // -1 left, +1 right
     if (isBusy()) return;
 
-    camera.rotating = true;
-    camera.rotT = 0;
+    camera.isRotating = true;
+    camera.rotElapsed = 0;
+    camera.rotDuration = TURN_TIME * Math.abs(direction);
     camera.rotFrom = camera.angle;
     camera.rotTo = camera.angle + direction * TURN_STEP;
 }
@@ -488,7 +498,7 @@ onKeyPress("down", () => startMoveStep(-1));
 onKeyPress("left", () => startTurnStep(-1));
 onKeyPress("right", () => startTurnStep(1));
 
-// HTML buttons, same logic
+// HTML buttons
 document.getElementById("btn-forward").addEventListener("click", () => {
     startMoveStep(1);
 });
