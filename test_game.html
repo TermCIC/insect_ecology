@@ -94,7 +94,7 @@ kaplay({
 });
 
 // sprites
-// Tell KAPLAY that this sprite is a 4 x 4 sheet
+// enemy is a 4 x 4 sheet
 loadSprite(
     "enemy",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764052899/monster-orc-1763978389772_vjhouc.png",
@@ -111,7 +111,7 @@ loadSprite(
 let enemy;
 let wall;
 
-// enemySlices[frameIndex][columnIndex] -> Quad of one vertical slice of that frame
+// enemySlices[frameIndex][columnIndex]
 let enemySlices = [];
 let wallSlices = [];
 
@@ -119,7 +119,7 @@ onLoad(() => {
     enemy = getSprite("enemy").data;
     wall = getSprite("wall").data;
 
-    // precompute vertical slices for each frame of the enemy animation
+    // enemy vertical slices for every frame
     const frameWidth = enemy.width;
     const numFrames = enemy.frames.length;
 
@@ -136,7 +136,7 @@ onLoad(() => {
         enemySlices.push(cols);
     }
 
-    // precompute vertical slices for the wall texture
+    // wall vertical slices
     for (let i = 0; i < wall.width; i++) {
         wallSlices.push(
             wall.frames[0].scale(
@@ -146,7 +146,7 @@ onLoad(() => {
     }
 });
 
-// ===== Grid & movement =====
+// ===== Grid & raycast =====
 const colors = {
     "#": RED,
     "$": GREEN,
@@ -154,7 +154,6 @@ const colors = {
     "&": YELLOW,
 };
 
-// baseGrid is static strings (for addLevel)
 const baseGrid = [
     "####################################",
     "#                                  #",
@@ -171,30 +170,19 @@ const baseGrid = [
     "####################################",
 ];
 
-// grid is mutable 2D char array (for raycast)
 const grid = baseGrid.map(row => row.split(""));
 
-const TILE_SIZE  = 16;
-
-// movement speeds
-const MOVE_SPEED = 40;  // pixels per second
-const ROT_SPEED  = 90;  // degrees per second
+const TILE_SIZE = 16;
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
-}
-
-function canWalkToCell(gx, gy) {
-    if (!inBounds(gx, gy)) return false;
-    const c = grid[gy][gx];
-    return c === " " || c === "&";
 }
 
 function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-function rayCastGrid(origin, direction, gridPosHit, maxDistance) {
+function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
     const pos = origin;
     const len = direction.len();
     const dir = direction.scale(1 / len);
@@ -213,9 +201,7 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance) {
     let steppedIndex = -1;
 
     while (t <= maxDistance) {
-        if (!inBounds(gridPos.x, gridPos.y)) {
-            break;
-        }
+        if (!inBounds(gridPos.x, gridPos.y)) break;
 
         const hit = gridPosHit(gridPos);
         if (hit === true) {
@@ -319,7 +305,7 @@ function rayCastAsciiGrid(origin, direction) {
 const startGX = 8;
 const startGY = 9;
 
-let animTime = 0; // used to choose animation frame
+let animTime = 0;
 
 const camera = add([
     pos((startGX + 0.5) * TILE_SIZE, (startGY + 0.5) * TILE_SIZE),
@@ -355,15 +341,15 @@ const camera = add([
             // choose current enemy animation frame
             let currentEnemySlices = null;
             if (enemySlices.length > 0) {
-                const animSpeed = 6; // frames per second
+                const animSpeed = 6;
                 const frameIndex = Math.floor(animTime * animSpeed) % enemySlices.length;
                 currentEnemySlices = enemySlices[frameIndex];
             }
 
             for (let x = 0; x <= 120; x++) {
                 const direction = lerp(planeP1, planeP2, x / 120).scale(6);
-
                 const hit = rayCastAsciiGrid(this.pos, direction);
+
                 if (hit) {
                     const t = hit.t;
                     const d = clamp(1 - t * 1.2, 0.2, 1);
@@ -371,7 +357,6 @@ const camera = add([
                     let u = Math.abs(hit.normal.x) > Math.abs(hit.normal.y)
                         ? hit.point.y
                         : hit.point.x;
-
                     u = (u % 16) / 16;
                     u = u - Math.floor(u);
 
@@ -418,84 +403,77 @@ const camera = add([
     },
 ]);
 
-// level collisions use baseGrid
+// level collisions like official example
 addLevel(baseGrid, {
     pos: vec2(0, 0),
     tileWidth: TILE_SIZE,
     tileHeight: TILE_SIZE,
     tiles: {
-        "#": () => [rect(16, 16), color(RED), opacity(0), area(), body({ isStatic: true })],
-        "$": () => [rect(16, 16), color(GREEN), opacity(0), area(), body({ isStatic: true })],
-        "%": () => [rect(16, 16), color(BLUE), opacity(0), area(), body({ isStatic: true })],
+        "#": () => [rect(16, 16), color(RED), area(), body({ isStatic: true }), opacity(0)],
+        "$": () => [rect(16, 16), color(GREEN), area(), body({ isStatic: true }), opacity(0)],
+        "%": () => [rect(16, 16), color(BLUE), area(), body({ isStatic: true }), opacity(0)],
         "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)],
     },
 });
 
-// ===== input state for continuous movement =====
-let moveForward = false;
-let moveBack    = false;
-let turnLeft    = false;
-let turnRight   = false;
+// ===== movement like official example =====
+const STEP_DIST = 40;
+const ROT_SPEED = 90;
 
-// keyboard: hold to move
-onKeyDown("up",    () => { moveForward = true; });
-onKeyRelease("up", () => { moveForward = false; });
+// keyboard movement exactly as in official sample
+onKeyDown("up", () => {
+    camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
+});
 
-onKeyDown("down",    () => { moveBack = true; });
-onKeyRelease("down", () => { moveBack = false; });
+onKeyDown("down", () => {
+    camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
+});
 
-onKeyDown("left",    () => { turnLeft = true; });
-onKeyRelease("left", () => { turnLeft = false; });
+onKeyDown("left", () => {
+    camera.angle -= ROT_SPEED * dt();
+});
 
-onKeyDown("right",    () => { turnRight = true; });
-onKeyRelease("right", () => { turnRight = false; });
+onKeyDown("right", () => {
+    camera.angle += ROT_SPEED * dt();
+});
 
-// HTML buttons: mousedown / mouseup to simulate hold
-function bindHoldButton(id, flagName) {
+// ===== HTML button hold-to-move =====
+let btnForwardHeld   = false;
+let btnBackHeld      = false;
+let btnTurnLeftHeld  = false;
+let btnTurnRightHeld = false;
+
+function bindHoldButton(id, setter) {
     const btn = document.getElementById(id);
-    btn.addEventListener("mousedown", () => { window[flagName] = true; });
-    btn.addEventListener("mouseup",   () => { window[flagName] = false; });
-    btn.addEventListener("mouseleave",() => { window[flagName] = false; });
-    btn.addEventListener("touchstart", e => { e.preventDefault(); window[flagName] = true; });
-    btn.addEventListener("touchend",   e => { e.preventDefault(); window[flagName] = false; });
+    btn.addEventListener("mousedown", () => setter(true));
+    btn.addEventListener("mouseup",   () => setter(false));
+    btn.addEventListener("mouseleave",() => setter(false));
+    btn.addEventListener("touchstart", e => { e.preventDefault(); setter(true); });
+    btn.addEventListener("touchend",   e => { e.preventDefault(); setter(false); });
 }
 
-bindHoldButton("btn-forward",    "moveForward");
-bindHoldButton("btn-back",       "moveBack");
-bindHoldButton("btn-turn-left",  "turnLeft");
-bindHoldButton("btn-turn-right", "turnRight");
+bindHoldButton("btn-forward",    v => btnForwardHeld = v);
+bindHoldButton("btn-back",       v => btnBackHeld = v);
+bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld = v);
+bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
 
-// ===== global update =====
+// update for animation and button driven movement
 onUpdate(() => {
     const d = dt();
     animTime += d;
 
-    // movement input
-    let moveInput = 0;
-    if (moveForward) moveInput += 1;
-    if (moveBack)    moveInput -= 1;
-
-    if (moveInput !== 0) {
-        const dir = Vec2.fromAngle(camera.angle)
-            .unit()
-            .scale(MOVE_SPEED * d * moveInput);
-
-        const newPos = camera.pos.add(dir);
-        const gx = Math.floor(newPos.x / TILE_SIZE);
-        const gy = Math.floor(newPos.y / TILE_SIZE);
-
-        if (canWalkToCell(gx, gy)) {
-            camera.pos = newPos;
-        }
+    // buttons use same logic per frame as keyboard
+    if (btnForwardHeld) {
+        camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
     }
-
-    // rotation input
-    let rotInput = 0;
-    if (turnLeft)  rotInput -= 1;
-    if (turnRight) rotInput += 1;
-
-    if (rotInput !== 0) {
-        camera.angle += ROT_SPEED * d * rotInput;
+    if (btnBackHeld) {
+        camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
+    }
+    if (btnTurnLeftHeld) {
+        camera.angle -= ROT_SPEED * d;
+    }
+    if (btnTurnRightHeld) {
+        camera.angle += ROT_SPEED * d;
     }
 });
 </script>
