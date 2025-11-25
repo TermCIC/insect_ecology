@@ -175,7 +175,8 @@ const ATTACK_RANGE_TILES_SQ  = 3;
 const FIREBALL_TILES_PER_SECOND = 1;   // speed in tiles / sec
 const FIREBALL_LIFETIME         = 3;   // seconds
 const FIREBALL_HIT_RADIUS       = 8;   // pixels
-
+const FIREBALL_ANGLE_OFFSET = 5;
+    
 // list of active fireballs
 const projectiles = [];
 
@@ -661,15 +662,18 @@ onKeyDown("down", () => {
 });
 onKeyDown("left", () => {
     camera.angle -= ROT_SPEED * dt();
+    FIREBALL_ANGLE_OFFSET += FIREBALL_OFFSET_SPEED * dt();
 });
 onKeyDown("right", () => {
     camera.angle += ROT_SPEED * dt();
+    FIREBALL_ANGLE_OFFSET -= FIREBALL_OFFSET_SPEED * dt();
 });
 
 // ===== fireball spawn & potion =====
 function spawnFireball() {
-    const dir = Vec2.fromAngle(camera.angle);
-    const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
+    const launchAngle = camera.angle - FIREBALL_ANGLE_OFFSET;
+    const dir = Vec2.fromAngle(launchAngle); 
+    const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10)); 
     projectiles.push({
         pos: start,
         dir: dir,
