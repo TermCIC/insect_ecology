@@ -52,10 +52,12 @@
         /* make buttons big and easy to tap */
         #controls button {
             min-width: 0;
-            min-height: 48px;
+            min-height: 48px; /* Recommended minimum tap target size */
             flex: 1;
             padding: 14px 0;
-            font-size: 120px;
+            /* **FIX:** Change font-size from 120px to a more reasonable size */
+            font-size: 24px; /* Using a fixed size, you could also use 4vw or 1.5em */
+            box-sizing: border-box; /* Ensures padding doesn't push the button out of its container */
         }
 
         /* forward button full width */
@@ -104,44 +106,6 @@
 
     #controls button:active {
         background: #444;
-    }
-
-    /* mobile friendly controls */
-    @media (max-width: 768px) {
-        body {
-            justify-content: flex-start;
-            padding-top: 12px;
-            height: auto;
-        }
-
-        #game {
-            width: 80vw;
-            height: auto;
-            border-width: 3px;
-        }
-
-        #controls {
-            width: 90vw;
-            gap: 6px;
-        }
-
-        /* make buttons big and easy to tap */
-        #controls button {
-            min-width: 0;
-            flex: 1;
-            padding: 14px 0;
-            font-size: 36px;
-        }
-
-        /* forward button full width */
-        #btn-forward {
-            width: 100%;
-        }
-
-        /* bottom row spans full width */
-        #controls .row {
-            width: 100%;
-        }
     }
 </style>
 
