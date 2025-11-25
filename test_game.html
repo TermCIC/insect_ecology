@@ -1,91 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>KAPLAY 3D Example</title>
-<style>
-    body {
-        margin: 0;
-        background: #111;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        gap: 12px;
-        font-family: system-ui, sans-serif;
-    }
-
-    #game {
-        position: relative;
-        overflow: hidden;
-        background: black;
-        border: 4px solid #555;
-        aspect-ratio: 1 / 1;
-    }
-
-    @media (orientation: landscape) {
-        #game {
-            height: 70vh;
-            width: auto;
-        }
-    }
-
-    @media (orientation: portrait) {
-        #game {
-            width: 70vw;
-            height: auto;
-        }
-    }
-
-    canvas {
-        width: 100%;
-        height: 100%;
-        image-rendering: pixelated;
-    }
-
-    #controls {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-    }
-
-    #controls .row {
-        display: flex;
-        gap: 4px;
-    }
-
-    #controls button {
-        min-width: 200px;
-        padding: 6px 10px;
-        font-size: 16px;
-        border-radius: 6px;
-        border: 1px solid #444;
-        background: #222;
-        color: #eee;
-        cursor: pointer;
-    }
-
-    #controls button:active {
-        background: #444;
-    }
-</style>
-<script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script>
-</head>
-
-<body>
-<div id="game"></div>
-
-<div id="controls">
-    <button id="btn-forward">↑</button>
-    <div class="row">
-        <button id="btn-turn-left">↺</button>
-        <button id="btn-back">↓</button>
-        <button id="btn-turn-right">↻</button>
-    </div>
-</div>
-
 <script>
 kaplay({
     canvas: document.querySelector("canvas") || undefined,
@@ -122,8 +34,8 @@ onLoad(() => {
     }
 });
 
-// ===== Raycasting helpers (unchanged) =====
-function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
+// ===== Raycasting helpers (optimized) =====
+function rayCastGrid(origin, direction, gridPosHit, maxDistance = 32) {
     const pos = origin;
     const len = direction.len();
     const dir = direction.scale(1 / len);
@@ -141,7 +53,15 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
     );
     let steppedIndex = -1;
 
+    const h = grid.length;
+    const w = grid[0].length;
+
     while (t <= maxDistance) {
+        // early out if ray left the map
+        if (gridPos.x < 0 || gridPos.y < 0 || gridPos.y >= h || gridPos.x >= grid[gridPos.y].length) {
+            break;
+        }
+
         const hit = gridPosHit(gridPos);
         if (hit === true) {
             return {
@@ -229,7 +149,7 @@ function rayCastAsciiGrid(origin, direction, grid) {
                 return row[x] !== " " && row[x] !== "&";
             }
         }
-    }, direction.len());
+    }, 32); // shorter view distance
 
     if (hit) {
         hit.point = hit.point.scale(16);
@@ -276,9 +196,10 @@ const grid = [
     "####################################",
 ];
 
-
 const TILE_SIZE = 16;
-const TURN_STEP = 90;   // degrees, 4 directions
+const TURN_STEP = 90;       // degrees, 4 directions
+const MOVE_TIME = 0.18;     // seconds to move 1 tile
+const TURN_TIME = 0.12;     // seconds to turn 90°
 
 function canWalkToCell(gx, gy) {
     if (gy < 0 || gy >= grid.length) return false;
@@ -286,21 +207,6 @@ function canWalkToCell(gx, gy) {
     if (gx < 0 || gx >= row.length) return false;
     const c = row[gx];
     return c === " " || c === "&"; // walkable
-}
-
-function moveByGrid(deltaX, deltaY) {
-    const gx = Math.floor(camera.pos.x / TILE_SIZE);
-    const gy = Math.floor(camera.pos.y / TILE_SIZE);
-
-    const nx = gx + deltaX;
-    const ny = gy + deltaY;
-
-    if (!canWalkToCell(nx, ny)) return;
-
-    camera.pos = vec2(
-        (nx + 0.5) * TILE_SIZE,
-        (ny + 0.5) * TILE_SIZE,
-    );
 }
 
 // quantize facing direction into 4 directions (90° each, using degrees)
@@ -323,10 +229,10 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-// ===== Camera entity =====
+// ===== Camera entity with tweened movement / rotation =====
 const camera = add([
-    // start exactly at center of tile (7, 11)
-    pos(7 * TILE_SIZE + TILE_SIZE / 2, 11 * TILE_SIZE + TILE_SIZE / 2),
+    // start roughly near middle
+    pos(13 * TILE_SIZE + TILE_SIZE / 2, 13 * TILE_SIZE + TILE_SIZE / 2),
     rotate(0),
     z(-1),
     rect(8, 8),
@@ -335,10 +241,44 @@ const camera = add([
     opacity(0),
     body(),
     {
-        draw() {
-            // Optional: snap angle to multiples of 90 so it never drifts
-            this.angle = Math.round(this.angle / TURN_STEP) * TURN_STEP;
+        // animation state
+        isMoving: false,
+        isRotating: false,
+        moveFrom: vec2(0, 0),
+        moveTo: vec2(0, 0),
+        moveT: 0,
+        rotFrom: 0,
+        rotTo: 0,
+        rotT: 0,
 
+        update() {
+            const d = dt();
+
+            // movement tween
+            if (this.isMoving) {
+                this.moveT += d / MOVE_TIME;
+                const t = Math.min(this.moveT, 1);
+                this.pos = lerp(this.moveFrom, this.moveTo, t);
+                if (t >= 1) {
+                    this.isMoving = false;
+                    this.pos = this.moveTo;
+                }
+            }
+
+            // rotation tween
+            if (this.isRotating) {
+                this.rotT += d / TURN_TIME;
+                const t = Math.min(this.rotT, 1);
+                this.angle = this.rotFrom + (this.rotTo - this.rotFrom) * t;
+                if (t >= 1) {
+                    this.isRotating = false;
+                    // snap to exact multiple of 90
+                    this.angle = Math.round(this.angle / TURN_STEP) * TURN_STEP;
+                }
+            }
+        },
+
+        draw() {
             pushTransform();
             pushRotate(-this.angle);
 
@@ -416,26 +356,61 @@ addLevel(grid, {
         "%": () => [rect(16, 16), color(BLUE), opacity(0), area(), body({ isStatic: true })],
         "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)],
     },
-});
+]);
+
+function busy() {
+    return camera.isMoving || camera.isRotating;
+}
+
+function startMoveStep(forward = 1) {
+    if (busy()) return;
+
+    const dir = getFacingDir().scale(forward);
+    const gx = Math.floor(camera.pos.x / TILE_SIZE);
+    const gy = Math.floor(camera.pos.y / TILE_SIZE);
+    const nx = gx + dir.x;
+    const ny = gy + dir.y;
+
+    if (!canWalkToCell(nx, ny)) return;
+
+    camera.isMoving = true;
+    camera.moveT = 0;
+    camera.moveFrom = vec2(camera.pos.x, camera.pos.y);
+    camera.moveTo = vec2(
+        (nx + 0.5) * TILE_SIZE,
+        (ny + 0.5) * TILE_SIZE,
+    );
+}
+
+function startTurnStep(direction) { // -1 left, +1 right
+    if (busy()) return;
+
+    camera.isRotating = true;
+    camera.rotT = 0;
+    camera.rotFrom = camera.angle;
+    camera.rotTo = camera.angle + direction * TURN_STEP;
+}
+
+// keyboard
+onKeyPress("up", () => startMoveStep(1));
+onKeyPress("down", () => startMoveStep(-1));
+onKeyPress("left", () => startTurnStep(-1));
+onKeyPress("right", () => startTurnStep(1));
 
 // HTML buttons, same logic
 document.getElementById("btn-forward").addEventListener("click", () => {
-    const dir = getFacingDir();
-    moveByGrid(dir.x, dir.y);
+    startMoveStep(1);
 });
 
 document.getElementById("btn-back").addEventListener("click", () => {
-    const dir = getFacingDir();
-    moveByGrid(-dir.x, -dir.y);
+    startMoveStep(-1);
 });
 
 document.getElementById("btn-turn-left").addEventListener("click", () => {
-    camera.angle -= TURN_STEP;
+    startTurnStep(-1);
 });
 
 document.getElementById("btn-turn-right").addEventListener("click", () => {
-    camera.angle += TURN_STEP;
+    startTurnStep(1);
 });
 </script>
-</body>
-</html>
