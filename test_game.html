@@ -158,23 +158,19 @@ const grid = baseGrid.map(row => row.split(""));
 
 const TILE_SIZE = 16;
 
-// movement / turning step sizes
-const STEP_SIZE = 4;        // pixels moved per key press
+// movement / turning step sizes for player
+const STEP_SIZE = 4;        // pixels per key press
 const TURN_STEP_DEG = 5;    // degrees rotated per key press
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
 }
 
-function isWallChar(c) {
-    return c === "#" || c === "$" || c === "%";
-}
-
 function canWalkToCell(gx, gy) {
     if (!inBounds(gx, gy)) return false;
     const c = grid[gy][gx];
-    // walls block, floor/monster tiles do not
-    return !isWallChar(c);
+    // only walls block movement
+    return c !== "#" && c !== "$" && c !== "%";
 }
 
 function clamp(v, min, max) {
@@ -278,14 +274,14 @@ function raycastEdge(origin, direction, line) {
 // ===== monster data (continuous positions) =====
 const monsters = [];
 
-// collect initial monster positions from grid (in world pixels)
+// collect initial monster positions from grid
 for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
         if (grid[y][x] === "&") {
-            monsters.push({
-                x: (x + 0.5) * TILE_SIZE,
-                y: (y + 0.5) * TILE_SIZE,
-            });
+            // store as center of tile in *grid units* (float)
+            monsters.push({ x: x + 0.5, y: y + 0.5 });
+            // clear from grid so raycast treats this as empty space
+            grid[y][x] = " ";
         }
     }
 }
@@ -293,16 +289,13 @@ for (let y = 0; y < grid.length; y++) {
 // smooth monster speed in tiles per second
 const MONSTER_SPEED = 1.5;
 
-// smooth monster movement toward player, blocked by walls
+// smooth monster movement toward player
 function moveMonsters(dt) {
     const px = camera.pos.x / TILE_SIZE;
     const py = camera.pos.y / TILE_SIZE;
 
     for (const m of monsters) {
-        const mx = m.x / TILE_SIZE;
-        const my = m.y / TILE_SIZE;
-
-        const toPlayer = vec2(px - mx, py - my);
+        const toPlayer = vec2(px - m.x, py - m.y);
         const dist = toPlayer.len();
         if (dist < 0.01) continue;
 
@@ -310,42 +303,47 @@ function moveMonsters(dt) {
         const maxStep = MONSTER_SPEED * dt;
         const step = Math.min(maxStep, dist);
 
-        const newMx = mx + dir.x * step;
-        const newMy = my + dir.y * step;
+        const newX = m.x + dir.x * step;
+        const newY = m.y + dir.y * step;
 
-        const gx = Math.floor(newMx);
-        const gy = Math.floor(newMy);
+        const gx = Math.floor(newX);
+        const gy = Math.floor(newY);
 
         if (canWalkToCell(gx, gy)) {
-            m.x = newMx * TILE_SIZE;
-            m.y = newMy * TILE_SIZE;
+            m.x = newX;
+            m.y = newY;
         }
     }
 }
 
 function rayCastAsciiGrid(origin, direction) {
-    // convert origin/direction from pixels to tile units
-    origin = origin.scale(1 / TILE_SIZE);
-    direction = direction.scale(1 / TILE_SIZE);
+    origin = origin.scale(1 / 16);     // to grid units
+    direction = direction.scale(1 / 16);
     const objects = [];
 
     // walls
     const hit = rayCastGrid(origin, direction, ({ x, y }) => {
-        if (!inBounds(x, y)) return false;
-        const tile = grid[y][x];
-        return isWallChar(tile);
+        if (y >= 0 && y < grid.length) {
+            const row = grid[y];
+            if (x >= 0 && x < row.length) {
+                const tile = row[x];
+                // anything non-space is solid wall
+                return tile !== " ";
+            }
+        }
     }, 32);
 
-    // monsters: billboard sprites at continuous positions
+    // monsters: each as a tiny vertical plane at its continuous position
     if (enemy) {
-        const perp = direction.normal().unit();
         for (const m of monsters) {
-            const mPos = vec2(m.x / TILE_SIZE, m.y / TILE_SIZE);
+            const perp = direction.normal().unit();
+            const planeP1 = perp.scale(-0.2);
+            const planeP2 = perp.scale(0.2);
 
             const objectHit = raycastEdge(origin, direction, {
-                pos: mPos,
-                p1: perp.scale(-0.2),
-                p2: perp.scale(0.2),
+                pos: vec2(m.x, m.y), // already in grid units
+                p1: planeP1,
+                p2: planeP2,
             });
 
             if (objectHit) objects.push(objectHit);
@@ -353,28 +351,11 @@ function rayCastAsciiGrid(origin, direction) {
     }
 
     if (hit) {
-        hit.point = hit.point.scale(TILE_SIZE);
+        hit.point = hit.point.scale(16);
         hit.object = { color: colors[grid[hit.gridPos.y][hit.gridPos.x]] };
         hit.objects = objects;
-        return hit;
     }
-
-    // no wall, but have monsters: fabricate a hit so they render
-    if (!hit && objects.length > 0) {
-        objects.sort((a, b) => a.t - b.t);
-        const first = objects[0];
-
-        return {
-            point: origin.add(direction.scale(first.t)).scale(TILE_SIZE),
-            normal: vec2(0, 0),
-            t: first.t,
-            gridPos: vec2(0, 0),
-            object: { color: WHITE },
-            objects,
-        };
-    }
-
-    return null;
+    return hit;
 }
 
 // ===== Camera entity (draw only) =====
@@ -498,7 +479,7 @@ function startTurnStep(direction) { // -1 left, +1 right
     camera.angle += direction * TURN_STEP_DEG;
 }
 
-// keyboard: step movement
+// keyboard
 onKeyPress("up", () => startMoveStep(1));
 onKeyPress("down", () => startMoveStep(-1));
 onKeyPress("left", () => startTurnStep(-1));
