@@ -185,7 +185,7 @@ function lerpVec(a, b, t) {
 }
 
 // ===== Raycasting helpers =====
-function rayCastGrid(origin, direction, gridPosHit, maxDistance = 32) {
+function rayCastGrid(origin, direction, gridPosHit, maxDistance = 24) {
     const pos = origin;
     const len = direction.len();
     const dir = direction.scale(1 / len);
