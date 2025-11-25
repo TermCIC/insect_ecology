@@ -345,7 +345,7 @@ const camera = add([
             drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
             drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
-            for (let x = 0; x <= 80; x++) {
+            for (let x = 0; x <= 60; x++) {
                 const direction = lerp(planeP1, planeP2, x / 120).scale(6);
 
                 const hit = rayCastAsciiGrid(this.pos, direction);
