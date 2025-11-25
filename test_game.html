@@ -12,6 +12,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        /* Using min-height and -webkit-fill-available for better mobile height calculation */
         min-height: 100vh;
         height: -webkit-fill-available;
         gap: 12px;
@@ -36,36 +37,40 @@
     @media (orientation: portrait) {
         body {
             justify-content: flex-start;
-            padding-top: 36px;
+            padding-top: 24px; /* Reduced padding slightly to save vertical space */
             height: auto;
         }
         
         #game {
-            width: 95vw;
+            /* Increased width to 95vw to use more screen space */
+            width: 95vw; 
             height: auto;
         }
         
         #controls {
-            width: 90vw;
+            /* Increased width to 95vw to match the game area */
+            width: 95vw; 
             gap: 6px;
             min-height: 96px;
+            margin-top: 12px; /* Added slight separation from game */
         }
 
         /* make buttons big and easy to tap */
         #controls button {
             min-width: 0;
-            min-height: 48px; /* Recommended minimum tap target size */
+            min-height: 52px; 
             flex: 1;
-            padding: 14px 0;
-            /* **FIX:** Change font-size from 120px to a more reasonable size */
-            font-size: 24px; /* Using a fixed size, you could also use 4vw or 1.5em */
-            box-sizing: border-box; /* Ensures padding doesn't push the button out of its container */
+            padding: 10px 0;
+            /* Using a responsive font size based on viewport width */
+            font-size: 5vw; 
+            box-sizing: border-box;
         }
 
         /* forward button full width */
         #btn-forward {
-            min-height: 48px;
+            min-height: 64px; /* Taller for primary action */
             width: 100%;
+            font-size: 6vw; /* Larger text for the main button */
         }
 
         /* bottom row spans full width */
