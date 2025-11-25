@@ -140,7 +140,7 @@
 
 <script>
 const defaultScale = 3;
-const portraitScale = 1.6;
+const portraitScale = 1.5;
 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
 const finalScale = isPortrait ? portraitScale : defaultScale;
 
@@ -592,8 +592,8 @@ const camera = add([
 
                 // draw an X in the middle-upper part of the view
                 drawLine({
-                    p1: vec2(40, 20),
-                    p2: vec2(80, 50),
+                    p1: vec2(40/finalScale, 20/finalScale),
+                    p2: vec2(80/finalScale, 50/finalScale),
                     width: 4,
                     color: col,
                 });
