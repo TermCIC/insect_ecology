@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v1.6</title>
+<title>KEG v1.7</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -12,11 +12,23 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        /* Using min-height and -webkit-fill-available for better mobile height calculation */
         min-height: 100vh;
         height: -webkit-fill-available;
-        gap: 12px;
+        gap: 8px;
         font-family: system-ui, sans-serif;
+        color: #eee;
+    }
+
+    #game-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .hp-bar {
+        font-size: 14px;
+        text-align: center;
     }
 
     #game {
@@ -25,6 +37,8 @@
         background: black;
         border: 4px solid #555;
         aspect-ratio: 1 / 1;
+        width: 80vw;
+        max-width: 480px;
     }
 
     @media (orientation: landscape) {
@@ -37,45 +51,32 @@
     @media (orientation: portrait) {
         body {
             justify-content: flex-start;
-            padding-top: 24px; /* Reduced padding slightly to save vertical space */
+            padding-top: 16px;
             height: auto;
         }
-        
+
         #game {
-            /* Increased width to 95vw to use more screen space */
-            width: 95vw; 
+            width: 95vw;
             height: 95vw;
         }
-        
+
         #controls {
-            /* Increased width to 95vw to match the game area */
-            width: 95vw; 
+            width: 95vw;
             gap: 6px;
             min-height: 96px;
-            margin-top: 12px; /* Added slight separation from game */
+            margin-top: 8px;
         }
 
-        /* make buttons big and easy to tap */
-        #controls button {
-            min-height: 52px; 
-            flex: 1;
-            padding: 10px 0;
-            /* Using a responsive font size based on viewport width */
-            font-size: 5vw; 
-            box-sizing: border-box;
-        }
-
-        /* forward button full width */
-        #btn-forward {
-            min-height: 64px; /* Taller for primary action */
-            width: 95vw;
-            font-size: 6vw; /* Larger text for the main button */
-        }
-
-        /* bottom row spans full width */
         #controls .row {
-            min-height: 48px;
-            width: 95vw;
+            width: 100%;
+        }
+
+        #controls button {
+            flex: 1;
+            min-height: 56px;
+            padding: 10px 0;
+            font-size: 5vw;
+            box-sizing: border-box;
         }
     }
 
@@ -89,7 +90,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         margin-bottom: 16px;
     }
 
@@ -100,13 +101,14 @@
 
     /* default (desktop / large screens) */
     #controls button {
-        padding: 6px 10px;
+        padding: 8px 12px;
         font-size: 16px;
         border-radius: 6px;
         border: 1px solid #444;
         background: #222;
         color: #eee;
         cursor: pointer;
+        min-width: 80px;
     }
 
     #controls button:active {
@@ -117,9 +119,19 @@
 <script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script>
 </head>
 <body>
-<div id="game"></div>
+
+<div id="game-wrapper">
+    <div id="monster-hp" class="hp-bar">Monster HP: -</div>
+    <div id="game"></div>
+    <div id="player-hp" class="hp-bar">Player HP: 100/100</div>
+</div>
+
 <div id="controls">
-    <button id="btn-forward">↑</button>
+    <div class="row">
+        <button id="btn-attack">⚔</button>
+        <button id="btn-forward">↑</button>
+        <button id="btn-potion">🧪</button>
+    </div>
     <div class="row">
         <button id="btn-turn-left">↺</button>
         <button id="btn-back">↓</button>
@@ -128,7 +140,7 @@
 </div>
 
 <script>
-const defaultScale = 3; 
+const defaultScale = 3;
 const portraitScale = 1.5;
 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
 const finalScale = isPortrait ? portraitScale : defaultScale;
@@ -140,23 +152,46 @@ kaplay({
     debug: true,
 });
 
-// sprites
+// ======== DOM UI ========
+const playerHpEl  = document.getElementById("player-hp");
+const monsterHpEl = document.getElementById("monster-hp");
+
+// ======== Player & Monster stats ========
+const player = {
+    maxHp: 100,
+    hp: 100,
+    atk: 12,
+};
+
+const MONSTER_MAX_HP = 40;
+const MONSTER_ATK    = 6;
+const MONSTER_ATTACK_INTERVAL = 1.0; // seconds between monster attacks
+
+const ATTACK_RANGE_TILES_SQ = 3; // distance^2 in tile units for both attack + animation
+
+function updatePlayerHpUI() {
+    playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
+}
+
+function updateMonsterHpUI(target) {
+    if (!target || !target.alive) {
+        monsterHpEl.textContent = "Monster HP: -";
+    } else {
+        monsterHpEl.textContent = `Monster HP: ${target.hp}/${target.maxHp}`;
+    }
+}
+
+// ======== Sprites ========
 loadSprite(
     "enemy",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057430/pixellab-jump-and-attack-toward-camera-1764054681406_zlxbfb.png",
-    {
-        sliceX: 4,
-        sliceY: 4,
-    },
+    { sliceX: 4, sliceY: 4 },
 );
 
 loadSprite(
     "enemyIdle",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764058491/pixellab-walk-and-idle-toward-camera-1764054830881_f6biy9.png",
-    {
-        sliceX: 4,
-        sliceY: 4,
-    },
+    { sliceX: 4, sliceY: 4 },
 );
 
 loadSprite(
@@ -193,20 +228,15 @@ onLoad(() => {
     wall_1 = getSprite("wall_1").data;
     wall_2 = getSprite("wall_2").data;
     wall_3 = getSprite("wall_3").data;
-    
+
     // enemy attack / walk slices
     const attackFrameWidth = enemy.width;
     const attackFrames = enemy.frames.length;
-
     for (let f = 0; f < attackFrames; f++) {
         const frame = enemy.frames[f];
         const cols = [];
         for (let i = 0; i < attackFrameWidth; i++) {
-            cols.push(
-                frame.scale(
-                    new Quad(i / attackFrameWidth, 0, 1 / attackFrameWidth, 1),
-                ),
-            );
+            cols.push(frame.scale(new Quad(i / attackFrameWidth, 0, 1 / attackFrameWidth, 1)));
         }
         enemySlices.push(cols);
     }
@@ -214,16 +244,11 @@ onLoad(() => {
     // enemy idle slices
     const idleFrameWidth = enemyIdle.width;
     const idleFrames = enemyIdle.frames.length;
-
     for (let f = 0; f < idleFrames; f++) {
         const frame = enemyIdle.frames[f];
         const cols = [];
         for (let i = 0; i < idleFrameWidth; i++) {
-            cols.push(
-                frame.scale(
-                    new Quad(i / idleFrameWidth, 0, 1 / idleFrameWidth, 1),
-                ),
-            );
+            cols.push(frame.scale(new Quad(i / idleFrameWidth, 0, 1 / idleFrameWidth, 1)));
         }
         enemyIdleSlices.push(cols);
     }
@@ -231,27 +256,21 @@ onLoad(() => {
     // wall_1 slices
     for (let i = 0; i < wall_1.width; i++) {
         wall_1_Slices.push(
-            wall_1.frames[0].scale(
-                new Quad(i / wall_1.width, 0, 1 / wall_1.width, 1),
-            ),
+            wall_1.frames[0].scale(new Quad(i / wall_1.width, 0, 1 / wall_1.width, 1)),
         );
     }
 
     // wall_2 slices
     for (let i = 0; i < wall_2.width; i++) {
         wall_2_Slices.push(
-            wall_2.frames[0].scale(
-                new Quad(i / wall_2.width, 0, 1 / wall_2.width, 1),
-            ),
+            wall_2.frames[0].scale(new Quad(i / wall_2.width, 0, 1 / wall_2.width, 1)),
         );
     }
 
     // wall_3 slices
     for (let i = 0; i < wall_3.width; i++) {
         wall_3_Slices.push(
-            wall_3.frames[0].scale(
-                new Quad(i / wall_3.width, 0, 1 / wall_3.width, 1),
-            ),
+            wall_3.frames[0].scale(new Quad(i / wall_3.width, 0, 1 / wall_3.width, 1)),
         );
     }
 });
@@ -281,8 +300,27 @@ const baseGrid = [
 ];
 
 const grid = baseGrid.map(row => row.split(""));
-
 const TILE_SIZE = 16;
+
+// monsters from '&' tiles
+const monsters = [];
+for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+        if (grid[y][x] === "&") {
+            monsters.push({
+                tileX: x,
+                tileY: y,
+                gx: x + 0.5,   // tile coords
+                gy: y + 0.5,
+                maxHp: MONSTER_MAX_HP,
+                hp: MONSTER_MAX_HP,
+                atk: MONSTER_ATK,
+                attackTimer: 0,
+                alive: true,
+            });
+        }
+    }
+}
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
@@ -383,20 +421,33 @@ function rayCastAsciiGrid(origin, direction) {
         if (y >= 0 && y < grid.length) {
             const row = grid[y];
             if (x >= 0 && x < row.length) {
-                const tile = row[x];
+                let tile = row[x];
 
                 if (tile === "&") {
+                    // find alive monster on this tile
+                    const monster = monsters.find(m => m.tileX === x && m.tileY === y && m.alive);
+                    if (!monster) {
+                        // monster is dead, treat as empty space
+                        return false;
+                    }
+
                     const perp = direction.normal().unit();
                     const planeP1 = perp.scale(-0.2);
                     const planeP2 = perp.scale(0.2);
 
-                    const objectHit = raycastEdge(origin, direction, {
+                    const line = {
                         pos: vec2(x + 0.5, y + 0.5),
                         p1: planeP1,
                         p2: planeP2,
-                    });
+                        monster: monster,
+                    };
 
-                    if (objectHit) objects.push(objectHit);
+                    const objectHit = raycastEdge(origin, direction, line);
+                    if (objectHit) {
+                        objects.push(objectHit);
+                    }
+                    // '&' is not a wall tile
+                    return false;
                 }
                 return tile !== " " && tile !== "&";
             }
@@ -520,19 +571,20 @@ const camera = add([
                     // animated monsters
                     if (hit.objects && currentAttackSlices && currentIdleSlices) {
                         hit.objects.slice().reverse().forEach((o) => {
+                            const monster = o.object.monster;
+                            if (!monster || !monster.alive) return;
+
                             const t2 = o.t;
                             const wh = 240 / (t2 * direction.len() / 16);
                             const oh = 180 / (t2 * direction.len() / 16);
 
                             const u2 = o.s;
 
-                            const monsterGX = o.object.pos.x;
-                            const monsterGY = o.object.pos.y;
-                            const dx = monsterGX - playerGX;
-                            const dy = monsterGY - playerGY;
+                            const dx = monster.gx - playerGX;
+                            const dy = monster.gy - playerGY;
                             const distSq = dx * dx + dy * dy;
 
-                            const useIdle = distSq > 3;
+                            const useIdle = distSq > ATTACK_RANGE_TILES_SQ;
 
                             const slices = useIdle ? currentIdleSlices : currentAttackSlices;
                             const tex = useIdle ? enemyIdle.tex : enemy.tex;
@@ -593,7 +645,48 @@ onKeyDown("right", () => {
     camera.angle += ROT_SPEED * dt();
 });
 
-// HTML button hold
+// ===== Attack & potion functions =====
+function playerAttack() {
+    // find nearest alive monster
+    const playerGX = camera.pos.x / TILE_SIZE;
+    const playerGY = camera.pos.y / TILE_SIZE;
+
+    let closest = null;
+    let closestDistSq = Infinity;
+
+    for (const m of monsters) {
+        if (!m.alive) continue;
+        const dx = m.gx - playerGX;
+        const dy = m.gy - playerGY;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < closestDistSq) {
+            closestDistSq = distSq;
+            closest = m;
+        }
+    }
+
+    if (!closest) {
+        updateMonsterHpUI(null);
+        return;
+    }
+
+    if (closestDistSq <= ATTACK_RANGE_TILES_SQ) {
+        closest.hp = Math.max(0, closest.hp - player.atk);
+        if (closest.hp <= 0) {
+            closest.alive = false;
+            grid[closest.tileY][closest.tileX] = " ";
+        }
+    }
+
+    updateMonsterHpUI(closest);
+}
+
+function drinkPotion() {
+    player.hp = Math.min(player.maxHp, player.hp + 25);
+    updatePlayerHpUI();
+}
+
+// ===== HTML buttons =====
 let btnForwardHeld   = false;
 let btnBackHeld      = false;
 let btnTurnLeftHeld  = false;
@@ -613,10 +706,22 @@ bindHoldButton("btn-back",       v => btnBackHeld = v);
 bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld = v);
 bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
 
+// attack & potion (tap / click)
+document.getElementById("btn-attack").addEventListener("click", playerAttack);
+document.getElementById("btn-potion").addEventListener("click", drinkPotion);
+
+// optional: keyboard shortcuts
+onKeyPress("space", playerAttack);
+onKeyPress("h", drinkPotion);
+
+// ===== global update =====
+let currentTarget = null;
+
 onUpdate(() => {
     const d = dt();
     animTime += d;
 
+    // movement (button hold)
     if (btnForwardHeld) {
         camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
     }
@@ -629,7 +734,51 @@ onUpdate(() => {
     if (btnTurnRightHeld) {
         camera.angle += ROT_SPEED * d;
     }
+
+    // monster auto-attack when in range
+    const playerGX = camera.pos.x / TILE_SIZE;
+    const playerGY = camera.pos.y / TILE_SIZE;
+
+    currentTarget = null;
+    let nearestDistSq = Infinity;
+
+    for (const m of monsters) {
+        if (!m.alive) continue;
+        const dx = m.gx - playerGX;
+        const dy = m.gy - playerGY;
+        const distSq = dx * dx + dy * dy;
+
+        if (distSq < nearestDistSq) {
+            nearestDistSq = distSq;
+            currentTarget = m;
+        }
+
+        if (distSq <= ATTACK_RANGE_TILES_SQ) {
+            m.attackTimer -= d;
+            if (m.attackTimer <= 0) {
+                player.hp = Math.max(0, player.hp - m.atk);
+                m.attackTimer = MONSTER_ATTACK_INTERVAL;
+                updatePlayerHpUI();
+            }
+        }
+    }
+
+    updateMonsterHpUI(currentTarget);
+
+    // simple game over check
+    if (player.hp <= 0) {
+        player.hp = 0;
+        updatePlayerHpUI();
+        // you can replace this with a nicer UI later
+        // to avoid spamming alerts, we could pause updates, but keeping simple:
+        // alert("You died!");
+        // debug.paused = true;
+    }
 });
+
+// init UI
+updatePlayerHpUI();
+updateMonsterHpUI(null);
 </script>
 
 </body>
