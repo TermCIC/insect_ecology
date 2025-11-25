@@ -94,7 +94,6 @@ kaplay({
 });
 
 // sprites
-// attack or walk animation (4 x 4)
 loadSprite(
     "enemy",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764054793/pixellab-jump-and-attack-toward-camera-1764054681406_k1buku.png",
@@ -104,7 +103,6 @@ loadSprite(
     },
 );
 
-// idle animation (use your own idle sheet url here - must also be 4 x 4)
 loadSprite(
     "enemyIdle",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764054939/pixellab-walk-and-idle-toward-camera-1764054830881_n3ezyo.png",
@@ -115,25 +113,33 @@ loadSprite(
 );
 
 loadSprite(
-    "wall",
+    "wall_1",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png",
+);
+
+loadSprite(
+    "wall_2",
+    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056065/brick_wall_3_asxofr.png",
 );
 
 let enemy;
 let enemyIdle;
-let wall;
+let wall_1;
+let wall_2;
 
-// enemySlices[frameIndex][columnIndex]
+// slices
 let enemySlices = [];
 let enemyIdleSlices = [];
-let wallSlices = [];
+let wall_1_Slices = [];
+let wall_2_Slices = [];
 
 onLoad(() => {
     enemy = getSprite("enemy").data;
     enemyIdle = getSprite("enemyIdle").data;
-    wall = getSprite("wall").data;
+    wall_1 = getSprite("wall_1").data;
+    wall_2 = getSprite("wall_2").data;
 
-    // attack / walk slices
+    // enemy attack / walk slices
     const attackFrameWidth = enemy.width;
     const attackFrames = enemy.frames.length;
 
@@ -150,7 +156,7 @@ onLoad(() => {
         enemySlices.push(cols);
     }
 
-    // idle slices
+    // enemy idle slices
     const idleFrameWidth = enemyIdle.width;
     const idleFrames = enemyIdle.frames.length;
 
@@ -167,11 +173,20 @@ onLoad(() => {
         enemyIdleSlices.push(cols);
     }
 
-    // wall vertical slices
-    for (let i = 0; i < wall.width; i++) {
-        wallSlices.push(
-            wall.frames[0].scale(
-                new Quad(i / wall.width, 0, 1 / wall.width, 1),
+    // wall_1 slices
+    for (let i = 0; i < wall_1.width; i++) {
+        wall_1_Slices.push(
+            wall_1.frames[0].scale(
+                new Quad(i / wall_1.width, 0, 1 / wall_1.width, 1),
+            ),
+        );
+    }
+
+    // wall_2 slices
+    for (let i = 0; i < wall_2.width; i++) {
+        wall_2_Slices.push(
+            wall_2.frames[0].scale(
+                new Quad(i / wall_2.width, 0, 1 / wall_2.width, 1),
             ),
         );
     }
@@ -291,7 +306,7 @@ function raycastEdge(origin, direction, line) {
         normal,
         t: s,
         s: t,
-        object: line, // contains pos, p1, p2
+        object: line,
     };
 }
 
@@ -312,7 +327,7 @@ function rayCastAsciiGrid(origin, direction) {
                     const planeP2 = perp.scale(0.2);
 
                     const objectHit = raycastEdge(origin, direction, {
-                        pos: vec2(x + 0.5, y + 0.5), // tile coords
+                        pos: vec2(x + 0.5, y + 0.5),
                         p1: planeP1,
                         p2: planeP2,
                     });
@@ -369,7 +384,7 @@ const camera = add([
             drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
             drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
-            // pre compute current frames for attack and idle
+            // current frames for attack and idle
             let currentAttackSlices = null;
             let currentIdleSlices = null;
 
@@ -404,17 +419,39 @@ const camera = add([
 
                     const h = 240 / (t * direction.len() / 16);
 
+                    // choose wall texture based on tile symbol
+                    const tileChar = grid[hit.gridPos.y][hit.gridPos.x];
+
+                    // mapping: # and $ use wall_1, % uses wall_2
+                    let wallTex;
+                    let wallSlicesArr;
+                    if (tileChar === "#" || tileChar === "$") {
+                        wallTex = wall_1 ? wall_1.tex : null;
+                        wallSlicesArr = wall_1_Slices;
+                    } else if (tileChar === "%") {
+                        wallTex = wall_2 ? wall_2.tex : null;
+                        wallSlicesArr = wall_2_Slices;
+                    } else {
+                        // fallback
+                        wallTex = wall_1 ? wall_1.tex : null;
+                        wallSlicesArr = wall_1_Slices;
+                    }
+
+                    const sliceIdx = wallSlicesArr.length > 0
+                        ? Math.round(u * (wallSlicesArr.length - 1))
+                        : 0;
+
                     // walls
                     drawUVQuad({
                         width: 2,
                         height: h,
                         pos: vec2(x * 2, 120 - h / 2),
-                        tex: wall ? wall.tex : null,
-                        quad: wall ? wallSlices[Math.round(u * (wall.width - 1))] : null,
+                        tex: wallTex,
+                        quad: wallSlicesArr[sliceIdx],
                         color: BLACK.lerp(WHITE, d),
                     });
 
-                    // animated monsters with idle and attack
+                    // animated monsters
                     if (hit.objects && currentAttackSlices && currentIdleSlices) {
                         hit.objects.slice().reverse().forEach((o) => {
                             const t2 = o.t;
@@ -423,15 +460,13 @@ const camera = add([
 
                             const u2 = o.s;
 
-                            // monster grid position from raycastEdge line.pos (in tile coords)
                             const monsterGX = o.object.pos.x;
                             const monsterGY = o.object.pos.y;
                             const dx = monsterGX - playerGX;
                             const dy = monsterGY - playerGY;
                             const distSq = dx * dx + dy * dy;
 
-                            // simple logic: far = idle, near = attack
-                            const useIdle = distSq > 3; // > 3 tiles away
+                            const useIdle = distSq > 3;
 
                             const slices = useIdle ? currentIdleSlices : currentAttackSlices;
                             const tex = useIdle ? enemyIdle.tex : enemy.tex;
