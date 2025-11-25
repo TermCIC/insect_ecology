@@ -122,6 +122,89 @@ onLoad(() => {
     }
 });
 
+// ===== Grid & movement =====
+const colors = {
+    "#": RED,
+    "$": GREEN,
+    "%": BLUE,
+    "&": YELLOW,
+};
+
+// baseGrid is static strings (for addLevel)
+const baseGrid = [
+    "####################################",
+    "#                                  #",
+    "#                                  #",
+    "#   $$$$$$$$$$$$$$  $$$$$$$$$$$$   #",
+    "#   $                          $   #",
+    "#   $                          $   #",
+    "#   $   %%%%  %%%%%%%%%%%%%%   $   #",
+    "#   $   %                  %   $   #",
+    "#   $   %                  %   $   #",
+    "##&&$$&&%%%%%%%%%%    %%%%%%&&$$&&##",
+    "#   $   %%                     $   #",
+    "#   $   %%                     $   #",
+    "#   $   %%%%%%%%%%%%%%%%%%%%       #",
+    "#   $                          $   #",
+    "#   $                          $   #",
+    "#   $$$$$$$$$$$$$$  $$$$$$$$$$$$   #",
+    "#                     &            #",
+    "#                      &           #",
+    "####################################",
+];
+
+// grid is mutable 2D char array (for raycast + AI)
+const grid = baseGrid.map(row => row.split(""));
+
+const TILE_SIZE = 16;
+
+// 45 degree steps, 8 directions
+const TURN_STEP = 45;
+const MOVE_TIME = 0.18;
+const TURN_TIME = 0.12;
+
+function inBounds(gx, gy) {
+    return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
+}
+
+function canWalkToCell(gx, gy) {
+    if (!inBounds(gx, gy)) return false;
+    const c = grid[gy][gx];
+    // monsters do not block movement in this example
+    return c === " " || c === "&";
+}
+
+// quantize facing direction into 8 directions (45° each)
+function getFacingDir() {
+    let a = camera.angle;
+    a = ((a % 360) + 360) % 360;
+    const sector = Math.round(a / TURN_STEP) % 8;
+
+    const dirs = [
+        vec2(1, 0),    // 0°   east
+        vec2(1, 1),    // 45°  south-east
+        vec2(0, 1),    // 90°  south
+        vec2(-1, 1),   // 135° south-west
+        vec2(-1, 0),   // 180° west
+        vec2(-1, -1),  // 225° north-west
+        vec2(0, -1),   // 270° north
+        vec2(1, -1),   // 315° north-east
+    ];
+
+    return dirs[sector];
+}
+
+function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+}
+
+function lerpVec(a, b, t) {
+    return vec2(
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+    );
+}
+
 // ===== Raycasting helpers =====
 function rayCastGrid(origin, direction, gridPosHit, maxDistance = 32) {
     const pos = origin;
@@ -144,7 +227,7 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance = 32) {
     const h = grid.length;
 
     while (t <= maxDistance) {
-        if (gridPos.x < 0 || gridPos.y < 0 || gridPos.y >= h || gridPos.x >= grid[gridPos.y].length) {
+        if (!inBounds(gridPos.x, gridPos.y)) {
             break;
         }
 
@@ -209,7 +292,7 @@ function raycastEdge(origin, direction, line) {
     };
 }
 
-function rayCastAsciiGrid(origin, direction, grid) {
+function rayCastAsciiGrid(origin, direction) {
     origin = origin.scale(1 / 16);
     direction = direction.scale(1 / 16);
     const objects = [];
@@ -218,8 +301,9 @@ function rayCastAsciiGrid(origin, direction, grid) {
         if (y >= 0 && y < grid.length) {
             const row = grid[y];
             if (x >= 0 && x < row.length) {
+                const tile = row[x];
 
-                if (row[x] === "&") {
+                if (tile === "&") {
                     const perp = direction.normal().unit();
                     const planeP1 = perp.scale(-0.2);
                     const planeP2 = perp.scale(0.2);
@@ -232,7 +316,7 @@ function rayCastAsciiGrid(origin, direction, grid) {
 
                     if (objectHit) objects.push(objectHit);
                 }
-                return row[x] !== " " && row[x] !== "&";
+                return tile !== " " && tile !== "&";
             }
         }
     }, 32);
@@ -243,83 +327,6 @@ function rayCastAsciiGrid(origin, direction, grid) {
         hit.objects = objects;
     }
     return hit;
-}
-
-// ===== Grid & movement =====
-const colors = {
-    "#": RED,
-    "$": GREEN,
-    "%": BLUE,
-    "&": YELLOW,
-};
-
-const grid = [
-    "####################################",
-    "#                                  #",
-    "#                                  #",
-    "#   $$$$$$$$$$$$$$  $$$$$$$$$$$$   #",
-    "#   $                          $   #",
-    "#   $                          $   #",
-    "#   $   %%%%  %%%%%%%%%%%%%%   $   #",
-    "#   $   %                  %   $   #",
-    "#   $   %                  %   $   #",
-    "##&&$$&&%%%%%%%%%%    %%%%%%&&$$&&##",
-    "#   $   %%                     $   #",
-    "#   $   %%                     $   #",
-    "#   $   %%%%%%%%%%%%%%%%%%%%       #",
-    "#   $                          $   #",
-    "#   $                          $   #",
-    "#   $$$$$$$$$$$$$$  $$$$$$$$$$$$   #",
-    "#                     &            #",
-    "#                      &           #",
-    "####################################",
-];
-
-const TILE_SIZE = 16;
-
-// 45 degree steps, 8 directions
-const TURN_STEP = 45;
-const MOVE_TIME = 0.18;
-const TURN_TIME = 0.12;
-
-function canWalkToCell(gx, gy) {
-    if (gy < 0 || gy >= grid.length) return false;
-    const row = grid[gy];
-    if (gx < 0 || gx >= row.length) return false;
-    const c = row[gx];
-    return c === " " || c === "&";
-}
-
-// quantize facing direction into 8 directions (45° each)
-function getFacingDir() {
-    let a = camera.angle;
-    a = ((a % 360) + 360) % 360;
-    const sector = Math.round(a / TURN_STEP) % 8;
-
-    const dirs = [
-        vec2(1, 0),    // 0°   east
-        vec2(1, 1),    // 45°  south-east
-        vec2(0, 1),    // 90°  south
-        vec2(-1, 1),   // 135° south-west
-        vec2(-1, 0),   // 180° west
-        vec2(-1, -1),  // 225° north-west
-        vec2(0, -1),   // 270° north
-        vec2(1, -1),   // 315° north-east
-    ];
-
-    return dirs[sector];
-}
-
-function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-}
-
-// simple vector lerp (we avoid relying on kaplay's lerp here)
-function lerpVec(a, b, t) {
-    return vec2(
-        a.x + (b.x - a.x) * t,
-        a.y + (b.y - a.y) * t,
-    );
 }
 
 // ===== Camera entity (draw only) =====
@@ -357,7 +364,7 @@ const camera = add([
             for (let x = 0; x <= 120; x++) {
                 const direction = lerp(planeP1, planeP2, x / 120).scale(6);
 
-                const hit = rayCastAsciiGrid(this.pos, direction, grid);
+                const hit = rayCastAsciiGrid(this.pos, direction);
                 if (hit) {
                     const t = hit.t;
                     const d = clamp(1 - t * 1.2, 0.2, 1);
@@ -407,7 +414,8 @@ const camera = add([
     },
 ]);
 
-addLevel(grid, {
+// level collisions use baseGrid (no moving monsters needed here)
+addLevel(baseGrid, {
     pos: vec2(0, 0),
     tileWidth: TILE_SIZE,
     tileHeight: TILE_SIZE,
@@ -415,11 +423,11 @@ addLevel(grid, {
         "#": () => [rect(16, 16), color(RED), opacity(0), area(), body({ isStatic: true })],
         "$": () => [rect(16, 16), color(GREEN), opacity(0), area(), body({ isStatic: true })],
         "%": () => [rect(16, 16), color(BLUE), opacity(0), area(), body({ isStatic: true })],
-        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)],
+        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)], // just a marker
     },
 });
 
-// ===== tween state (global, updated in onUpdate) =====
+// ===== tween state (camera movement) =====
 let isMoving = false;
 let moveFrom = vec2(0, 0);
 let moveTo = vec2(0, 0);
@@ -436,9 +444,60 @@ function busy() {
     return isMoving || isRotating;
 }
 
+// ===== monster data & movement =====
+const monsters = [];
+
+// collect initial monster positions from grid
+for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+        if (grid[y][x] === "&") {
+            monsters.push({ x, y });
+        }
+    }
+}
+
+function monsterAt(gx, gy) {
+    return monsters.some(m => m.x === gx && m.y === gy);
+}
+
+const MONSTER_MOVE_INTERVAL = 0.4;
+let monsterTimer = 0;
+
+function moveMonsters() {
+    const px = Math.floor(camera.pos.x / TILE_SIZE);
+    const py = Math.floor(camera.pos.y / TILE_SIZE);
+
+    for (const m of monsters) {
+        // choose axis closer to player
+        const dx = px - m.x;
+        const dy = py - m.y;
+        let stepX = 0, stepY = 0;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+            stepX = Math.sign(dx);
+        } else {
+            stepY = Math.sign(dy);
+        }
+
+        const nx = m.x + stepX;
+        const ny = m.y + stepY;
+
+        if (inBounds(nx, ny) && canWalkToCell(nx, ny) && !monsterAt(nx, ny)) {
+            // clear old
+            grid[m.y][m.x] = " ";
+            // move
+            m.x = nx;
+            m.y = ny;
+            grid[m.y][m.x] = "&";
+        }
+    }
+}
+
+// ===== global update =====
 onUpdate(() => {
     const d = dt();
 
+    // camera tween
     if (isMoving) {
         moveElapsed += d;
         const t = Math.min(moveElapsed / moveDuration, 1);
@@ -457,6 +516,13 @@ onUpdate(() => {
             isRotating = false;
             camera.angle = Math.round(camera.angle / TURN_STEP) * TURN_STEP;
         }
+    }
+
+    // monster AI timer
+    monsterTimer += d;
+    if (monsterTimer >= MONSTER_MOVE_INTERVAL) {
+        monsterTimer = 0;
+        moveMonsters();
     }
 });
 
