@@ -175,7 +175,7 @@ const ATTACK_RANGE_TILES_SQ  = 3;
 const FIREBALL_TILES_PER_SECOND = 1;   // speed in tiles / sec
 const FIREBALL_LIFETIME         = 3;   // seconds
 const FIREBALL_HIT_RADIUS       = 8;   // pixels
-const FIREBALL_ANGLE_OFFSET = 5;
+const FIREBALL_ANGLE_OFFSET = 0;
     
 // list of active fireballs
 const projectiles = [];
@@ -662,11 +662,9 @@ onKeyDown("down", () => {
 });
 onKeyDown("left", () => {
     camera.angle -= ROT_SPEED * dt();
-    FIREBALL_ANGLE_OFFSET += FIREBALL_OFFSET_SPEED * dt();
 });
 onKeyDown("right", () => {
     camera.angle += ROT_SPEED * dt();
-    FIREBALL_ANGLE_OFFSET -= FIREBALL_OFFSET_SPEED * dt();
 });
 
 // ===== fireball spawn & potion =====
