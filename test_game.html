@@ -1,3 +1,5 @@
+<!DOCTYPE html> <html> <head> <meta charset="utf-8" /> <title>KAPLAY 3D Example</title> <style> body { margin: 0; background: #111; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; gap: 12px; font-family: system-ui, sans-serif; } #game { position: relative; overflow: hidden; background: black; border: 4px solid #555; aspect-ratio: 1 / 1; } @media (orientation: landscape) { #game { height: 70vh; width: auto; } } @media (orientation: portrait) { #game { width: 70vw; height: auto; } } canvas { width: 100%; height: 100%; image-rendering: pixelated; } #controls { display: flex; flex-direction: column; align-items: center; gap: 4px; } #controls .row { display: flex; gap: 4px; } #controls button { min-width: 200px; padding: 6px 10px; font-size: 16px; border-radius: 6px; border: 1px solid #444; background: #222; color: #eee; cursor: pointer; } #controls button:active { background: #444; } </style> <script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script> </head> <body> <div id="game"></div> <div id="controls"> <button id="btn-forward">↑</button> <div class="row"> <button id="btn-turn-left">↺</button> <button id="btn-back">↓</button> <button id="btn-turn-right">↻</button> </div> </div>
+    
 <script>
 kaplay({
     canvas: document.querySelector("canvas") || undefined,
@@ -414,3 +416,4 @@ document.getElementById("btn-turn-right").addEventListener("click", () => {
     startTurnStep(1);
 });
 </script>
+</body> </html>
