@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v1.3</title>
+<title>KEG v1.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -43,8 +43,8 @@
         
         #game {
             /* Increased width to 95vw to use more screen space */
-            width: 90vw; 
-            height: 90vw;
+            width: 95vw; 
+            height: 95vw;
         }
         
         #controls {
@@ -128,10 +128,19 @@
 </div>
 
 <script>
+// 1. Define the default scale (for landscape/desktop)
+const defaultScale = 3; 
+// 2. Define the scale for portrait mode
+const portraitScale = 2;
+// 3. Check if the screen is currently in portrait orientation
+const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+// 4. Set the final scale based on the check
+const finalScale = isPortrait ? portraitScale : defaultScale;
+
 // init
 kaplay({
     root: document.getElementById("game"),
-    scale: 3,
+    scale: finalScale,,
     debug: true,
 });
 
