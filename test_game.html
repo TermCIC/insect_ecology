@@ -464,30 +464,6 @@ document.getElementById("btn-turn-right").addEventListener("click", () => {
     camera.angle += TURN_STEP;
 });
 
-let lastPos = vec2();
-
-onTouchStart(pos => {
-    lastPos = pos;
-});
-
-onTouchMove(pos => {
-    const delta = pos.sub(lastPos);
-
-    if (delta.x < 0) {
-        camera.angle -= 90 * dt();
-    } else if (delta.x > 0) {
-        camera.angle += 90 * dt();
-    }
-
-    if (delta.y < 0) {
-        camera.move(Vec2.fromAngle(camera.angle).scale(40));
-    } else if (delta.y > 0) {
-        camera.move(Vec2.fromAngle(camera.angle).scale(-40));
-    }
-
-    lastPos = pos;
-});
-
 </script>
 </body>
 </html>
