@@ -380,7 +380,7 @@ const camera = add([
             }
 
             if (enemyIdleSlices.length > 0) {
-                const idleSpeed = 4;
+                const idleSpeed = 6;
                 const idleIndex = Math.floor(animTime * idleSpeed) % enemyIdleSlices.length;
                 currentIdleSlices = enemyIdleSlices[idleIndex];
             }
@@ -431,7 +431,7 @@ const camera = add([
                             const distSq = dx * dx + dy * dy;
 
                             // simple logic: far = idle, near = attack
-                            const useIdle = distSq > 9; // > 3 tiles away
+                            const useIdle = distSq > 3; // > 3 tiles away
 
                             const slices = useIdle ? currentIdleSlices : currentAttackSlices;
                             const tex = useIdle ? enemyIdle.tex : enemy.tex;
