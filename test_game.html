@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.1</title>
+<title>KEG v0.3.2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -169,13 +169,12 @@ const player = {
 const MONSTER_MAX_HP = 40;
 const MONSTER_ATK    = 6;
 const MONSTER_ATTACK_INTERVAL = 1.0;
-
-const ATTACK_RANGE_TILES_SQ = 3;
+const ATTACK_RANGE_TILES_SQ  = 3;
 
 // fireball parameters
 const FIREBALL_TILES_PER_SECOND = 1;   // speed in tiles / sec
-const FIREBALL_LIFETIME = 3;        // seconds
-const FIREBALL_HIT_RADIUS = 8;        // pixels
+const FIREBALL_LIFETIME         = 3;   // seconds
+const FIREBALL_HIT_RADIUS       = 8;   // pixels
 
 // list of active fireballs
 const projectiles = [];
@@ -226,11 +225,11 @@ let wall_2_Slices = [];
 let wall_3_Slices = [];
 
 onLoad(() => {
-    enemy = getSprite("enemy").data;
-    enemyIdle = getSprite("enemyIdle").data;
-    wall_1 = getSprite("wall_1").data;
-    wall_2 = getSprite("wall_2").data;
-    wall_3 = getSprite("wall_3").data;
+    enemy        = getSprite("enemy").data;
+    enemyIdle    = getSprite("enemyIdle").data;
+    wall_1       = getSprite("wall_1").data;
+    wall_2       = getSprite("wall_2").data;
+    wall_3       = getSprite("wall_3").data;
     fireballSprite = getSprite("fireball").data;
 
     // full quad for fireball
@@ -600,25 +599,23 @@ const camera = add([
             }
             popTransform();
 
-            // ===== draw fireballs in screen space =====
+            // ===== draw fireballs in camera space =====
             if (fireballSprite && fireballQuad) {
-                const halfFov = Math.PI / 3; // ~60 degrees
+                const halfScreenW = NATIVE_GAME_WIDTH / 2;
+                const forward = Vec2.fromAngle(this.angle);   // camera forward in world space
+                const rightVec = forward.normal();            // camera right
+
                 for (const fb of projectiles) {
-                    const rel = fb.pos.sub(this.pos);
-                    const dist = rel.len();
-                    if (dist <= 1) continue;
+                    const rel = fb.pos.sub(this.pos);  // world -> camera origin
+                    const zCam = rel.dot(forward);     // forward distance
+                    if (zCam <= 4) continue;           // behind or too close
 
-                    const angleTo = Math.atan2(rel.y, rel.x);
-                    let delta = angleTo - this.angle;
-                    while (delta > Math.PI)  delta -= 2 * Math.PI;
-                    while (delta < -Math.PI) delta += 2 * Math.PI;
+                    const xCam = rel.dot(rightVec);    // sideways distance
 
-                    if (Math.abs(delta) > halfFov) continue; // outside view
+                    // simple perspective projection
+                    const screenX = halfScreenW + (xCam / zCam) * halfScreenW;
 
-                    const screenXNorm = 0.5 + (delta / (2 * halfFov));
-                    const screenX = screenXNorm * NATIVE_GAME_WIDTH;
-
-                    const distTiles = dist / TILE_SIZE;
+                    const distTiles = zCam / TILE_SIZE;
                     const spriteH = 120 / distTiles;
                     const spriteW = spriteH;
                     const bottomY = 220;
@@ -681,7 +678,6 @@ function spawnFireball() {
 }
 
 function playerAttack() {
-    // just spawn fireball; damage is handled when it hits something
     spawnFireball();
 }
 
