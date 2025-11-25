@@ -158,10 +158,9 @@ const grid = baseGrid.map(row => row.split(""));
 
 const TILE_SIZE = 16;
 
-// 45 degree steps, 8 directions
-const TURN_STEP = 45;
-const MOVE_TIME = 0.18;
-const TURN_TIME = 0.12;
+// movement / turning step sizes
+const STEP_SIZE = 4;        // pixels moved per key press
+const TURN_STEP_DEG = 5;    // degrees rotated per key press
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
@@ -172,26 +171,6 @@ function canWalkToCell(gx, gy) {
     const c = grid[gy][gx];
     // monsters do not block movement in this example
     return c === " " || c === "&";
-}
-
-// quantize facing direction into 8 directions (45° each)
-function getFacingDir() {
-    let a = camera.angle;
-    a = ((a % 360) + 360) % 360;
-    const sector = Math.round(a / TURN_STEP) % 8;
-
-    const dirs = [
-        vec2(1, 0),    // 0°   east
-        vec2(1, 1),    // 45°  south-east
-        vec2(0, 1),    // 90°  south
-        vec2(-1, 1),   // 135° south-west
-        vec2(-1, 0),   // 180° west
-        vec2(-1, -1),  // 225° north-west
-        vec2(0, -1),   // 270° north
-        vec2(1, -1),   // 315° north-east
-    ];
-
-    return dirs[sector];
 }
 
 function clamp(v, min, max) {
@@ -427,23 +406,6 @@ addLevel(baseGrid, {
     },
 });
 
-// ===== tween state (camera movement) =====
-let isMoving = false;
-let moveFrom = vec2(0, 0);
-let moveTo = vec2(0, 0);
-let moveElapsed = 0;
-let moveDuration = 1;
-
-let isRotating = false;
-let rotFrom = 0;
-let rotTo = 0;
-let rotElapsed = 0;
-let rotDuration = 1;
-
-function busy() {
-    return isMoving || isRotating;
-}
-
 // ===== monster data & movement =====
 const monsters = [];
 
@@ -493,32 +455,9 @@ function moveMonsters() {
     }
 }
 
-// ===== global update =====
+// ===== global update (only monsters now) =====
 onUpdate(() => {
     const d = dt();
-
-    // camera tween
-    if (isMoving) {
-        moveElapsed += d;
-        const t = Math.min(moveElapsed / moveDuration, 1);
-        camera.pos = lerpVec(moveFrom, moveTo, t);
-        if (t >= 1) {
-            isMoving = false;
-            camera.pos = moveTo.clone();
-        }
-    }
-
-    if (isRotating) {
-        rotElapsed += d;
-        const t = Math.min(rotElapsed / rotDuration, 1);
-        camera.angle = rotFrom + (rotTo - rotFrom) * t;
-        if (t >= 1) {
-            isRotating = false;
-            camera.angle = Math.round(camera.angle / TURN_STEP) * TURN_STEP;
-        }
-    }
-
-    // monster AI timer
     monsterTimer += d;
     if (monsterTimer >= MONSTER_MOVE_INTERVAL) {
         monsterTimer = 0;
@@ -526,38 +465,22 @@ onUpdate(() => {
     }
 });
 
-// ===== command helpers =====
+// ===== movement / rotation helpers (step + degree) =====
 function startMoveStep(forward = 1) {
-    if (busy()) return;
+    // step along current view direction
+    const dir = Vec2.fromAngle(camera.angle).unit().scale(STEP_SIZE * forward);
+    const newPos = camera.pos.add(dir);
 
-    const dir = getFacingDir().scale(forward);
-    const stepLen = Math.sqrt(dir.x * dir.x + dir.y * dir.y); // 1 or sqrt(2)
+    const gx = Math.floor(newPos.x / TILE_SIZE);
+    const gy = Math.floor(newPos.y / TILE_SIZE);
 
-    const gx = Math.floor(camera.pos.x / TILE_SIZE);
-    const gy = Math.floor(camera.pos.y / TILE_SIZE);
-    const nx = gx + dir.x;
-    const ny = gy + dir.y;
+    if (!canWalkToCell(gx, gy)) return;
 
-    if (!canWalkToCell(nx, ny)) return;
-
-    moveFrom = camera.pos.clone();
-    moveTo = vec2(
-        (nx + 0.5) * TILE_SIZE,
-        (ny + 0.5) * TILE_SIZE,
-    );
-    moveElapsed = 0;
-    moveDuration = MOVE_TIME * stepLen;
-    isMoving = true;
+    camera.pos = newPos;
 }
 
 function startTurnStep(direction) { // -1 left, +1 right
-    if (busy()) return;
-
-    rotFrom = camera.angle;
-    rotTo = camera.angle + direction * TURN_STEP;
-    rotElapsed = 0;
-    rotDuration = TURN_TIME * Math.abs(direction);
-    isRotating = true;
+    camera.angle += direction * TURN_STEP_DEG;
 }
 
 // keyboard
@@ -580,5 +503,6 @@ document.getElementById("btn-turn-right").addEventListener("click", () => {
     startTurnStep(1);
 });
 </script>
+
 </body>
 </html>
