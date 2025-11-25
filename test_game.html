@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.5</title>
+<title>KEG v0.3.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -145,16 +145,10 @@ let finalScale = defaultScale;
 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
 
 if (isPortrait) {
-    // 95vw is the CSS width of #game in portrait mode.
-    // window.innerWidth gives the viewport width in pixels.
     const actualGameContainerWidth = window.innerWidth;
-    
-    // Calculate the scale needed to stretch the 240px native game resolution
-    // to fit the actual container width (95vw).
     finalScale = actualGameContainerWidth / NATIVE_GAME_WIDTH;
 }
 
-// init
 kaplay({
     root: document.getElementById("game"),
     scale: finalScale,
@@ -178,9 +172,13 @@ const MONSTER_ATTACK_INTERVAL = 1.0;
 
 const ATTACK_RANGE_TILES_SQ = 3;
 
-// simple slash FX
-const SLASH_DURATION = 0.18;
-let slashTimer = 0;
+// fireball parameters
+const FIREBALL_TILES_PER_SECOND = 6;   // speed in tiles / sec
+const FIREBALL_LIFETIME = 1.5;        // seconds
+const FIREBALL_HIT_RADIUS = 8;        // pixels
+
+// list of active fireballs
+const projectiles = [];
 
 function updatePlayerHpUI() {
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
@@ -210,12 +208,15 @@ loadSprite(
 loadSprite("wall_1", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
 loadSprite("wall_2", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png");
 loadSprite("wall_3", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png");
+loadSprite("fireball", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764066293/fireball_mnjxyq.png");
 
 let enemy;
 let enemyIdle;
 let wall_1;
 let wall_2;
 let wall_3;
+let fireballSprite;
+let fireballQuad;
 
 // slices
 let enemySlices = [];
@@ -230,6 +231,10 @@ onLoad(() => {
     wall_1 = getSprite("wall_1").data;
     wall_2 = getSprite("wall_2").data;
     wall_3 = getSprite("wall_3").data;
+    fireballSprite = getSprite("fireball").data;
+
+    // full quad for fireball
+    fireballQuad = fireballSprite.frames[0].scale(new Quad(0, 0, 1, 1));
 
     // enemy attack / walk slices
     const attackFrameWidth = enemy.width;
@@ -595,25 +600,39 @@ const camera = add([
             }
             popTransform();
 
-            // ===== slash overlay (screen space) =====
-            if (slashTimer > 0) {
-                const alpha = slashTimer / SLASH_DURATION;
-                const col = rgb(255, 255, 255, alpha);
-                const slashOffset = vec2(90, 90); // Calculated center position (120 - 30, 120 - 30)
-            
-                // draw an X centered on the screen
-                drawLine({
-                    p1: slashOffset.add(vec2(0, 0)),
-                    p2: slashOffset.add(vec2(60, 60)),
-                    width: 4,
-                    color: col,
-                });
-                drawLine({
-                    p1: slashOffset.add(vec2(0, 60)),
-                    p2: slashOffset.add(vec2(60, 0)),
-                    width: 4,
-                    color: col,
-                });
+            // ===== draw fireballs in screen space =====
+            if (fireballSprite && fireballQuad) {
+                const halfFov = Math.PI / 3; // ~60 degrees
+                for (const fb of projectiles) {
+                    const rel = fb.pos.sub(this.pos);
+                    const dist = rel.len();
+                    if (dist <= 1) continue;
+
+                    const angleTo = Math.atan2(rel.y, rel.x);
+                    let delta = angleTo - this.angle;
+                    while (delta > Math.PI)  delta -= 2 * Math.PI;
+                    while (delta < -Math.PI) delta += 2 * Math.PI;
+
+                    if (Math.abs(delta) > halfFov) continue; // outside view
+
+                    const screenXNorm = 0.5 + (delta / (2 * halfFov));
+                    const screenX = screenXNorm * NATIVE_GAME_WIDTH;
+
+                    const distTiles = dist / TILE_SIZE;
+                    const spriteH = 120 / distTiles;
+                    const spriteW = spriteH;
+                    const bottomY = 220;
+                    const centerY = bottomY - spriteH / 2;
+
+                    drawUVQuad({
+                        width: spriteW,
+                        height: spriteH,
+                        pos: vec2(screenX - spriteW / 2, centerY - spriteH / 2),
+                        tex: fireballSprite.tex,
+                        quad: fireballQuad,
+                        color: WHITE,
+                    });
+                }
             }
         },
         focalLength: 40,
@@ -650,42 +669,20 @@ onKeyDown("right", () => {
     camera.angle += ROT_SPEED * dt();
 });
 
-// ===== Attack & potion functions =====
+// ===== fireball spawn & potion =====
+function spawnFireball() {
+    const dir = Vec2.fromAngle(camera.angle);
+    const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
+    projectiles.push({
+        pos: start,
+        dir: dir,
+        life: FIREBALL_LIFETIME,
+    });
+}
+
 function playerAttack() {
-    // start slash FX regardless
-    slashTimer = SLASH_DURATION;
-
-    const playerGX = camera.pos.x / TILE_SIZE;
-    const playerGY = camera.pos.y / TILE_SIZE;
-
-    let closest = null;
-    let closestDistSq = Infinity;
-
-    for (const m of monsters) {
-        if (!m.alive) continue;
-        const dx = m.gx - playerGX;
-        const dy = m.gy - playerGY;
-        const distSq = dx * dx + dy * dy;
-        if (distSq < closestDistSq) {
-            closestDistSq = distSq;
-            closest = m;
-        }
-    }
-
-    if (!closest) {
-        updateMonsterHpUI(null);
-        return;
-    }
-
-    if (closestDistSq <= ATTACK_RANGE_TILES_SQ) {
-        closest.hp = Math.max(0, closest.hp - player.atk);
-        if (closest.hp <= 0) {
-            closest.alive = false;
-            grid[closest.tileY][closest.tileX] = " ";
-        }
-    }
-
-    updateMonsterHpUI(closest);
+    // just spawn fireball; damage is handled when it hits something
+    spawnFireball();
 }
 
 function drinkPotion() {
@@ -726,11 +723,6 @@ onUpdate(() => {
     const d = dt();
     animTime += d;
 
-    // update slash timer
-    if (slashTimer > 0) {
-        slashTimer = Math.max(0, slashTimer - d);
-    }
-
     // movement (button hold)
     if (btnForwardHeld) {
         camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
@@ -743,6 +735,54 @@ onUpdate(() => {
     }
     if (btnTurnRightHeld) {
         camera.angle += ROT_SPEED * d;
+    }
+
+    // update fireballs (movement + collision)
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const fb = projectiles[i];
+        fb.life -= d;
+        if (fb.life <= 0) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        const speedPxPerSec = FIREBALL_TILES_PER_SECOND * TILE_SIZE;
+        fb.pos = fb.pos.add(fb.dir.scale(speedPxPerSec * d));
+
+        // out of bounds or hit wall
+        const gx = Math.floor(fb.pos.x / TILE_SIZE);
+        const gy = Math.floor(fb.pos.y / TILE_SIZE);
+        if (!inBounds(gx, gy)) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+        const tile = grid[gy][gx];
+        if (tile !== " " && tile !== "&") {
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        // hit monster
+        let hit = false;
+        for (const m of monsters) {
+            if (!m.alive) continue;
+            const mx = m.gx * TILE_SIZE;
+            const my = m.gy * TILE_SIZE;
+            const dx = mx - fb.pos.x;
+            const dy = my - fb.pos.y;
+            if (dx * dx + dy * dy <= FIREBALL_HIT_RADIUS * FIREBALL_HIT_RADIUS) {
+                m.hp = Math.max(0, m.hp - player.atk);
+                if (m.hp <= 0) {
+                    m.alive = false;
+                    grid[m.tileY][m.tileX] = " ";
+                }
+                hit = true;
+                break;
+            }
+        }
+        if (hit) {
+            projectiles.splice(i, 1);
+        }
     }
 
     // monster auto-attack when in range
