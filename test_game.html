@@ -588,7 +588,7 @@ const camera = add([
             // ===== slash overlay (screen space) =====
             if (slashTimer > 0) {
                 const alpha = slashTimer / SLASH_DURATION;
-                const col = rgba(255, 255, 255, alpha);
+                const col = rgb(255, 255, 255, alpha);
 
                 // draw an X in the middle-upper part of the view
                 drawLine({
