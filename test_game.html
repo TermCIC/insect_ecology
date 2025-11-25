@@ -32,9 +32,38 @@
     }
 
     @media (orientation: portrait) {
+        body {
+            justify-content: flex-start;
+            padding-top: 12px;
+            height: auto;
+        }
+        
         #game {
             width: 70vw;
             height: auto;
+        }
+        
+        #controls {
+            width: 90vw;
+            gap: 6px;
+        }
+
+        /* make buttons big and easy to tap */
+        #controls button {
+            min-width: 0;
+            flex: 1;
+            padding: 14px 0;
+            font-size: 36px;
+        }
+
+        /* forward button full width */
+        #btn-forward {
+            width: 100%;
+        }
+
+        /* bottom row spans full width */
+        #controls .row {
+            width: 100%;
         }
     }
 
