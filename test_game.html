@@ -17,12 +17,27 @@
     }
 
     #game {
-        width: 640px;
-        height: 640px;
-        position: relative;
-        overflow: hidden;
-        background: black;
-        border: 4px solid #555;
+    position: relative;
+    overflow: hidden;
+    background: black;
+    border: 4px solid #555;
+    aspect-ratio: 1 / 1;   /* keep game square */
+    }
+    
+    /* Landscape: window width > height → fit to height */
+    @media (orientation: landscape) {
+        #game {
+            height: 70vh;      /* fit height (adjust % if you want more/less) */
+            width: auto;       /* width follows aspect-ratio */
+        }
+    }
+    
+    /* Portrait: window height > width → fit to width (phone) */
+    @media (orientation: portrait) {
+        #game {
+            width: 90vw;       /* fit width */
+            height: auto;      /* height follows aspect-ratio */
+        }
     }
 
     canvas {
@@ -44,7 +59,7 @@
     }
 
     #controls button {
-        min-width: 60px;
+        min-width: 120px;
         padding: 6px 10px;
         font-size: 16px;
         border-radius: 6px;
