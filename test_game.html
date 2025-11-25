@@ -123,6 +123,8 @@
     <div id="monster-hp" class="hp-bar">Monster HP: -</div>
     <div id="game"></div>
     <div id="player-hp" class="hp-bar">Player HP: 100/100</div>
+    <!-- DEBUG ANGLES LINE -->
+    <div id="debug-angles" class="hp-bar">Cam: 0 | Fire spawn: - | Fire dir: -</div>
 </div>
 
 <div id="controls">
@@ -158,6 +160,7 @@ kaplay({
 // ======== DOM UI ========
 const playerHpEl  = document.getElementById("player-hp");
 const monsterHpEl = document.getElementById("monster-hp");
+const debugAnglesEl = document.getElementById("debug-angles");
 
 // ======== Player & Monster stats ========
 const player = {
@@ -179,6 +182,14 @@ const FIREBALL_HIT_RADIUS       = 8;   // pixels
 // list of active fireballs
 const projectiles = [];
 
+// debug vars
+let lastFireSpawnAngle = null;      // camera.angle when fireball was spawned
+let lastFireDirAngleDeg = null;     // atan2(dir.y, dir.x) in degrees
+
+function radToDeg(r) {
+    return r * 180 / Math.PI;
+}
+
 function updatePlayerHpUI() {
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
 }
@@ -189,6 +200,23 @@ function updateMonsterHpUI(target) {
     } else {
         monsterHpEl.textContent = `Monster HP: ${target.hp}/${target.maxHp}`;
     }
+}
+
+function updateDebugAngles() {
+    if (!debugAnglesEl) return;
+
+    const camAngleDeg = camera.angle.toFixed(2);
+
+    const fireSpawnText = (lastFireSpawnAngle !== null)
+        ? lastFireSpawnAngle.toFixed(2)
+        : "-";
+
+    const fireDirText = (lastFireDirAngleDeg !== null)
+        ? lastFireDirAngleDeg.toFixed(2)
+        : "-";
+
+    debugAnglesEl.textContent =
+        `Cam: ${camAngleDeg} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
 }
 
 // ======== Sprites ========
@@ -692,8 +720,14 @@ onKeyDown("right", () => {
 
 // ===== fireball spawn & potion =====
 function spawnFireball() {
+    lastFireSpawnAngle = camera.angle;
+
     const dir = Vec2.fromAngle(camera.angle).unit();
     const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
+
+    // real direction angle from velocity vector
+    lastFireDirAngleDeg = radToDeg(Math.atan2(dir.y, dir.x));
+
     projectiles.push({
         pos: start,
         dir: dir,
@@ -834,6 +868,7 @@ onUpdate(() => {
     }
 
     updateMonsterHpUI(currentTarget);
+    updateDebugAngles();
 
     if (player.hp <= 0) {
         player.hp = 0;
@@ -844,8 +879,8 @@ onUpdate(() => {
 // init UI
 updatePlayerHpUI();
 updateMonsterHpUI(null);
+updateDebugAngles();
 </script>
-
 
 </body>
 </html>
