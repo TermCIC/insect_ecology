@@ -88,7 +88,6 @@
 <script>
 // init
 kaplay({
-    canvas: document.querySelector("canvas") || undefined,
     root: document.getElementById("game"),
     scale: 3,
     debug: true,
@@ -96,7 +95,7 @@ kaplay({
 
 // sprites
 loadSprite("enemy", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978470/pixellab-monster-orc-1763978389772_tctylf.png");
-loadSprite("wall", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
+loadSprite("wall",  "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
 
 let enemy;
 let objSlices = [];
@@ -278,10 +277,10 @@ const grid = [
 
 const TILE_SIZE = 16;
 
-// 45 degree steps (8 directions)
+// 45 degree steps, 8 directions
 const TURN_STEP = 45;
-const MOVE_TIME = 0.18; // time for 1-tile move in cardinal direction
-const TURN_TIME = 0.12; // time for 45° turn
+const MOVE_TIME = 0.18;
+const TURN_TIME = 0.12;
 
 function canWalkToCell(gx, gy) {
     if (gy < 0 || gy >= grid.length) return false;
@@ -315,7 +314,15 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-// ===== Camera entity, with manual tween in update() =====
+// simple vector lerp (we avoid relying on kaplay's lerp here)
+function lerpVec(a, b, t) {
+    return vec2(
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+    );
+}
+
+// ===== Camera entity (draw only) =====
 const camera = add([
     pos(13 * TILE_SIZE + TILE_SIZE / 2, 13 * TILE_SIZE + TILE_SIZE / 2),
     rotate(0),
@@ -326,47 +333,6 @@ const camera = add([
     opacity(0),
     body(),
     {
-        // movement tween state
-        isMoving: false,
-        moveFrom: vec2(0, 0),
-        moveTo: vec2(0, 0),
-        moveElapsed: 0,
-        moveDuration: 1,
-
-        // rotation tween state
-        isRotating: false,
-        rotFrom: 0,
-        rotTo: 0,
-        rotElapsed: 0,
-        rotDuration: 1,
-
-        update() {
-            const d = dt();
-
-            // position tween
-            if (this.isMoving) {
-                this.moveElapsed += d;
-                const t = Math.min(this.moveElapsed / this.moveDuration, 1);
-                this.pos = lerp(this.moveFrom, this.moveTo, t);
-                if (t >= 1) {
-                    this.isMoving = false;
-                    this.pos = this.moveTo;
-                }
-            }
-
-            // rotation tween
-            if (this.isRotating) {
-                this.rotElapsed += d;
-                const t = Math.min(this.rotElapsed / this.rotDuration, 1);
-                this.angle = this.rotFrom + (this.rotTo - this.rotFrom) * t;
-                if (t >= 1) {
-                    this.isRotating = false;
-                    // snap to exact 45°
-                    this.angle = Math.round(this.angle / TURN_STEP) * TURN_STEP;
-                }
-            }
-        },
-
         draw() {
             pushTransform();
             pushRotate(-this.angle);
@@ -409,13 +375,13 @@ const camera = add([
                         width: 2,
                         height: h,
                         pos: vec2(x * 2, 120 - h / 2),
-                        tex: wall.tex,
-                        quad: slices[Math.round(u * (wall.width - 1))],
+                        tex: wall ? wall.tex : null,
+                        quad: wall ? slices[Math.round(u * (wall.width - 1))] : null,
                         color: BLACK.lerp(WHITE, d),
                     });
 
-                    if (hit.objects) {
-                        hit.objects.reverse().forEach((o) => {
+                    if (hit.objects && enemy) {
+                        hit.objects.slice().reverse().forEach((o) => {
                             const t2 = o.t;
                             const wh = 240 / (t2 * direction.len() / 16);
                             const oh = 180 / (t2 * direction.len() / 16);
@@ -436,7 +402,6 @@ const camera = add([
             }
             popTransform();
         },
-
         focalLength: 40,
         fov: 10,
     },
@@ -454,16 +419,53 @@ addLevel(grid, {
     },
 });
 
-// ===== movement / rotation control =====
-function isBusy() {
-    return camera.isMoving || camera.isRotating;
+// ===== tween state (global, updated in onUpdate) =====
+let isMoving = false;
+let moveFrom = vec2(0, 0);
+let moveTo = vec2(0, 0);
+let moveElapsed = 0;
+let moveDuration = 1;
+
+let isRotating = false;
+let rotFrom = 0;
+let rotTo = 0;
+let rotElapsed = 0;
+let rotDuration = 1;
+
+function busy() {
+    return isMoving || isRotating;
 }
 
+onUpdate(() => {
+    const d = dt();
+
+    if (isMoving) {
+        moveElapsed += d;
+        const t = Math.min(moveElapsed / moveDuration, 1);
+        camera.pos = lerpVec(moveFrom, moveTo, t);
+        if (t >= 1) {
+            isMoving = false;
+            camera.pos = moveTo.clone();
+        }
+    }
+
+    if (isRotating) {
+        rotElapsed += d;
+        const t = Math.min(rotElapsed / rotDuration, 1);
+        camera.angle = rotFrom + (rotTo - rotFrom) * t;
+        if (t >= 1) {
+            isRotating = false;
+            camera.angle = Math.round(camera.angle / TURN_STEP) * TURN_STEP;
+        }
+    }
+});
+
+// ===== command helpers =====
 function startMoveStep(forward = 1) {
-    if (isBusy()) return;
+    if (busy()) return;
 
     const dir = getFacingDir().scale(forward);
-    const stepLen = dir.len(); // 1 for cardinal, sqrt(2) for diagonal
+    const stepLen = Math.sqrt(dir.x * dir.x + dir.y * dir.y); // 1 or sqrt(2)
 
     const gx = Math.floor(camera.pos.x / TILE_SIZE);
     const gy = Math.floor(camera.pos.y / TILE_SIZE);
@@ -472,24 +474,24 @@ function startMoveStep(forward = 1) {
 
     if (!canWalkToCell(nx, ny)) return;
 
-    camera.isMoving = true;
-    camera.moveElapsed = 0;
-    camera.moveDuration = MOVE_TIME * stepLen;
-    camera.moveFrom = vec2(camera.pos.x, camera.pos.y);
-    camera.moveTo = vec2(
+    moveFrom = camera.pos.clone();
+    moveTo = vec2(
         (nx + 0.5) * TILE_SIZE,
         (ny + 0.5) * TILE_SIZE,
     );
+    moveElapsed = 0;
+    moveDuration = MOVE_TIME * stepLen;
+    isMoving = true;
 }
 
 function startTurnStep(direction) { // -1 left, +1 right
-    if (isBusy()) return;
+    if (busy()) return;
 
-    camera.isRotating = true;
-    camera.rotElapsed = 0;
-    camera.rotDuration = TURN_TIME * Math.abs(direction);
-    camera.rotFrom = camera.angle;
-    camera.rotTo = camera.angle + direction * TURN_STEP;
+    rotFrom = camera.angle;
+    rotTo = camera.angle + direction * TURN_STEP;
+    rotElapsed = 0;
+    rotDuration = TURN_TIME * Math.abs(direction);
+    isRotating = true;
 }
 
 // keyboard
@@ -502,15 +504,12 @@ onKeyPress("right", () => startTurnStep(1));
 document.getElementById("btn-forward").addEventListener("click", () => {
     startMoveStep(1);
 });
-
 document.getElementById("btn-back").addEventListener("click", () => {
     startMoveStep(-1);
 });
-
 document.getElementById("btn-turn-left").addEventListener("click", () => {
     startTurnStep(-1);
 });
-
 document.getElementById("btn-turn-right").addEventListener("click", () => {
     startTurnStep(1);
 });
