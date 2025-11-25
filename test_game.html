@@ -445,19 +445,21 @@ onKeyDown("right", () => {
     camera.angle += TURN_STEP;
 });
 
-// === HTML button controls ===
-const MOVE_STEP = 120;
-const TURN_STEP = Math.PI; // about 7.5 degrees
-
+// === HTML button controls, use the same logic ===
 document.getElementById("btn-forward").addEventListener("click", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(MOVE_STEP));
+    const dir = getFacingDir();
+    moveByGrid(dir.x, dir.y);
 });
+
 document.getElementById("btn-back").addEventListener("click", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(-MOVE_STEP));
+    const dir = getFacingDir();
+    moveByGrid(-dir.x, -dir.y);
 });
+
 document.getElementById("btn-turn-left").addEventListener("click", () => {
     camera.angle -= TURN_STEP;
 });
+
 document.getElementById("btn-turn-right").addEventListener("click", () => {
     camera.angle += TURN_STEP;
 });
