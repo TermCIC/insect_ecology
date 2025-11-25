@@ -48,17 +48,16 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 6px;
-        margin-top: 6px;
+        gap: 4px;
+        margin-bottom: 16px;
     }
 
     #controls .row {
         display: flex;
-        gap: 6px;
-        width: 100%;
-        justify-content: center;
+        gap: 4px;
     }
 
+    /* default (desktop / large screens) */
     #controls button {
         min-width: 200px;
         padding: 6px 10px;
@@ -70,50 +69,45 @@
         cursor: pointer;
     }
 
-    #controls .row button {
-        min-width: 0;
-        flex: 1;
-    }
-
     #controls button:active {
         background: #444;
     }
 
-    /* --- Mobile tweaks: bigger, full-width buttons --- */
-    @media (max-width: 600px) {
+    /* mobile friendly controls */
+    @media (max-width: 768px) {
         body {
             justify-content: flex-start;
-            padding: 12px 8px;
+            padding-top: 12px;
+            height: auto;
         }
 
         #game {
-            width: 95vw;
+            width: 90vw;
             height: auto;
-            border-width: 2px;
+            border-width: 3px;
         }
 
         #controls {
-            width: 100%;
-            max-width: 420px;
+            width: 90vw;
+            gap: 6px;
         }
 
+        /* make buttons big and easy to tap */
         #controls button {
-            font-size: 36px;
+            min-width: 0;
+            flex: 1;
             padding: 14px 0;
-            border-radius: 10px;
+            font-size: 20px;
         }
 
+        /* forward button full width */
         #btn-forward {
             width: 100%;
-            min-width: 0;
         }
 
+        /* bottom row spans full width */
         #controls .row {
             width: 100%;
-        }
-
-        #controls .row button {
-            flex: 1;
         }
     }
 </style>
@@ -151,7 +145,7 @@ loadSprite(
 
 loadSprite(
     "enemyIdle",
-    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764054939/pixellab-walk-and-idle-toward-camera-1764054830881_n3ezyo.png",
+    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764058491/pixellab-walk-and-idle-toward-camera-1764054830881_f6biy9.png",
     {
         sliceX: 4,
         sliceY: 4,
