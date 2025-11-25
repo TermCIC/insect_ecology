@@ -485,6 +485,7 @@ const camera = add([
 
         draw() {
             pushTransform();
+            pushRotate(-this.angle);
 
             const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
