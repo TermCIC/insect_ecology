@@ -448,12 +448,12 @@ onKeyDown("right", () => {
 // === HTML button controls, use the same logic ===
 document.getElementById("btn-forward").addEventListener("click", () => {
     const dir = getFacingDir();
-    moveByGrid(-dir.x, -dir.y);
+    moveByGrid(dir.x, dir.y);
 });
 
 document.getElementById("btn-back").addEventListener("click", () => {
     const dir = getFacingDir();
-    moveByGrid(dir.x, dir.y);
+    moveByGrid(-dir.x, -dir.y);
 });
 
 document.getElementById("btn-turn-left").addEventListener("click", () => {
