@@ -147,7 +147,7 @@ const isPortrait = window.matchMedia("(orientation: portrait)").matches;
 if (isPortrait) {
     // 95vw is the CSS width of #game in portrait mode.
     // window.innerWidth gives the viewport width in pixels.
-    const actualGameContainerWidth = window.innerWidth * 0.95;
+    const actualGameContainerWidth = window.innerWidth;
     
     // Calculate the scale needed to stretch the 240px native game resolution
     // to fit the actual container width (95vw).
