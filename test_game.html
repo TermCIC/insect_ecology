@@ -84,13 +84,13 @@
         <button id="btn-turn-right">↻</button>
     </div>
 </div>
-    
+
 <script>
 kaplay({
     canvas: document.querySelector("canvas") || undefined,
     root: document.getElementById("game"),
     scale: 3,
-    debug: true
+    debug: true,
 });
 
 // sprites
@@ -122,7 +122,7 @@ onLoad(() => {
     }
 });
 
-// ===== Raycasting helpers (optimized) =====
+// ===== Raycasting helpers =====
 function rayCastGrid(origin, direction, gridPosHit, maxDistance = 32) {
     const pos = origin;
     const len = direction.len();
@@ -142,10 +142,8 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance = 32) {
     let steppedIndex = -1;
 
     const h = grid.length;
-    const w = grid[0].length;
 
     while (t <= maxDistance) {
-        // early out if ray left the map
         if (gridPos.x < 0 || gridPos.y < 0 || gridPos.y >= h || gridPos.x >= grid[gridPos.y].length) {
             break;
         }
@@ -237,7 +235,7 @@ function rayCastAsciiGrid(origin, direction, grid) {
                 return row[x] !== " " && row[x] !== "&";
             }
         }
-    }, 32); // shorter view distance
+    }, 32);
 
     if (hit) {
         hit.point = hit.point.scale(16);
@@ -300,8 +298,8 @@ function canWalkToCell(gx, gy) {
 // quantize facing direction into 4 directions (90° each, using degrees)
 function getFacingDir() {
     let a = camera.angle;
-    a = ((a % 360) + 360) % 360;      // wrap 0..360
-    const sector = Math.round(a / TURN_STEP) & 3; // 0..3
+    a = ((a % 360) + 360) % 360;
+    const sector = Math.round(a / TURN_STEP) & 3;
 
     const dirs = [
         vec2(1, 0),   // 0°  east
@@ -317,9 +315,9 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-// ===== Camera entity with tweened movement / rotation =====
+// ===== Camera entity (draw only, no custom update) =====
 const camera = add([
-    // start roughly near middle
+    // start near middle of map
     pos(13 * TILE_SIZE + TILE_SIZE / 2, 13 * TILE_SIZE + TILE_SIZE / 2),
     rotate(0),
     z(-1),
@@ -329,43 +327,6 @@ const camera = add([
     opacity(0),
     body(),
     {
-        // animation state
-        isMoving: false,
-        isRotating: false,
-        moveFrom: vec2(0, 0),
-        moveTo: vec2(0, 0),
-        moveT: 0,
-        rotFrom: 0,
-        rotTo: 0,
-        rotT: 0,
-
-        update() {
-            const d = dt();
-
-            // movement tween
-            if (this.isMoving) {
-                this.moveT += d / MOVE_TIME;
-                const t = Math.min(this.moveT, 1);
-                this.pos = lerp(this.moveFrom, this.moveTo, t);
-                if (t >= 1) {
-                    this.isMoving = false;
-                    this.pos = this.moveTo;
-                }
-            }
-
-            // rotation tween
-            if (this.isRotating) {
-                this.rotT += d / TURN_TIME;
-                const t = Math.min(this.rotT, 1);
-                this.angle = this.rotFrom + (this.rotTo - this.rotFrom) * t;
-                if (t >= 1) {
-                    this.isRotating = false;
-                    // snap to exact multiple of 90
-                    this.angle = Math.round(this.angle / TURN_STEP) * TURN_STEP;
-                }
-            }
-        },
-
         draw() {
             pushTransform();
             pushRotate(-this.angle);
@@ -373,8 +334,14 @@ const camera = add([
             const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
 
-            const planeP1 = this.pos.add(dir.scale(this.focalLength)).add(perp.scale(this.fov)).sub(this.pos);
-            const planeP2 = this.pos.add(dir.scale(this.focalLength)).sub(perp.scale(this.fov)).sub(this.pos);
+            const planeP1 = this.pos
+                .add(dir.scale(this.focalLength))
+                .add(perp.scale(this.fov))
+                .sub(this.pos);
+            const planeP2 = this.pos
+                .add(dir.scale(this.focalLength))
+                .sub(perp.scale(this.fov))
+                .sub(this.pos);
 
             pushTranslate(this.pos.scale(-1).add(0, 0));
 
@@ -446,12 +413,16 @@ addLevel(grid, {
     },
 });
 
-function busy() {
-    return camera.isMoving || camera.isRotating;
+// ===== Step movement / rotation using tween =====
+let moving = false;
+let rotating = false;
+
+function isBusy() {
+    return moving || rotating;
 }
 
 function startMoveStep(forward = 1) {
-    if (busy()) return;
+    if (isBusy()) return;
 
     const dir = getFacingDir().scale(forward);
     const gx = Math.floor(camera.pos.x / TILE_SIZE);
@@ -461,22 +432,34 @@ function startMoveStep(forward = 1) {
 
     if (!canWalkToCell(nx, ny)) return;
 
-    camera.isMoving = true;
-    camera.moveT = 0;
-    camera.moveFrom = vec2(camera.pos.x, camera.pos.y);
-    camera.moveTo = vec2(
+    const from = camera.pos.clone();
+    const to = vec2(
         (nx + 0.5) * TILE_SIZE,
         (ny + 0.5) * TILE_SIZE,
     );
+
+    moving = true;
+    tween(0, 1, MOVE_TIME, (t) => {
+        camera.pos = lerp(from, to, t);
+    }).then(() => {
+        camera.pos = to;
+        moving = false;
+    });
 }
 
 function startTurnStep(direction) { // -1 left, +1 right
-    if (busy()) return;
+    if (isBusy()) return;
 
-    camera.isRotating = true;
-    camera.rotT = 0;
-    camera.rotFrom = camera.angle;
-    camera.rotTo = camera.angle + direction * TURN_STEP;
+    const from = camera.angle;
+    const to = from + direction * TURN_STEP;
+
+    rotating = true;
+    tween(0, 1, TURN_TIME, (t) => {
+        camera.angle = from + (to - from) * t;
+    }).then(() => {
+        camera.angle = Math.round(camera.angle / TURN_STEP) * TURN_STEP;
+        rotating = false;
+    });
 }
 
 // keyboard
@@ -501,7 +484,6 @@ document.getElementById("btn-turn-left").addEventListener("click", () => {
 document.getElementById("btn-turn-right").addEventListener("click", () => {
     startTurnStep(1);
 });
-
 </script>
 </body>
 </html>
