@@ -128,19 +128,15 @@
 </div>
 
 <script>
-// 1. Define the default scale (for landscape/desktop)
 const defaultScale = 3; 
-// 2. Define the scale for portrait mode
 const portraitScale = 2;
-// 3. Check if the screen is currently in portrait orientation
 const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-// 4. Set the final scale based on the check
 const finalScale = isPortrait ? portraitScale : defaultScale;
 
 // init
 kaplay({
     root: document.getElementById("game"),
-    scale: finalScale,,
+    scale: finalScale,
     debug: true,
 });
 
