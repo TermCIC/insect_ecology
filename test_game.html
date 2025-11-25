@@ -94,7 +94,7 @@ kaplay({
 });
 
 // sprites
-// enemy is a 4 x 4 sheet
+// attack or walk animation (4 x 4)
 loadSprite(
     "enemy",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764054793/pixellab-jump-and-attack-toward-camera-1764054681406_k1buku.png",
@@ -103,37 +103,68 @@ loadSprite(
         sliceY: 4,
     },
 );
+
+// idle animation (use your own idle sheet url here - must also be 4 x 4)
+loadSprite(
+    "enemyIdle",
+    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764054793/pixellab-jump-and-attack-toward-camera-1764054681406_k1buku.png",
+    {
+        sliceX: 4,
+        sliceY: 4,
+    },
+);
+
 loadSprite(
     "wall",
     "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png",
 );
 
 let enemy;
+let enemyIdle;
 let wall;
 
 // enemySlices[frameIndex][columnIndex]
 let enemySlices = [];
+let enemyIdleSlices = [];
 let wallSlices = [];
 
 onLoad(() => {
     enemy = getSprite("enemy").data;
+    enemyIdle = getSprite("enemyIdle").data;
     wall = getSprite("wall").data;
 
-    // enemy vertical slices for every frame
-    const frameWidth = enemy.width;
-    const numFrames = enemy.frames.length;
+    // attack / walk slices
+    const attackFrameWidth = enemy.width;
+    const attackFrames = enemy.frames.length;
 
-    for (let f = 0; f < numFrames; f++) {
+    for (let f = 0; f < attackFrames; f++) {
         const frame = enemy.frames[f];
         const cols = [];
-        for (let i = 0; i < frameWidth; i++) {
+        for (let i = 0; i < attackFrameWidth; i++) {
             cols.push(
                 frame.scale(
-                    new Quad(i / frameWidth, 0, 1 / frameWidth, 1),
+                    new Quad(i / attackFrameWidth, 0, 1 / attackFrameWidth, 1),
                 ),
             );
         }
         enemySlices.push(cols);
+    }
+
+    // idle slices
+    const idleFrameWidth = enemyIdle.width;
+    const idleFrames = enemyIdle.frames.length;
+
+    for (let f = 0; f < idleFrames; f++) {
+        const frame = enemyIdle.frames[f];
+        const cols = [];
+        for (let i = 0; i < idleFrameWidth; i++) {
+            cols.push(
+                frame.scale(
+                    new Quad(i / idleFrameWidth, 0, 1 / idleFrameWidth, 1),
+                ),
+            );
+        }
+        enemyIdleSlices.push(cols);
     }
 
     // wall vertical slices
@@ -146,7 +177,7 @@ onLoad(() => {
     }
 });
 
-// ===== Grid & raycast =====
+// ===== Grid and raycast =====
 const colors = {
     "#": RED,
     "$": GREEN,
@@ -169,7 +200,7 @@ const baseGrid = [
     "#          &     #",
     "##################",
 ];
-    
+
 const grid = baseGrid.map(row => row.split(""));
 
 const TILE_SIZE = 16;
@@ -182,7 +213,7 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-function rayCastGrid(origin, direction, gridPosHit, maxDistance = 16) {
+function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
     const pos = origin;
     const len = direction.len();
     const dir = direction.scale(1 / len);
@@ -260,7 +291,7 @@ function raycastEdge(origin, direction, line) {
         normal,
         t: s,
         s: t,
-        object: line,
+        object: line, // contains pos, p1, p2
     };
 }
 
@@ -281,7 +312,7 @@ function rayCastAsciiGrid(origin, direction) {
                     const planeP2 = perp.scale(0.2);
 
                     const objectHit = raycastEdge(origin, direction, {
-                        pos: vec2(x + 0.5, y + 0.5),
+                        pos: vec2(x + 0.5, y + 0.5), // tile coords
                         p1: planeP1,
                         p2: planeP2,
                     });
@@ -338,13 +369,24 @@ const camera = add([
             drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
             drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
-            // choose current enemy animation frame
-            let currentEnemySlices = null;
+            // pre compute current frames for attack and idle
+            let currentAttackSlices = null;
+            let currentIdleSlices = null;
+
             if (enemySlices.length > 0) {
-                const animSpeed = 12;
-                const frameIndex = Math.floor(animTime * animSpeed) % enemySlices.length;
-                currentEnemySlices = enemySlices[frameIndex];
+                const attackSpeed = 12;
+                const attackIndex = Math.floor(animTime * attackSpeed) % enemySlices.length;
+                currentAttackSlices = enemySlices[attackIndex];
             }
+
+            if (enemyIdleSlices.length > 0) {
+                const idleSpeed = 4;
+                const idleIndex = Math.floor(animTime * idleSpeed) % enemyIdleSlices.length;
+                currentIdleSlices = enemyIdleSlices[idleIndex];
+            }
+
+            const playerGX = this.pos.x / TILE_SIZE;
+            const playerGY = this.pos.y / TILE_SIZE;
 
             for (let x = 0; x <= 120; x++) {
                 const direction = lerp(planeP1, planeP2, x / 120).scale(6);
@@ -372,24 +414,38 @@ const camera = add([
                         color: BLACK.lerp(WHITE, d),
                     });
 
-                    // animated monsters
-                    if (hit.objects && enemy && currentEnemySlices) {
+                    // animated monsters with idle and attack
+                    if (hit.objects && currentAttackSlices && currentIdleSlices) {
                         hit.objects.slice().reverse().forEach((o) => {
                             const t2 = o.t;
                             const wh = 240 / (t2 * direction.len() / 16);
                             const oh = 180 / (t2 * direction.len() / 16);
 
                             const u2 = o.s;
+
+                            // monster grid position from raycastEdge line.pos (in tile coords)
+                            const monsterGX = o.object.pos.x;
+                            const monsterGY = o.object.pos.y;
+                            const dx = monsterGX - playerGX;
+                            const dy = monsterGY - playerGY;
+                            const distSq = dx * dx + dy * dy;
+
+                            // simple logic: far = idle, near = attack
+                            const useIdle = distSq > 9; // > 3 tiles away
+
+                            const slices = useIdle ? currentIdleSlices : currentAttackSlices;
+                            const tex = useIdle ? enemyIdle.tex : enemy.tex;
+
                             const sliceIndex = Math.round(
-                                u2 * (currentEnemySlices.length - 1),
+                                u2 * (slices.length - 1),
                             );
 
                             drawUVQuad({
                                 width: 2,
                                 height: oh,
                                 pos: vec2(x * 2, 120 + wh / 2 - oh),
-                                tex: enemy.tex,
-                                quad: currentEnemySlices[sliceIndex],
+                                tex: tex,
+                                quad: slices[sliceIndex],
                                 color: WHITE,
                             });
                         });
@@ -403,7 +459,7 @@ const camera = add([
     },
 ]);
 
-// level collisions like official example
+// level collisions
 addLevel(baseGrid, {
     pos: vec2(0, 0),
     tileWidth: TILE_SIZE,
@@ -416,11 +472,10 @@ addLevel(baseGrid, {
     },
 });
 
-// ===== movement like official example =====
+// movement like official example
 const STEP_DIST = 40;
 const ROT_SPEED = 90;
 
-// keyboard movement exactly as in official sample
 onKeyDown("up", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
 });
@@ -437,7 +492,7 @@ onKeyDown("right", () => {
     camera.angle += ROT_SPEED * dt();
 });
 
-// ===== HTML button hold-to-move =====
+// HTML button hold
 let btnForwardHeld   = false;
 let btnBackHeld      = false;
 let btnTurnLeftHeld  = false;
@@ -457,12 +512,10 @@ bindHoldButton("btn-back",       v => btnBackHeld = v);
 bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld = v);
 bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
 
-// update for animation and button driven movement
 onUpdate(() => {
     const d = dt();
     animTime += d;
 
-    // buttons use same logic per frame as keyboard
     if (btnForwardHeld) {
         camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
     }
