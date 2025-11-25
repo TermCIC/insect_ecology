@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <title>I am trying to remake MM6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
         margin: 0;
@@ -11,7 +12,8 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
+        height: -webkit-fill-available;
         gap: 12px;
         font-family: system-ui, sans-serif;
     }
@@ -39,7 +41,7 @@
         }
         
         #game {
-            width: 70vw;
+            width: 95vw;
             height: auto;
         }
         
@@ -126,7 +128,7 @@
 // init
 kaplay({
     root: document.getElementById("game"),
-    scale: 3,
+    scale: 3.3,
     debug: true,
 });
 
