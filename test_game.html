@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.1</title>
+<title>KEG v0.2.2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -592,14 +592,14 @@ const camera = add([
 
                 // draw an X in the middle-upper part of the view
                 drawLine({
-                    p1: vec2(20/finalScale, 10/finalScale),
-                    p2: vec2(40/finalScale, 25/finalScale),
+                    p1: vec2(0, 0),
+                    p2: vec2(60, 60),
                     width: 4,
                     color: col,
                 });
                 drawLine({
-                    p1: vec2(40/finalScale, 10/finalScale),
-                    p2: vec2(20/finalScale, 25/finalScale),
+                    p1: vec2(0, 60),
+                    p2: vec2(60, 0),
                     width: 4,
                     color: col,
                 });
