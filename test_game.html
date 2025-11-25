@@ -139,7 +139,7 @@ const baseGrid = [
     "#   $                          $   #",
     "#   $                          $   #",
     "#   $   %%%%  %%%%%%%%%%%%%%   $   #",
-    "#   $   %                  %   $   #",
+    "#   $   %                  %   #",
     "#   $   %                  %   $   #",
     "##&&$$&&%%%%%%%%%%    %%%%%%&&$$&&##",
     "#   $   %%                     $   #",
@@ -157,8 +157,14 @@ const baseGrid = [
 const grid = baseGrid.map(row => row.split(""));
 
 const TILE_SIZE  = 16;
-const MOVE_SPEED = 60;  // pixels per second
-const ROT_SPEED  = 90;  // degrees per second
+
+// speeds
+const MOVE_SPEED = 80;  // pixels per second (you can tune)
+const ROT_SPEED  = 110; // degrees per second (you can tune)
+
+// acceleration factors (bigger = snappier, smaller = smoother)
+const MOVE_ACCEL = 8;   // per second
+const ROT_ACCEL  = 10;  // per second
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
@@ -173,6 +179,10 @@ function canWalkToCell(gx, gy) {
 
 function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
+}
+
+function clamp01(v) {
+    return clamp(v, 0, 1);
 }
 
 function lerpVec(a, b, t) {
@@ -455,6 +465,10 @@ let moveBack    = false;
 let turnLeft    = false;
 let turnRight   = false;
 
+// current smoothed velocities
+let moveVel = 0; // pixels per second
+let rotVel  = 0; // degrees per second;
+
 // keyboard: hold to move
 onKeyDown("up",    () => { moveForward = true; });
 onKeyRelease("up", () => { moveForward = false; });
@@ -474,7 +488,6 @@ function bindHoldButton(id, flagName) {
     btn.addEventListener("mousedown", () => { window[flagName] = true; });
     btn.addEventListener("mouseup",   () => { window[flagName] = false; });
     btn.addEventListener("mouseleave",() => { window[flagName] = false; });
-    // optional touch support
     btn.addEventListener("touchstart", e => { e.preventDefault(); window[flagName] = true; });
     btn.addEventListener("touchend",   e => { e.preventDefault(); window[flagName] = false; });
 }
@@ -484,35 +497,50 @@ bindHoldButton("btn-back",       "moveBack");
 bindHoldButton("btn-turn-left",  "turnLeft");
 bindHoldButton("btn-turn-right", "turnRight");
 
-// ===== global update: movement + monsters =====
+// ===== global update: smooth movement + monsters =====
 onUpdate(() => {
     const d = dt();
 
-    // movement
-    let moveAmount = 0;
-    if (moveForward) moveAmount += MOVE_SPEED * d;
-    if (moveBack)    moveAmount -= MOVE_SPEED * d;
+    // 1) compute desired input from keys
+    let moveInput = 0; // -1 backward, +1 forward
+    if (moveForward) moveInput += 1;
+    if (moveBack)    moveInput -= 1;
 
-    if (moveAmount !== 0) {
-        const dir = Vec2.fromAngle(camera.angle).unit().scale(moveAmount);
+    let rotInput = 0; // -1 left, +1 right
+    if (turnLeft)  rotInput -= 1;
+    if (turnRight) rotInput += 1;
+
+    // 2) smooth velocities toward targets
+    const moveTarget = moveInput * MOVE_SPEED;
+    const rotTarget  = rotInput * ROT_SPEED;
+
+    const moveAlpha = clamp01(MOVE_ACCEL * d);
+    const rotAlpha  = clamp01(ROT_ACCEL  * d);
+
+    moveVel = moveVel + (moveTarget - moveVel) * moveAlpha;
+    rotVel  = rotVel  + (rotTarget  - rotVel)  * rotAlpha;
+
+    // 3) apply movement
+    if (Math.abs(moveVel) > 0.01) {
+        const dir = Vec2.fromAngle(camera.angle).unit().scale(moveVel * d);
         const newPos = camera.pos.add(dir);
         const gx = Math.floor(newPos.x / TILE_SIZE);
         const gy = Math.floor(newPos.y / TILE_SIZE);
 
         if (canWalkToCell(gx, gy)) {
             camera.pos = newPos;
+        } else {
+            // stop sliding against walls
+            moveVel = 0;
         }
     }
 
-    // rotation
-    let rotAmount = 0;
-    if (turnLeft)  rotAmount -= ROT_SPEED * d;
-    if (turnRight) rotAmount += ROT_SPEED * d;
-    if (rotAmount !== 0) {
-        camera.angle += rotAmount;
+    // 4) apply rotation
+    if (Math.abs(rotVel) > 0.01) {
+        camera.angle += rotVel * d;
     }
 
-    // monster AI timer
+    // 5) monster AI timer
     monsterTimer += d;
     if (monsterTimer >= MONSTER_MOVE_INTERVAL) {
         monsterTimer = 0;
