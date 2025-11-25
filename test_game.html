@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.3</title>
+<title>KEG v0.3.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -175,8 +175,7 @@ const ATTACK_RANGE_TILES_SQ  = 3;
 const FIREBALL_TILES_PER_SECOND = 1;   // speed in tiles / sec
 const FIREBALL_LIFETIME         = 3;   // seconds
 const FIREBALL_HIT_RADIUS       = 8;   // pixels
-const FIREBALL_ANGLE_OFFSET = 0;
-    
+
 // list of active fireballs
 const projectiles = [];
 
@@ -475,23 +474,17 @@ const camera = add([
     body(),
     {
         draw() {
-            pushTransform();
-            pushRotate(-this.angle);
+            // NO pushRotate / pushTranslate here anymore:
+            // we work directly in "screen space" for drawing.
 
-            const dir = Vec2.fromAngle(this.angle);
-            const perp = dir.normal();
+            const dir = Vec2.fromAngle(this.angle);   // camera forward
+            const rightVec = dir.normal();            // camera right
 
-            const planeP1 = this.pos
-                .add(dir.scale(this.focalLength))
-                .add(perp.scale(this.fov))
-                .sub(this.pos);
-            const planeP2 = this.pos
-                .add(dir.scale(this.focalLength))
-                .sub(perp.scale(this.fov))
-                .sub(this.pos);
+            // Build camera plane (like a simple FOV plane)
+            const planeP1 = dir.scale(this.focalLength).add(rightVec.scale(this.fov));
+            const planeP2 = dir.scale(this.focalLength).sub(rightVec.scale(this.fov));
 
-            pushTranslate(this.pos.scale(-1).add(0, 0));
-
+            // Background
             drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
             drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
@@ -514,6 +507,7 @@ const camera = add([
             const playerGX = this.pos.x / TILE_SIZE;
             const playerGY = this.pos.y / TILE_SIZE;
 
+            // Raycast walls + monsters
             for (let x = 0; x <= 120; x++) {
                 const direction = lerp(planeP1, planeP2, x / 120).scale(6);
                 const hit = rayCastAsciiGrid(this.pos, direction);
@@ -598,22 +592,19 @@ const camera = add([
                     }
                 }
             }
-            popTransform();
 
-            // ===== draw fireballs in camera space =====
+            // ===== draw fireballs in the SAME camera basis =====
             if (fireballSprite && fireballQuad) {
                 const halfScreenW = NATIVE_GAME_WIDTH / 2;
-                const forward = Vec2.fromAngle(this.angle);   // camera forward in world space
-                const rightVec = forward.normal();            // camera right
 
                 for (const fb of projectiles) {
                     const rel = fb.pos.sub(this.pos);  // world -> camera origin
-                    const zCam = rel.dot(forward);     // forward distance
+                    const zCam = rel.dot(dir);         // forward distance
                     if (zCam <= 4) continue;           // behind or too close
 
                     const xCam = rel.dot(rightVec);    // sideways distance
 
-                    // simple perspective projection
+                    // simple perspective projection: same style as walls
                     const screenX = halfScreenW + (xCam / zCam) * halfScreenW;
 
                     const distTiles = zCam / TILE_SIZE;
@@ -669,12 +660,12 @@ onKeyDown("right", () => {
 
 // ===== fireball spawn & potion =====
 function spawnFireball() {
-    const launchAngle = camera.angle - FIREBALL_ANGLE_OFFSET;
-    const dir = Vec2.fromAngle(launchAngle); 
-    const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10)); 
+    // fireball goes exactly along camera forward (same basis as raycast)
+    const dir = Vec2.fromAngle(camera.angle);
+    const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
     projectiles.push({
         pos: start,
-        dir: dir,
+        dir: dir.unit(),
         life: FIREBALL_LIFETIME,
     });
 }
