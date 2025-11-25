@@ -159,12 +159,12 @@ const grid = baseGrid.map(row => row.split(""));
 const TILE_SIZE  = 16;
 
 // speeds
-const MOVE_SPEED = 80;  // pixels per second (you can tune)
+const MOVE_SPEED = 40;  // pixels per second (you can tune)
 const ROT_SPEED  = 10; // degrees per second (you can tune)
 
 // acceleration factors (bigger = snappier, smaller = smoother)
-const MOVE_ACCEL = 8;   // per second
-const ROT_ACCEL  = 10;  // per second
+const MOVE_ACCEL = 20;   // per second
+const ROT_ACCEL  = 5;  // per second
 
 function inBounds(gx, gy) {
     return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
@@ -429,7 +429,7 @@ function monsterAt(gx, gy) {
     return monsters.some(m => m.x === gx && m.y === gy);
 }
 
-const MONSTER_MOVE_INTERVAL = 0.4;
+const MONSTER_MOVE_INTERVAL = 1.0;
 let monsterTimer = 0;
 
 function moveMonsters() {
