@@ -341,7 +341,7 @@ const camera = add([
             // choose current enemy animation frame
             let currentEnemySlices = null;
             if (enemySlices.length > 0) {
-                const animSpeed = 6;
+                const animSpeed = 12;
                 const frameIndex = Math.floor(animTime * animSpeed) % enemySlices.length;
                 currentEnemySlices = enemySlices[frameIndex];
             }
