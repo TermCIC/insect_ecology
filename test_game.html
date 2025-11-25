@@ -94,8 +94,14 @@ kaplay({
 });
 
 // sprites
-loadSprite("enemy", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978470/pixellab-monster-orc-1763978389772_tctylf.png");
-loadSprite("wall",  "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
+loadSprite(
+    "enemy",
+    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978470/pixellab-monster-orc-1763978389772_tctylf.png",
+);
+loadSprite(
+    "wall",
+    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png",
+);
 
 let enemy;
 let objSlices = [];
@@ -130,6 +136,7 @@ const colors = {
     "&": YELLOW,
 };
 
+// baseGrid is static strings (for addLevel)
 const baseGrid = [
     "####################################",
     "#                                  #",
@@ -146,11 +153,12 @@ const baseGrid = [
     "####################################",
 ];
 
+// grid is mutable 2D char array (for raycast)
 const grid = baseGrid.map(row => row.split(""));
 
 const TILE_SIZE  = 16;
 
-// movement speeds
+// movement speeds, tuned to feel like the original sample
 const MOVE_SPEED = 150;  // pixels per second
 const ROT_SPEED  = 120;  // degrees per second
 
@@ -161,6 +169,7 @@ function inBounds(gx, gy) {
 function canWalkToCell(gx, gy) {
     if (!inBounds(gx, gy)) return false;
     const c = grid[gy][gx];
+    // monsters do not block movement in this example
     return c === " " || c === "&";
 }
 
@@ -253,7 +262,6 @@ function raycastEdge(origin, direction, line) {
 }
 
 function rayCastAsciiGrid(origin, direction) {
-    // work in grid units
     origin = origin.scale(1 / 16);
     direction = direction.scale(1 / 16);
     const objects = [];
@@ -280,7 +288,7 @@ function rayCastAsciiGrid(origin, direction) {
                 return tile !== " " && tile !== "&";
             }
         }
-    }, direction.len());
+    }, direction.len()); // like original: trace as far as ray length
 
     if (hit) {
         hit.point = hit.point.scale(16);
@@ -291,8 +299,7 @@ function rayCastAsciiGrid(origin, direction) {
 }
 
 // ===== Camera entity (draw only) =====
-
-// put camera inside a valid empty tile, for example (8, 9)
+// put camera inside map (grid coords 8, 9 for example)
 const startGX = 8;
 const startGY = 9;
 
@@ -393,51 +400,6 @@ addLevel(baseGrid, {
     },
 });
 
-// ===== monster data & movement =====
-const monsters = [];
-
-for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-        if (grid[y][x] === "&") {
-            monsters.push({ x, y });
-        }
-    }
-}
-
-function monsterAt(gx, gy) {
-    return monsters.some(m => m.x === gx && m.y === gy);
-}
-
-const MONSTER_MOVE_INTERVAL = 2.0;
-let monsterTimer = 0;
-
-function moveMonsters() {
-    const px = Math.floor(camera.pos.x / TILE_SIZE);
-    const py = Math.floor(camera.pos.y / TILE_SIZE);
-
-    for (const m of monsters) {
-        const dx = px - m.x;
-        const dy = py - m.y;
-        let stepX = 0, stepY = 0;
-
-        if (Math.abs(dx) > Math.abs(dy)) {
-            stepX = Math.sign(dx);
-        } else {
-            stepY = Math.sign(dy);
-        }
-
-        const nx = m.x + stepX;
-        const ny = m.y + stepY;
-
-        if (inBounds(nx, ny) && canWalkToCell(nx, ny) && !monsterAt(nx, ny)) {
-            grid[m.y][m.x] = " ";
-            m.x = nx;
-            m.y = ny;
-            grid[m.y][m.x] = "&";
-        }
-    }
-}
-
 // ===== input state for continuous movement =====
 let moveForward = false;
 let moveBack    = false;
@@ -457,7 +419,7 @@ onKeyRelease("left", () => { turnLeft = false; });
 onKeyDown("right",    () => { turnRight = true; });
 onKeyRelease("right", () => { turnRight = false; });
 
-// HTML buttons: hold movement
+// HTML buttons: mousedown / mouseup to simulate hold
 function bindHoldButton(id, flagName) {
     const btn = document.getElementById(id);
     btn.addEventListener("mousedown", () => { window[flagName] = true; });
@@ -472,7 +434,7 @@ bindHoldButton("btn-back",       "moveBack");
 bindHoldButton("btn-turn-left",  "turnLeft");
 bindHoldButton("btn-turn-right", "turnRight");
 
-// ===== global update: movement + monsters =====
+// ===== global update: movement only =====
 onUpdate(() => {
     const d = dt();
 
@@ -502,13 +464,6 @@ onUpdate(() => {
 
     if (rotInput !== 0) {
         camera.angle += ROT_SPEED * d * rotInput;
-    }
-
-    // monster AI
-    monsterTimer += d;
-    if (monsterTimer >= MONSTER_MOVE_INTERVAL) {
-        monsterTimer = 0;
-        moveMonsters();
     }
 });
 </script>
