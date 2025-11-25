@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v1.7</title>
+<title>KEG v1.8</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -99,7 +99,6 @@
         gap: 4px;
     }
 
-    /* default (desktop / large screens) */
     #controls button {
         padding: 8px 12px;
         font-size: 16px;
@@ -165,9 +164,13 @@ const player = {
 
 const MONSTER_MAX_HP = 40;
 const MONSTER_ATK    = 6;
-const MONSTER_ATTACK_INTERVAL = 1.0; // seconds between monster attacks
+const MONSTER_ATTACK_INTERVAL = 1.0;
 
-const ATTACK_RANGE_TILES_SQ = 3; // distance^2 in tile units for both attack + animation
+const ATTACK_RANGE_TILES_SQ = 3;
+
+// simple slash FX
+const SLASH_DURATION = 0.18;
+let slashTimer = 0;
 
 function updatePlayerHpUI() {
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
@@ -194,20 +197,9 @@ loadSprite(
     { sliceX: 4, sliceY: 4 },
 );
 
-loadSprite(
-    "wall_1",
-    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png",
-);
-
-loadSprite(
-    "wall_2",
-    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png",
-);
-
-loadSprite(
-    "wall_3",
-    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png",
-);
+loadSprite("wall_1", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
+loadSprite("wall_2", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png");
+loadSprite("wall_3", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png");
 
 let enemy;
 let enemyIdle;
@@ -253,21 +245,17 @@ onLoad(() => {
         enemyIdleSlices.push(cols);
     }
 
-    // wall_1 slices
+    // wall slices
     for (let i = 0; i < wall_1.width; i++) {
         wall_1_Slices.push(
             wall_1.frames[0].scale(new Quad(i / wall_1.width, 0, 1 / wall_1.width, 1)),
         );
     }
-
-    // wall_2 slices
     for (let i = 0; i < wall_2.width; i++) {
         wall_2_Slices.push(
             wall_2.frames[0].scale(new Quad(i / wall_2.width, 0, 1 / wall_2.width, 1)),
         );
     }
-
-    // wall_3 slices
     for (let i = 0; i < wall_3.width; i++) {
         wall_3_Slices.push(
             wall_3.frames[0].scale(new Quad(i / wall_3.width, 0, 1 / wall_3.width, 1)),
@@ -310,7 +298,7 @@ for (let y = 0; y < grid.length; y++) {
             monsters.push({
                 tileX: x,
                 tileY: y,
-                gx: x + 0.5,   // tile coords
+                gx: x + 0.5,
                 gy: y + 0.5,
                 maxHp: MONSTER_MAX_HP,
                 hp: MONSTER_MAX_HP,
@@ -421,15 +409,11 @@ function rayCastAsciiGrid(origin, direction) {
         if (y >= 0 && y < grid.length) {
             const row = grid[y];
             if (x >= 0 && x < row.length) {
-                let tile = row[x];
+                const tile = row[x];
 
                 if (tile === "&") {
-                    // find alive monster on this tile
                     const monster = monsters.find(m => m.tileX === x && m.tileY === y && m.alive);
-                    if (!monster) {
-                        // monster is dead, treat as empty space
-                        return false;
-                    }
+                    if (!monster) return false;
 
                     const perp = direction.normal().unit();
                     const planeP1 = perp.scale(-0.2);
@@ -443,11 +427,8 @@ function rayCastAsciiGrid(origin, direction) {
                     };
 
                     const objectHit = raycastEdge(origin, direction, line);
-                    if (objectHit) {
-                        objects.push(objectHit);
-                    }
-                    // '&' is not a wall tile
-                    return false;
+                    if (objectHit) objects.push(objectHit);
+                    return false; // '&' not a wall
                 }
                 return tile !== " " && tile !== "&";
             }
@@ -534,9 +515,7 @@ const camera = add([
 
                     const h = 240 / (t * direction.len() / 16);
 
-                    // choose wall texture based on tile symbol
                     const tileChar = grid[hit.gridPos.y][hit.gridPos.x];
-
                     let wallTex;
                     let wallSlicesArr;
 
@@ -558,7 +537,6 @@ const camera = add([
                         ? Math.round(u * (wallSlicesArr.length - 1))
                         : 0;
 
-                    // walls
                     drawUVQuad({
                         width: 2,
                         height: h,
@@ -606,6 +584,26 @@ const camera = add([
                 }
             }
             popTransform();
+
+            // ===== slash overlay (screen space) =====
+            if (slashTimer > 0) {
+                const alpha = slashTimer / SLASH_DURATION;
+                const col = rgba(255, 255, 255, alpha);
+
+                // draw an X in the middle-upper part of the view
+                drawLine({
+                    p1: vec2(80, 40),
+                    p2: vec2(160, 100),
+                    width: 4,
+                    color: col,
+                });
+                drawLine({
+                    p1: vec2(160, 40),
+                    p2: vec2(80, 100),
+                    width: 4,
+                    color: col,
+                });
+            }
         },
         focalLength: 40,
         fov: 10,
@@ -625,29 +623,27 @@ addLevel(baseGrid, {
     },
 });
 
-// movement like official example
 const STEP_DIST = 40;
 const ROT_SPEED = 90;
 
 onKeyDown("up", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
 });
-
 onKeyDown("down", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
 });
-
 onKeyDown("left", () => {
     camera.angle -= ROT_SPEED * dt();
 });
-
 onKeyDown("right", () => {
     camera.angle += ROT_SPEED * dt();
 });
 
 // ===== Attack & potion functions =====
 function playerAttack() {
-    // find nearest alive monster
+    // start slash FX regardless
+    slashTimer = SLASH_DURATION;
+
     const playerGX = camera.pos.x / TILE_SIZE;
     const playerGY = camera.pos.y / TILE_SIZE;
 
@@ -706,11 +702,9 @@ bindHoldButton("btn-back",       v => btnBackHeld = v);
 bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld = v);
 bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
 
-// attack & potion (tap / click)
 document.getElementById("btn-attack").addEventListener("click", playerAttack);
 document.getElementById("btn-potion").addEventListener("click", drinkPotion);
 
-// optional: keyboard shortcuts
 onKeyPress("space", playerAttack);
 onKeyPress("h", drinkPotion);
 
@@ -720,6 +714,11 @@ let currentTarget = null;
 onUpdate(() => {
     const d = dt();
     animTime += d;
+
+    // update slash timer
+    if (slashTimer > 0) {
+        slashTimer = Math.max(0, slashTimer - d);
+    }
 
     // movement (button hold)
     if (btnForwardHeld) {
@@ -765,14 +764,9 @@ onUpdate(() => {
 
     updateMonsterHpUI(currentTarget);
 
-    // simple game over check
     if (player.hp <= 0) {
         player.hp = 0;
         updatePlayerHpUI();
-        // you can replace this with a nicer UI later
-        // to avoid spamming alerts, we could pause updates, but keeping simple:
-        // alert("You died!");
-        // debug.paused = true;
     }
 });
 
