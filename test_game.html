@@ -8,7 +8,7 @@
         margin: 0;
         background: #111;
         display: flex;
-        flex-direction: column;   /* game on top, buttons below */
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -21,22 +21,20 @@
         overflow: hidden;
         background: black;
         border: 4px solid #555;
-        aspect-ratio: 1 / 1;   /* keep game square */
+        aspect-ratio: 1 / 1;
     }
-    
-    /* Landscape: window width > height → fit to height */
+
     @media (orientation: landscape) {
         #game {
-            height: 70vh;      /* fit height (adjust % if you want more/less) */
-            width: auto;       /* width follows aspect-ratio */
+            height: 70vh;
+            width: auto;
         }
     }
-    
-    /* Portrait: window height > width → fit to width (phone) */
+
     @media (orientation: portrait) {
         #game {
-            width: 70vw;       /* fit width */
-            height: auto;      /* height follows aspect-ratio */
+            width: 70vw;
+            height: auto;
         }
     }
 
@@ -92,11 +90,11 @@
 <script>
 kaplay({
     canvas: document.querySelector("canvas") || undefined,
-    root: document.getElementById("game"), 
-    scale: 3, // 自動等比例縮放
+    root: document.getElementById("game"),
+    scale: 3,
 });
 
-// Load sprites using ABSOLUTE URLs from play.kaplayjs.com
+// sprites
 loadSprite("enemy", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978470/pixellab-monster-orc-1763978389772_tctylf.png");
 loadSprite("wall", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763978431/brick_wall_2_jwuiva.png");
 
@@ -104,7 +102,7 @@ let enemy;
 let objSlices = [];
 let wall;
 let slices = [];
-    
+
 onLoad(() => {
     enemy = getSprite("enemy").data;
     for (let i = 0; i < enemy.width; i++) {
@@ -125,6 +123,7 @@ onLoad(() => {
     }
 });
 
+// ===== Raycasting helpers (unchanged) =====
 function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
     const pos = origin;
     const len = direction.len();
@@ -155,8 +154,7 @@ function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
                 t: t / len,
                 gridPos,
             };
-        }
-        else if (hit) {
+        } else if (hit) {
             return hit;
         }
 
@@ -242,6 +240,7 @@ function rayCastAsciiGrid(origin, direction, grid) {
     return hit;
 }
 
+// ===== Grid & movement =====
 const colors = {
     "#": RED,
     "$": GREEN,
@@ -266,50 +265,42 @@ const grid = [
 ];
 
 const TILE_SIZE = 16;
-const TURN_STEP = Math.PI / 4;   // 45 degrees
+const TURN_STEP = 90;   // degrees, 4 directions
 
 function canWalkToCell(gx, gy) {
     if (gy < 0 || gy >= grid.length) return false;
     const row = grid[gy];
     if (gx < 0 || gx >= row.length) return false;
     const c = row[gx];
-    // passable tiles: space or & (enemy)
-    return c === " " || c === "&";
+    return c === " " || c === "&"; // walkable
 }
 
 function moveByGrid(deltaX, deltaY) {
-    // current grid cell
     const gx = Math.floor(camera.pos.x / TILE_SIZE);
     const gy = Math.floor(camera.pos.y / TILE_SIZE);
 
     const nx = gx + deltaX;
     const ny = gy + deltaY;
 
-    if (!canWalkToCell(nx, ny)) return; // hit wall, do nothing
+    if (!canWalkToCell(nx, ny)) return;
 
-    // snap camera to center of new cell
     camera.pos = vec2(
         (nx + 0.5) * TILE_SIZE,
         (ny + 0.5) * TILE_SIZE,
     );
 }
 
-// quantize facing direction into 8 directions (45° each)
+// quantize facing direction into 4 directions (90° each, using degrees)
 function getFacingDir() {
-    const full = Math.PI * 2;
     let a = camera.angle;
-    a = ((a % full) + full) % full;        // wrap to 0..2π
-    const sector = Math.round(a / TURN_STEP) & 7; // 0..7
+    a = ((a % 360) + 360) % 360;      // wrap 0..360
+    const sector = Math.round(a / TURN_STEP) & 3; // 0..3
 
     const dirs = [
         vec2(1, 0),   // 0°  east
-        vec2(1, 1),   // 45°
-        vec2(0, 1),   // 90°  south
-        vec2(-1, 1),  // 135°
+        vec2(0, 1),   // 90° south
         vec2(-1, 0),  // 180° west
-        vec2(-1, -1), // 225°
         vec2(0, -1),  // 270° north
-        vec2(1, -1),  // 315°
     ];
 
     return dirs[sector];
@@ -319,8 +310,10 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
+// ===== Camera entity =====
 const camera = add([
-    pos(7 * 16, 11 * 16 + 8),
+    // start exactly at center of tile (7, 11)
+    pos(7 * TILE_SIZE + TILE_SIZE / 2, 11 * TILE_SIZE + TILE_SIZE / 2),
     rotate(0),
     z(-1),
     rect(8, 8),
@@ -330,15 +323,11 @@ const camera = add([
     body(),
     {
         draw() {
+            // Optional: snap angle to multiples of 90 so it never drifts
+            this.angle = Math.round(this.angle / TURN_STEP) * TURN_STEP;
+
             pushTransform();
             pushRotate(-this.angle);
-
-            drawCircle({
-                pos: vec2(),
-                radius: 4,
-                color: RED,
-                opacity: 0,
-            });
 
             const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
@@ -346,18 +335,10 @@ const camera = add([
             const planeP1 = this.pos.add(dir.scale(this.focalLength)).add(perp.scale(this.fov)).sub(this.pos);
             const planeP2 = this.pos.add(dir.scale(this.focalLength)).sub(perp.scale(this.fov)).sub(this.pos);
 
-            drawLine({
-                p1: planeP1,
-                p2: planeP2,
-                width: 1,
-                color: RED,
-                opacity: 0,
-            });
-
             pushTranslate(this.pos.scale(-1).add(0, 0));
 
-            drawRect({ width: 240, height: 120, color: rgb(50, 50, 50), });
-            drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128), });
+            drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
+            drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
             for (let x = 0; x <= 120; x++) {
                 let direction = lerp(planeP1, planeP2, x / 120).scale(6);
@@ -399,7 +380,7 @@ const camera = add([
                                 pos: vec2(x * 2, 120 + wh / 2 - oh),
                                 tex: enemy.tex,
                                 quad: objSlices[Math.round(u * (enemy.width - 1))],
-                                color: WHITE,   // 保留原本 sprite 的立體陰影
+                                color: WHITE,
                             });
                         });
                     }
@@ -414,8 +395,8 @@ const camera = add([
 
 addLevel(grid, {
     pos: vec2(0, 0),
-    tileWidth: 16,
-    tileHeight: 16,
+    tileWidth: TILE_SIZE,
+    tileHeight: TILE_SIZE,
     tiles: {
         "#": () => [rect(16, 16), color(RED), opacity(0), area(), body({ isStatic: true })],
         "$": () => [rect(16, 16), color(GREEN), opacity(0), area(), body({ isStatic: true })],
@@ -424,19 +405,17 @@ addLevel(grid, {
     },
 });
 
-// move one grid cell in facing direction
+// ===== Movement / rotation controls =====
 onKeyDown("up", () => {
     const dir = getFacingDir();
     moveByGrid(dir.x, dir.y);
 });
 
-// move one grid cell backward
 onKeyDown("down", () => {
     const dir = getFacingDir();
     moveByGrid(-dir.x, -dir.y);
 });
 
-// rotate exactly 45 degrees
 onKeyDown("left", () => {
     camera.angle -= TURN_STEP;
 });
@@ -445,7 +424,7 @@ onKeyDown("right", () => {
     camera.angle += TURN_STEP;
 });
 
-// === HTML button controls, use the same logic ===
+// HTML buttons, same logic
 document.getElementById("btn-forward").addEventListener("click", () => {
     const dir = getFacingDir();
     moveByGrid(dir.x, dir.y);
@@ -463,7 +442,6 @@ document.getElementById("btn-turn-left").addEventListener("click", () => {
 document.getElementById("btn-turn-right").addEventListener("click", () => {
     camera.angle += TURN_STEP;
 });
-
 </script>
 </body>
 </html>
