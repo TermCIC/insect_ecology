@@ -276,29 +276,35 @@ const grid = [
 ];
 
 const TILE_SIZE = 16;
-const TURN_STEP = 90;       // degrees, 4 directions
-const MOVE_TIME = 0.18;     // seconds to move 1 tile
-const TURN_TIME = 0.12;     // seconds to turn 90°
+
+// 45 degree steps now
+const TURN_STEP = 45;
+const MOVE_TIME = 0.18;
+const TURN_TIME = 0.12;
 
 function canWalkToCell(gx, gy) {
     if (gy < 0 || gy >= grid.length) return false;
     const row = grid[gy];
     if (gx < 0 || gx >= row.length) return false;
     const c = row[gx];
-    return c === " " || c === "&"; // walkable
+    return c === " " || c === "&";
 }
 
-// quantize facing direction into 4 directions (90° each, using degrees)
+// quantize facing direction into 8 directions (45° each)
 function getFacingDir() {
     let a = camera.angle;
     a = ((a % 360) + 360) % 360;
-    const sector = Math.round(a / TURN_STEP) & 3;
+    const sector = Math.round(a / TURN_STEP) % 8;
 
     const dirs = [
-        vec2(1, 0),   // 0°  east
-        vec2(0, 1),   // 90° south
+        vec2(1, 0),   // 0°   east
+        vec2(1, 1),   // 45°  south-east
+        vec2(0, 1),   // 90°  south
+        vec2(-1, 1),  // 135° south-west
         vec2(-1, 0),  // 180° west
+        vec2(-1, -1), // 225° north-west
         vec2(0, -1),  // 270° north
+        vec2(1, -1),  // 315° north-east
     ];
 
     return dirs[sector];
@@ -308,9 +314,8 @@ function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
 }
 
-// ===== Camera entity (draw only, no custom update) =====
+// ===== Camera entity (draw only) =====
 const camera = add([
-    // start near middle of map
     pos(13 * TILE_SIZE + TILE_SIZE / 2, 13 * TILE_SIZE + TILE_SIZE / 2),
     rotate(0),
     z(-1),
