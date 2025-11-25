@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.4</title>
+<title>KEG v0.2.5</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -471,7 +471,7 @@ const camera = add([
     {
         draw() {
             pushTransform();
-            pushRotate(-this.angle);
+            //pushRotate(-this.angle);
 
             const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
