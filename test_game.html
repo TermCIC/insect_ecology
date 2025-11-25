@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.4</title>
+<title>KEG v0.3.5</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -29,6 +29,13 @@
     .hp-bar {
         font-size: 14px;
         text-align: center;
+    }
+
+    #debug-info {
+        font-size: 12px;
+        font-family: monospace;
+        text-align: center;
+        color: #6ee7b7;
     }
 
     #game {
@@ -123,8 +130,7 @@
     <div id="monster-hp" class="hp-bar">Monster HP: -</div>
     <div id="game"></div>
     <div id="player-hp" class="hp-bar">Player HP: 100/100</div>
-    <!-- DEBUG ANGLES LINE -->
-    <div id="debug-angles" class="hp-bar">Cam: 0 | Fire spawn: - | Fire dir: -</div>
+    <div id="debug-info">angle: 0 | forward: (1.00, 0.00) | last fire: none</div>
 </div>
 
 <div id="controls">
@@ -157,10 +163,12 @@ kaplay({
     debug: true,
 });
 
+const DEG2RAD = Math.PI / 180;
+
 // ======== DOM UI ========
 const playerHpEl  = document.getElementById("player-hp");
 const monsterHpEl = document.getElementById("monster-hp");
-const debugAnglesEl = document.getElementById("debug-angles");
+const debugEl     = document.getElementById("debug-info");
 
 // ======== Player & Monster stats ========
 const player = {
@@ -181,14 +189,7 @@ const FIREBALL_HIT_RADIUS       = 8;   // pixels
 
 // list of active fireballs
 const projectiles = [];
-
-// debug vars
-let lastFireSpawnAngle = null;      // camera.angle when fireball was spawned
-let lastFireDirAngleDeg = null;     // atan2(dir.y, dir.x) in degrees
-
-function radToDeg(r) {
-    return r * 180 / Math.PI;
-}
+let lastFireDir = null;
 
 function updatePlayerHpUI() {
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
@@ -200,23 +201,6 @@ function updateMonsterHpUI(target) {
     } else {
         monsterHpEl.textContent = `Monster HP: ${target.hp}/${target.maxHp}`;
     }
-}
-
-function updateDebugAngles() {
-    if (!debugAnglesEl) return;
-
-    const camAngleDeg = camera.angle.toFixed(2);
-
-    const fireSpawnText = (lastFireSpawnAngle !== null)
-        ? lastFireSpawnAngle.toFixed(2)
-        : "-";
-
-    const fireDirText = (lastFireDirAngleDeg !== null)
-        ? lastFireDirAngleDeg.toFixed(2)
-        : "-";
-
-    debugAnglesEl.textContent =
-        `Cam: ${camAngleDeg} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
 }
 
 // ======== Sprites ========
@@ -260,10 +244,8 @@ onLoad(() => {
     wall_3       = getSprite("wall_3").data;
     fireballSprite = getSprite("fireball").data;
 
-    // full quad for fireball
     fireballQuad = fireballSprite.frames[0].scale(new Quad(0, 0, 1, 1));
 
-    // enemy attack / walk slices
     const attackFrameWidth = enemy.width;
     const attackFrames = enemy.frames.length;
     for (let f = 0; f < attackFrames; f++) {
@@ -275,7 +257,6 @@ onLoad(() => {
         enemySlices.push(cols);
     }
 
-    // enemy idle slices
     const idleFrameWidth = enemyIdle.width;
     const idleFrames = enemyIdle.frames.length;
     for (let f = 0; f < idleFrames; f++) {
@@ -287,7 +268,6 @@ onLoad(() => {
         enemyIdleSlices.push(cols);
     }
 
-    // wall slices
     for (let i = 0; i < wall_1.width; i++) {
         wall_1_Slices.push(
             wall_1.frames[0].scale(new Quad(i / wall_1.width, 0, 1 / wall_1.width, 1)),
@@ -470,7 +450,7 @@ function rayCastAsciiGrid(origin, direction) {
 
                     const objectHit = raycastEdge(origin, direction, line);
                     if (objectHit) objects.push(objectHit);
-                    return false; // '&' not a wall
+                    return false;
                 }
                 return tile !== " " && tile !== "&";
             }
@@ -488,7 +468,6 @@ function rayCastAsciiGrid(origin, direction) {
 // ===== Camera entity (draw only) =====
 const startGX = 8;
 const startGY = 9;
-
 let animTime = 0;
 
 const camera = add([
@@ -506,26 +485,16 @@ const camera = add([
 
         draw() {
             pushTransform();
-            pushRotate(-this.angle);
 
             const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
 
-            const planeP1 = this.pos
-                .add(dir.scale(this.focalLength))
-                .add(perp.scale(this.fov))
-                .sub(this.pos);
-            const planeP2 = this.pos
-                .add(dir.scale(this.focalLength))
-                .sub(perp.scale(this.fov))
-                .sub(this.pos);
-
-            pushTranslate(this.pos.scale(-1).add(0, 0));
+            const planeP1 = dir.scale(this.focalLength).add(perp.scale(this.fov));
+            const planeP2 = dir.scale(this.focalLength).sub(perp.scale(this.fov));
 
             drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
             drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
 
-            // current frames for attack and idle
             let currentAttackSlices = null;
             let currentIdleSlices = null;
 
@@ -591,7 +560,6 @@ const camera = add([
                         color: BLACK.lerp(WHITE, d),
                     });
 
-                    // animated monsters
                     if (hit.objects && currentAttackSlices && currentIdleSlices) {
                         hit.objects.slice().reverse().forEach((o) => {
                             const monster = o.object.monster;
@@ -628,19 +596,16 @@ const camera = add([
                     }
                 }
             }
-            popTransform();
 
             // ===== draw fireballs using same FOV as raycaster =====
             if (fireballSprite && fireballQuad) {
-                // derive horizontal FOV from camera.focalLength and camera.fov
-                const halfFovRad = Math.atan(this.fov / this.focalLength); // matches planeP1/P2
+                const halfFovRad = Math.atan(this.fov / this.focalLength);
                 const FOV = halfFovRad * 2;
                 const NUM_RAYS = 120;
                 const DELTA_ANGLE = FOV / NUM_RAYS;
                 const CENTER_RAY = NUM_RAYS / 2;
 
-                const viewDir = Vec2.fromAngle(this.angle);
-                const viewAngle = Math.atan2(viewDir.y, viewDir.x);
+                const viewAngle = this.angle * DEG2RAD;
 
                 for (const fb of projectiles) {
                     const rel = fb.pos.sub(this.pos);
@@ -650,11 +615,9 @@ const camera = add([
                     const theta = Math.atan2(rel.y, rel.x);
                     let gamma = theta - viewAngle;
 
-                    // wrap to [-pi, pi]
                     while (gamma < -Math.PI) gamma += 2 * Math.PI;
                     while (gamma >  Math.PI) gamma -= 2 * Math.PI;
 
-                    // outside FOV: not visible
                     if (Math.abs(gamma) > halfFovRad) continue;
 
                     const rayOffset = gamma / DELTA_ANGLE;
@@ -662,18 +625,15 @@ const camera = add([
 
                     if (currentRay < 0 || currentRay > NUM_RAYS) continue;
 
-                    const screenX = currentRay * 2; // each ray column is 2 px
+                    const screenX = currentRay * 2;
 
-                    // fish-eye correction: use distance along view direction
                     const distCorrected = distance * Math.cos(gamma);
                     const distTiles = distCorrected / TILE_SIZE;
 
-                    // size decreases with distance
                     const spriteH = 120 / distTiles;
                     const spriteW = spriteH;
 
-                    const bottomY = 220;
-                    const centerY = bottomY - spriteH / 2;
+                    const centerY = 120; // horizon level
 
                     drawUVQuad({
                         width: spriteW,
@@ -685,6 +645,8 @@ const camera = add([
                     });
                 }
             }
+
+            popTransform();
         },
     },
 ]);
@@ -720,19 +682,14 @@ onKeyDown("right", () => {
 
 // ===== fireball spawn & potion =====
 function spawnFireball() {
-    lastFireSpawnAngle = camera.angle;
-
     const dir = Vec2.fromAngle(camera.angle).unit();
     const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
-
-    // real direction angle from velocity vector
-    lastFireDirAngleDeg = radToDeg(Math.atan2(dir.y, dir.x));
-
     projectiles.push({
         pos: start,
         dir: dir,
         life: FIREBALL_LIFETIME,
     });
+    lastFireDir = vec2(dir.x, dir.y);
 }
 
 function playerAttack() {
@@ -777,7 +734,6 @@ onUpdate(() => {
     const d = dt();
     animTime += d;
 
-    // movement (button hold)
     if (btnForwardHeld) {
         camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
     }
@@ -791,7 +747,6 @@ onUpdate(() => {
         camera.angle += ROT_SPEED * d;
     }
 
-    // update fireballs (movement + collision)
     for (let i = projectiles.length - 1; i >= 0; i--) {
         const fb = projectiles[i];
         fb.life -= d;
@@ -803,7 +758,6 @@ onUpdate(() => {
         const speedPxPerSec = FIREBALL_TILES_PER_SECOND * TILE_SIZE;
         fb.pos = fb.pos.add(fb.dir.scale(speedPxPerSec * d));
 
-        // out of bounds or hit wall
         const gx = Math.floor(fb.pos.x / TILE_SIZE);
         const gy = Math.floor(fb.pos.y / TILE_SIZE);
         if (!inBounds(gx, gy)) {
@@ -816,7 +770,6 @@ onUpdate(() => {
             continue;
         }
 
-        // hit monster
         let hit = false;
         for (const m of monsters) {
             if (!m.alive) continue;
@@ -839,7 +792,6 @@ onUpdate(() => {
         }
     }
 
-    // monster auto-attack when in range
     const playerGX = camera.pos.x / TILE_SIZE;
     const playerGY = camera.pos.y / TILE_SIZE;
 
@@ -868,18 +820,25 @@ onUpdate(() => {
     }
 
     updateMonsterHpUI(currentTarget);
-    updateDebugAngles();
 
     if (player.hp <= 0) {
         player.hp = 0;
         updatePlayerHpUI();
+    }
+
+    if (debugEl) {
+        const fwd = Vec2.fromAngle(camera.angle).unit();
+        const fire = lastFireDir
+            ? `(${lastFireDir.x.toFixed(2)}, ${lastFireDir.y.toFixed(2)})`
+            : "none";
+        debugEl.textContent =
+            `angle: ${camera.angle.toFixed(1)} | forward: (${fwd.x.toFixed(2)}, ${fwd.y.toFixed(2)}) | last fire: ${fire}`;
     }
 });
 
 // init UI
 updatePlayerHpUI();
 updateMonsterHpUI(null);
-updateDebugAngles();
 </script>
 
 </body>
