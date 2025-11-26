@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.1.3</title>
+<title>KEG v0.1.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -138,7 +138,7 @@ const projectiles = [];
 
 // Torch flicker
 let torchTime = 0;
-const BASE_TORCH_INTENSITY = 1.6;
+const BASE_TORCH_INTENSITY = 1.15;
 
 // Map and geometry constants
 const MAP_SIZE = 10;
@@ -232,20 +232,24 @@ function createScene() {
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    hemi.intensity = 0.06;
+    hemi.intensity = 0.1;
 
     // Player torch: warm point light
     playerLight = new BABYLON.PointLight(
         "playerTorch",
-        new BABYLON.Vector3(1.2, 1.2, 1.2),
+        new BABYLON.Vector3(0.4, 0.4, 1.0),
         scene
     );
     playerLight.parent = camera;
-    playerLight.range = 12;
+    playerLight.range = 9;
     playerLight.intensity = BASE_TORCH_INTENSITY;
-    playerLight.diffuse = new BABYLON.Color3(3.0, 2.85, 2.6);
-    playerLight.specular = new BABYLON.Color3(0.6, 0.4, 0.4);
-    playerLight.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
+    
+    // Warm orange, but not super bright
+    playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
+    playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
+    
+    // Standard falloff gives a soft fade instead of a harsh bubble
+    playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
     // Textures
     const wallTexture = new BABYLON.Texture(
@@ -528,9 +532,14 @@ function update(dt) {
     // torch flicker
     torchTime += dt;
     const flicker =
-        Math.sin(torchTime * 9.7) * 0.25 +
-        Math.sin(torchTime * 3.1) * 0.15;
-    playerLight.intensity = Math.max(1.0, BASE_TORCH_INTENSITY + flicker);
+    Math.sin(torchTime * 6.3) * 0.08 +
+    Math.sin(torchTime * 11.1) * 0.05 +
+    (Math.random() - 0.5) * 0.02;  // tiny random jitter
+
+    let intensity = BASE_TORCH_INTENSITY + flicker;
+    // clamp so it never goes crazy bright or fully dark
+    intensity = Math.min(1.4, Math.max(0.8, intensity));
+    playerLight.intensity = intensity;
 }
 
 engine.runRenderLoop(() => {
