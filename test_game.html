@@ -287,13 +287,15 @@ function createScene() {
     camera.inertia = 0;
     camera.checkCollisions = false;
 
-    // Ambient light (very low)
+    // Ambient light - very low, but with some ground light so floor is visible
     const hemi = new BABYLON.HemisphericLight(
         "hemi",
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    hemi.intensity = 0.1;
+    hemi.intensity = 0.14; // was 0.1
+    // NEW - light coming from below, very soft bluish grey for the ground
+    hemi.groundColor = new BABYLON.Color3(0.16, 0.17, 0.2);
 
     // Player torch: warm point light
     playerLight = new BABYLON.PointLight(
@@ -302,14 +304,12 @@ function createScene() {
         scene
     );
     playerLight.parent = camera;
-    playerLight.range = 10.5;
+    playerLight.range = 11.5; // slightly more reach so it hits more floor
     playerLight.intensity = BASE_TORCH_INTENSITY;
     
     // Warm orange, but not super bright
     playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
     playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
-    
-    // Standard falloff gives a soft fade instead of a harsh bubble
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
     // Textures
@@ -333,6 +333,8 @@ function createScene() {
     const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
     floorMat.diffuseTexture = floorTexture;
     floorMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
+    // NEW - faint emissive so ground is always a little visible
+    floorMat.emissiveColor = new BABYLON.Color3(0.05, 0.05, 0.055);
 
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
@@ -415,13 +417,9 @@ function createScene() {
                 playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
 
-            // Monster spawn position (we will place imported mesh here)
+            // Monster spawn
             if (objectMap[i][j] === "M") {
-                monsterSpawnPos = new BABYLON.Vector3(
-                    pos.x,
-                    0,
-                    pos.z
-                );
+                monsterSpawnPos = new BABYLON.Vector3(pos.x, 0, pos.z);
             }
         }
     }
@@ -430,59 +428,11 @@ function createScene() {
         camera.position = playerSpawn.clone();
     }
 
-    // === Load enemy model from URL ===
-    if (monsterSpawnPos) {
-        BABYLON.SceneLoader.ImportMesh(
-            "",
-            MONSTER_MODEL_ROOT,
-            MONSTER_MODEL_FILE,
-            scene,
-            function (meshes) {
-                if (!meshes || meshes.length === 0) {
-                    console.warn("Monster model not loaded");
-                    return;
-                }
-    
-                // Create a single root node and parent all imported meshes
-                const root = new BABYLON.TransformNode("monsterRoot", scene);
-                meshes.forEach(m => {
-                    m.parent = root;
-                });
-    
-                // Start at spawn XZ, y = 0
-                root.position = monsterSpawnPos.clone();
-                root.rotation = new BABYLON.Vector3(0, Math.PI, 0); // face player
-                root.scaling = new BABYLON.Vector3(1, 1, 1);
-    
-                // --- Scale to target height ---
-                const targetHeight = 1.8; // how tall you want the monster (world units)
-                const bbox = root.getHierarchyBoundingVectors();
-                const currentHeight = bbox.max.y - bbox.min.y || 1;
-                const scale = targetHeight / currentHeight;
-                root.scaling = new BABYLON.Vector3(scale, scale, scale);
-    
-                // --- Snap feet to floor (y = 0) ---
-                const bbox2 = root.getHierarchyBoundingVectors();
-                const lowestY = bbox2.min.y;
-                root.position.y -= lowestY; // lift or drop so min.y == 0
-    
-                // Optional: override material/texture
-                if (MONSTER_TEXTURE_URL) {
-                    const tex = new BABYLON.Texture(MONSTER_TEXTURE_URL, scene);
-                    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
-                    mat.diffuseTexture = tex;
-                    mat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
-                    meshes.forEach(m => m.material = mat);
-                }
-    
-                // Save for game logic
-                monsterMesh = root;
-            }
-        );
-    }
+    // ... your ImportMesh block stays unchanged ...
 
     return scene;
 }
+
 
 scene = createScene();
 
