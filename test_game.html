@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.1.0</title>
+<title>KEG v0.1.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -134,9 +134,9 @@ const engine = new BABYLON.Engine(canvas, true);
 let scene, camera, monsterMesh, playerLight;
 const projectiles = [];
 
-// torch flicker
+// Torch flicker
 let torchTime = 0;
-const BASE_TORCH_INTENSITY = 1.8;
+const BASE_TORCH_INTENSITY = 1.6;
 
 // Map and geometry constants
 const MAP_SIZE = 10;
@@ -144,12 +144,12 @@ const TILE_SIZE = 2;
 const HALF_MAP = MAP_SIZE / 2;
 
 const FLOOR_THICKNESS = 0.2;
-const WALL_HEIGHT = 3.0;        // walls from y = 0 to y = 3
+const WALL_HEIGHT = 3.0;
 const CEILING_THICKNESS = 0.2;
-const CEILING_Y = WALL_HEIGHT;  // bottom of ceiling
+const CEILING_Y = WALL_HEIGHT;
 
-const CAMERA_HEIGHT = 1.4;      // eye height above floor
-const PLAYER_RADIUS = 0.75;     // collision radius
+const CAMERA_HEIGHT = 1.4;
+const PLAYER_RADIUS = 0.75;
 
 // ===== Maps =====
 const groundMap = [
@@ -218,25 +218,26 @@ function createScene() {
     camera.inertia = 0;
     camera.checkCollisions = false;
 
-    // Lights
+    // Ambient light (very low)
     const hemi = new BABYLON.HemisphericLight(
         "hemi",
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    hemi.intensity = 0.08; // just a tiny ambient so nothing is pure black
+    hemi.intensity = 0.06;
 
-    // Player torch - warm point light attached to camera
+    // Player torch: warm point light so it hits walls, floor and ceiling
     playerLight = new BABYLON.PointLight(
         "playerTorch",
-        new BABYLON.Vector3(0.2, 0, 0.2),  // slight offset from camera center
+        new BABYLON.Vector3(0.25, 0, 0.25), // slightly in front/right of camera
         scene
     );
-    playerLight.parent = camera;          // follows camera position and rotation
+    playerLight.parent = camera;
     playerLight.range = 12;
     playerLight.intensity = BASE_TORCH_INTENSITY;
     playerLight.diffuse = new BABYLON.Color3(1.0, 0.85, 0.6);
     playerLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
+    playerLight.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
 
     // Textures
     const wallTexture = new BABYLON.Texture(
@@ -254,12 +255,15 @@ function createScene() {
 
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
     wallMat.diffuseTexture = wallTexture;
+    wallMat.specularColor = new BABYLON.Color3(0.1, 0.08, 0.06); // reduce huge hotspot
 
     const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
     floorMat.diffuseTexture = floorTexture;
+    floorMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
 
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
+    ceilMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
 
     // Box options
     const wallBoxOptions = {
@@ -287,7 +291,7 @@ function createScene() {
         for (let j = 0; j < MAP_SIZE; j++) {
             const pos = gridToWorld(i, j);
 
-            // Floor - thin slab around y = 0
+            // Floor
             if (groundMap[i][j] === "#") {
                 const floor = BABYLON.MeshBuilder.CreateBox(
                     `floor_${i}_${j}`,
@@ -302,7 +306,7 @@ function createScene() {
                 floor.material = floorMat;
             }
 
-            // Wall - tall box, bottom at y = 0
+            // Wall
             if (wallMap[i][j] === "#") {
                 const wall = BABYLON.MeshBuilder.CreateBox(
                     `wall_${i}_${j}`,
@@ -317,7 +321,7 @@ function createScene() {
                 wall.material = wallMat;
             }
 
-            // Ceiling - thin slab at top
+            // Ceiling
             if (ceilingMap[i][j] === "#") {
                 const ceil = BABYLON.MeshBuilder.CreateBox(
                     `ceil_${i}_${j}`,
@@ -350,6 +354,7 @@ function createScene() {
                 );
                 const mMat = new BABYLON.StandardMaterial("mMat", scene);
                 mMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
+                mMat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
                 monsterMesh.material = mMat;
             }
         }
@@ -368,15 +373,12 @@ scene = createScene();
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
-// Precise circle vs tile-AABB collision
 function isCircleCollidingWithWalls(pos) {
-    // If outside the map, treat as collision
     const grid = worldToGrid(pos.x, pos.z);
     if (grid.i < 0 || grid.i >= MAP_SIZE || grid.j < 0 || grid.j >= MAP_SIZE) {
         return true;
     }
 
-    // Check nearby tiles (3x3 around player)
     for (let di = -1; di <= 1; di++) {
         for (let dj = -1; dj <= 1; dj++) {
             const wi = grid.i + di;
@@ -387,13 +389,11 @@ function isCircleCollidingWithWalls(pos) {
             }
             if (wallMap[wi][wj] !== "#") continue;
 
-            // World-space AABB for this wall tile
             const xMin = (wj - HALF_MAP) * TILE_SIZE;
             const xMax = xMin + TILE_SIZE;
             const zMin = (wi - HALF_MAP) * TILE_SIZE;
             const zMax = zMin + TILE_SIZE;
 
-            // Closest point on the box to the circle center
             const cx = Math.max(xMin, Math.min(pos.x, xMax));
             const cz = Math.max(zMin, Math.min(pos.z, zMax));
 
@@ -409,7 +409,6 @@ function isCircleCollidingWithWalls(pos) {
 
 function tryMove(stepVec) {
     const newPos = camera.position.add(stepVec);
-
     if (!isCircleCollidingWithWalls(newPos)) {
         camera.position = newPos;
     }
@@ -462,7 +461,7 @@ function update(dt) {
         camera.rotation.y += TURN_SPEED * dt;
     }
 
-    // forward/back
+    // movement
     const forward = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
     const flat = new BABYLON.Vector3(forward.x, 0, forward.z).normalize();
     const step = MOVE_SPEED * dt;
@@ -477,10 +476,9 @@ function update(dt) {
     // torch flicker
     torchTime += dt;
     const flicker =
-        Math.sin(torchTime * 10.7) * 0.2 +
-        Math.sin(torchTime * 3.3) * 0.1;
-    const intensity = BASE_TORCH_INTENSITY + flicker;
-    playerLight.intensity = Math.max(1.0, intensity); // avoid going too low
+        Math.sin(torchTime * 9.7) * 0.25 +
+        Math.sin(torchTime * 3.1) * 0.15;
+    playerLight.intensity = Math.max(1.0, BASE_TORCH_INTENSITY + flicker);
 }
 
 engine.runRenderLoop(() => {
