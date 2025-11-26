@@ -230,8 +230,6 @@ function createScene() {
     camera.rotation.y = 0;
     camera.inertia = 0;
     camera.speed = 0;
-    // do not attach mouse controls, we use buttons and keys
-    // camera.attachControl(canvas, true);
 
     // Lights
     const hemi = new BABYLON.HemisphericLight(
@@ -248,16 +246,41 @@ function createScene() {
     );
     point.intensity = 0.6;
 
-    // Ground and corridor
+    // --- Textures ---
+    const wallTexture = new BABYLON.Texture(
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764073173/brick_wall_1_hjoaxn.png",
+        scene
+    );
+    wallTexture.uScale = 6;   // repeat horizontally
+    wallTexture.vScale = 3;   // repeat vertically
+
+    const floorTexture = new BABYLON.Texture(
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png",
+        scene
+    );
+    floorTexture.uScale = 6;
+    floorTexture.vScale = 18;
+
+    const ceilTexture = new BABYLON.Texture(
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764073221/brick_wall_2_ua8zgt.png",
+        scene
+    );
+    ceilTexture.uScale = 6;
+    ceilTexture.vScale = 18;
+
+    // Ground
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {
         width: 10,
         height: 30,
     }, scene);
     ground.position.z = 0;
+
     const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
-    groundMat.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    groundMat.diffuseTexture = floorTexture;
+    groundMat.specularColor = new BABYLON.Color3(0, 0, 0);
     ground.material = groundMat;
 
+    // Ceiling
     const ceiling = BABYLON.MeshBuilder.CreateGround("ceiling", {
         width: 10,
         height: 30,
@@ -265,12 +288,17 @@ function createScene() {
     ceiling.position.y = 3;
     ceiling.position.z = 0;
     ceiling.rotation.x = Math.PI;
+
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
-    ceilMat.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.15);
+    ceilMat.diffuseTexture = ceilTexture;
+    ceilMat.specularColor = new BABYLON.Color3(0, 0, 0);
     ceiling.material = ceilMat;
 
+    // Walls
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-    wallMat.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1);
+    wallMat.diffuseTexture = wallTexture;
+    wallMat.specularColor = new BABYLON.Color3(0, 0, 0);
+    wallMat.backFaceCulling = false;
 
     const leftWall = BABYLON.MeshBuilder.CreateBox("leftWall", {
         width: 0.3,
@@ -283,7 +311,6 @@ function createScene() {
     const rightWall = leftWall.clone("rightWall");
     rightWall.position.x = 3;
 
-    // End wall
     const endWall = BABYLON.MeshBuilder.CreateBox("endWall", {
         width: 6,
         height: 3,
@@ -297,6 +324,7 @@ function createScene() {
         size: 1.2,
     }, scene);
     monsterMesh.position = new BABYLON.Vector3(0, 1.0, 4);
+
     const monsterMat = new BABYLON.StandardMaterial("monsterMat", scene);
     monsterMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
     monsterMat.emissiveColor = new BABYLON.Color3(0.3, 0, 0);
