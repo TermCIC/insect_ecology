@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.0.2</title>
+<title>KEG v0.0.3 – ASCII Babylon</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -169,11 +169,11 @@ const monsterState = {
     cooldown: 0,
 };
 
-const ATTACK_RANGE = 3.0; // in world units
+const ATTACK_RANGE = 3.0;              // world units
 const MONSTER_ATTACK_INTERVAL = 1.0;
 
 // Projectiles
-const FIREBALL_SPEED   = 12;
+const FIREBALL_SPEED    = 12;
 const FIREBALL_LIFETIME = 3;
 const FIREBALL_RADIUS   = 0.4;
 
@@ -214,22 +214,102 @@ const engine = new BABYLON.Engine(canvas, true);
 
 let scene;
 let camera;
-let monsterMesh;
+let monsterMesh = null;
 const projectiles = [];
+
+// ===== ASCII maps (10 x 10) =====
+// '.' = empty, '#' = block
+// Object map: 'P' = player spawn, 'M' = monster
+const MAP_SIZE = 10;
+
+// floor layer (y = 0)
+const groundMap = [
+    "##########",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "##########",
+];
+
+// wall layer (y = tileSize)
+const wallMap = [
+    "##########",
+    "#........#",
+    "#...#....#",
+    "#........#",
+    "#........#",
+    "#..###...#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "##########",
+];
+
+// ceiling layer (y = tileSize * 2)
+const ceilingMap = [
+    "##########",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "##########",
+];
+
+// object layer (same height as wall layer)
+const objectMap = [
+    "..........",
+    "..........",
+    "...M......",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "....P.....",
+    "..........",
+    "..........",
+];
+
+// ===== Map parameters =====
+const TILE_SIZE      = 2;       // cube size
+const HALF_MAP       = MAP_SIZE / 2;
+const FLOOR_Y        = 0;
+const WALL_Y         = TILE_SIZE;       // player + walls on this level
+const CEILING_Y      = TILE_SIZE * 2;
+
+const collidableMeshes = [];    // walls for collisions
+
+function gridToWorld(i, j) {
+    // i = row (z direction), j = col (x direction)
+    const x = (j - HALF_MAP + 0.5) * TILE_SIZE;
+    const z = (i - HALF_MAP + 0.5) * TILE_SIZE;
+    return new BABYLON.Vector3(x, 0, z);
+}
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.05, 1);
+    scene.collisionsEnabled = true;
 
     // Camera
     camera = new BABYLON.UniversalCamera(
         "playerCamera",
-        new BABYLON.Vector3(0, 1.6, -8),
+        new BABYLON.Vector3(0, WALL_Y, -8),
         scene
     );
     camera.rotation.y = 0;
     camera.inertia = 0;
     camera.speed = 0;
+    camera.checkCollisions = true;
+    camera.ellipsoid = new BABYLON.Vector3(0.5, 0.9, 0.5);
 
     // Lights
     const hemi = new BABYLON.HemisphericLight(
@@ -241,94 +321,113 @@ function createScene() {
 
     const point = new BABYLON.PointLight(
         "point",
-        new BABYLON.Vector3(0, 2.5, -6),
+        new BABYLON.Vector3(0, CEILING_Y + 1, 0),
         scene
     );
     point.intensity = 0.6;
 
-    // --- Textures ---
+    // --- Textures and materials ---
     const wallTexture = new BABYLON.Texture(
         "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056065/brick_wall_3_asxofr.png",
         scene
     );
-    wallTexture.uScale = 6;   // repeat horizontally
-    wallTexture.vScale = 6;   // repeat vertically
+    wallTexture.uScale = 1;
+    wallTexture.vScale = 1;
 
     const floorTexture = new BABYLON.Texture(
         "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png",
         scene
     );
-    floorTexture.uScale = 6;
-    floorTexture.vScale = 6;
+    floorTexture.uScale = 1;
+    floorTexture.vScale = 1;
 
     const ceilTexture = new BABYLON.Texture(
         "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png",
         scene
     );
-    ceilTexture.uScale = 6;
-    ceilTexture.vScale = 6;
+    ceilTexture.uScale = 1;
+    ceilTexture.vScale = 1;
 
-    // Ground
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", {
-        width: 10,
-        height: 30,
-    }, scene);
-    ground.position.z = 0;
+    const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
+    floorMat.diffuseTexture = floorTexture;
+    floorMat.specularColor = new BABYLON.Color3(0, 0, 0);
 
-    const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
-    groundMat.diffuseTexture = floorTexture;
-    groundMat.specularColor = new BABYLON.Color3(0, 0, 0);
-    ground.material = groundMat;
-
-    // Ceiling
-    const ceiling = BABYLON.MeshBuilder.CreateGround("ceiling", {
-        width: 10,
-        height: 30,
-    }, scene);
-    ceiling.position.y = 3;
-    ceiling.position.z = 0;
-    ceiling.rotation.x = Math.PI;
-
-    const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
-    ceilMat.diffuseTexture = ceilTexture;
-    ceilMat.specularColor = new BABYLON.Color3(0, 0, 0);
-    ceiling.material = ceilMat;
-
-    // Walls
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
     wallMat.diffuseTexture = wallTexture;
     wallMat.specularColor = new BABYLON.Color3(0, 0, 0);
     wallMat.backFaceCulling = false;
 
-    const leftWall = BABYLON.MeshBuilder.CreateBox("leftWall", {
-        width: 0.3,
-        height: 3,
-        depth: 30,
-    }, scene);
-    leftWall.position = new BABYLON.Vector3(-3, 1.5, 0);
-    leftWall.material = wallMat;
+    const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
+    ceilMat.diffuseTexture = ceilTexture;
+    ceilMat.specularColor = new BABYLON.Color3(0, 0, 0);
 
-    const rightWall = leftWall.clone("rightWall");
-    rightWall.position.x = 3;
+    // ===== Build cubes from ASCII layers =====
+    let playerSpawn = null;
 
-    const endWall = BABYLON.MeshBuilder.CreateBox("endWall", {
-        width: 6,
-        height: 3,
-        depth: 0.3,
-    }, scene);
-    endWall.position = new BABYLON.Vector3(0, 1.5, 8);
-    endWall.material = wallMat;
+    for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+            const posXZ = gridToWorld(i, j);
 
-    // Monster
-    monsterMesh = BABYLON.MeshBuilder.CreateBox("monster", {
-        size: 1.2,
-    }, scene);
-    monsterMesh.position = new BABYLON.Vector3(0, 1.0, 4);
+            // Ground cubes
+            if (groundMap[i][j] === "#") {
+                const box = BABYLON.MeshBuilder.CreateBox(
+                    `floor_${i}_${j}`,
+                    { size: TILE_SIZE },
+                    scene
+                );
+                box.position = new BABYLON.Vector3(posXZ.x, FLOOR_Y, posXZ.z);
+                box.material = floorMat;
+                // ground does not need collisions for player (he is in wall layer)
+            }
 
-    const monsterMat = new BABYLON.StandardMaterial("monsterMat", scene);
-    monsterMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
-    monsterMat.emissiveColor = new BABYLON.Color3(0.3, 0, 0);
-    monsterMesh.material = monsterMat;
+            // Wall cubes (collision)
+            if (wallMap[i][j] === "#") {
+                const box = BABYLON.MeshBuilder.CreateBox(
+                    `wall_${i}_${j}`,
+                    { size: TILE_SIZE },
+                    scene
+                );
+                box.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
+                box.material = wallMat;
+                box.checkCollisions = true;
+                collidableMeshes.push(box);
+            }
+
+            // Ceiling cubes
+            if (ceilingMap[i][j] === "#") {
+                const box = BABYLON.MeshBuilder.CreateBox(
+                    `ceil_${i}_${j}`,
+                    { size: TILE_SIZE },
+                    scene
+                );
+                box.position = new BABYLON.Vector3(posXZ.x, CEILING_Y, posXZ.z);
+                box.material = ceilMat;
+                // no collision required for camera (player is below)
+            }
+
+            // Objects / player / monster (same layer height as wall)
+            const objChar = objectMap[i][j];
+            if (objChar === "P") {
+                playerSpawn = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
+            } else if (objChar === "M" && !monsterMesh) {
+                monsterMesh = BABYLON.MeshBuilder.CreateBox(
+                    "monster",
+                    { size: TILE_SIZE * 0.8 },
+                    scene
+                );
+                monsterMesh.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
+                const monsterMat = new BABYLON.StandardMaterial("monsterMat", scene);
+                monsterMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
+                monsterMat.emissiveColor = new BABYLON.Color3(0.3, 0, 0);
+                monsterMesh.material = monsterMat;
+            }
+        }
+    }
+
+    // Fallback if no player spawn was placed
+    if (playerSpawn) {
+        camera.position = playerSpawn.clone();
+    }
 
     return scene;
 }
@@ -428,7 +527,7 @@ const TURN_SPEED = Math.PI;     // radians per second
 function update(dt) {
     if (!camera) return;
 
-    // Movement
+    // Movement (with collisions)
     const moveForward = btnForwardHeld || keys.forward;
     const moveBack    = btnBackHeld || keys.back;
     const turnLeft    = btnTurnLeftHeld || keys.left;
@@ -441,14 +540,13 @@ function update(dt) {
         camera.rotation.y += TURN_SPEED * dt;
     }
 
-    const forwardDir = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
-    const forwardNorm = forwardDir.normalize();
+    const forwardDir = camera.getDirection(new BABYLON.Vector3(0, 0, 1)).normalize();
 
     if (moveForward) {
-        camera.position.addInPlace(forwardNorm.scale(MOVE_SPEED * dt));
+        camera.moveWithCollisions(forwardDir.scale(MOVE_SPEED * dt));
     }
     if (moveBack) {
-        camera.position.addInPlace(forwardNorm.scale(-MOVE_SPEED * dt));
+        camera.moveWithCollisions(forwardDir.scale(-MOVE_SPEED * dt));
     }
 
     // Update projectiles
