@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.0.9</title>
+<title>KEG v0.1.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -131,7 +131,7 @@ let lastFireDirAngleDeg = null;
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-let scene, camera, monsterMesh;
+let scene, camera, monsterMesh, playerLight;  // playerLight added
 const projectiles = [];
 
 // Map and geometry constants
@@ -145,7 +145,7 @@ const CEILING_THICKNESS = 0.2;
 const CEILING_Y = WALL_HEIGHT;  // bottom of ceiling
 
 const CAMERA_HEIGHT = 1.4;      // eye height above floor
-const PLAYER_RADIUS = 0.75;      // slightly larger so you never visually overlap walls
+const PLAYER_RADIUS = 0.75;     // collision radius
 
 // ===== Maps =====
 const groundMap = [
@@ -220,7 +220,20 @@ function createScene() {
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    hemi.intensity = 0.8;
+    hemi.intensity = 0.15; // very low ambient so dungeon is mostly dark
+
+    // Player torch - spotlight attached to camera
+    playerLight = new BABYLON.SpotLight(
+        "playerLight",
+        new BABYLON.Vector3(0, 0, 0),            // local position, will be relative to camera
+        new BABYLON.Vector3(0, 0, 1),            // local forward direction
+        Math.PI / 2.3,                           // cone angle
+        4,                                       // falloff exponent - sharper edge
+        scene
+    );
+    playerLight.parent = camera;                // follows camera position and rotation
+    playerLight.intensity = 2.2;
+    playerLight.range = 18;
 
     // Textures
     const wallTexture = new BABYLON.Texture(
