@@ -726,10 +726,10 @@ onKeyDown("down", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
 });
 onKeyDown("left", () => {
-    camera.angle -= normalizeAngleRad(camera.angle - ROT_SPEED * dt());
+    camera.angle = normalizeAngleRad(camera.angle - ROT_SPEED * dt());
 });
 onKeyDown("right", () => {
-    camera.angle += normalizeAngleRad(camera.angle + ROT_SPEED * dt());
+    camera.angle = normalizeAngleRad(camera.angle + ROT_SPEED * dt());
 });
 
 // ===== fireball spawn & potion =====
