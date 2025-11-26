@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.0.3</title>
+<title>KEG v0.0.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -145,7 +145,7 @@ const CEILING_THICKNESS = 0.2;
 const CEILING_Y = WALL_HEIGHT;  // bottom of ceiling
 
 const CAMERA_HEIGHT = 1.4;      // eye height above floor
-const PLAYER_RADIUS = 0.45;     // collision radius
+const PLAYER_RADIUS = 0.6;      // slightly larger so you never visually overlap walls
 
 // ===== Maps =====
 const groundMap = [
@@ -245,8 +245,7 @@ function createScene() {
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
 
-    // This is the important bit: ensure all faces share orientation
-    // wrap: true fixes Babylon's rotated box texture sides
+    // Box options
     const wallBoxOptions = {
         width: TILE_SIZE,
         depth: TILE_SIZE,
@@ -353,32 +352,51 @@ scene = createScene();
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
-// Collision based on 2D grid with radius, out of bounds = blocked
+// Precise circle vs tile-AABB collision
+function isCircleCollidingWithWalls(pos) {
+    // If outside the map, treat as collision
+    const grid = worldToGrid(pos.x, pos.z);
+    if (grid.i < 0 || grid.i >= MAP_SIZE || grid.j < 0 || grid.j >= MAP_SIZE) {
+        return true;
+    }
+
+    // Check nearby tiles (3x3 around player)
+    for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+            const wi = grid.i + di;
+            const wj = grid.j + dj;
+
+            if (wi < 0 || wi >= MAP_SIZE || wj < 0 || wj >= MAP_SIZE) {
+                continue;
+            }
+            if (wallMap[wi][wj] !== "#") continue;
+
+            // World-space AABB for this wall tile
+            const xMin = (wj - HALF_MAP) * TILE_SIZE;
+            const xMax = xMin + TILE_SIZE;
+            const zMin = (wi - HALF_MAP) * TILE_SIZE;
+            const zMax = zMin + TILE_SIZE;
+
+            // Closest point on the box to the circle center
+            const cx = Math.max(xMin, Math.min(pos.x, xMax));
+            const cz = Math.max(zMin, Math.min(pos.z, zMax));
+
+            const dx = pos.x - cx;
+            const dz = pos.z - cz;
+            if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function tryMove(stepVec) {
     const newPos = camera.position.add(stepVec);
 
-    const checks = [
-        newPos,
-        newPos.add(new BABYLON.Vector3(PLAYER_RADIUS, 0, 0)),
-        newPos.add(new BABYLON.Vector3(-PLAYER_RADIUS, 0, 0)),
-        newPos.add(new BABYLON.Vector3(0, 0, PLAYER_RADIUS)),
-        newPos.add(new BABYLON.Vector3(0, 0, -PLAYER_RADIUS))
-    ];
-
-    for (let c of checks) {
-        const { i, j } = worldToGrid(c.x, c.z);
-
-        // out of map -> treat as wall
-        if (i < 0 || i >= MAP_SIZE || j < 0 || j >= MAP_SIZE) {
-            return;
-        }
-
-        if (wallMap[i][j] === "#") {
-            return;
-        }
+    if (!isCircleCollidingWithWalls(newPos)) {
+        camera.position = newPos;
     }
-
-    camera.position = newPos;
 }
 
 // ===== Input =====
