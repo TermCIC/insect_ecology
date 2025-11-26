@@ -359,6 +359,17 @@ function createScene() {
     // Build cubes
     let playerSpawn = null;
 
+    const faceUV = [];
+    // back
+    faceUV[0] = new BABYLON.Vector4(0, 0, 0, 0);
+    // front (visible face, normal UV)
+    faceUV[1] = new BABYLON.Vector4(0, 0, 1, 1);
+    // right, left, top, bottom – collapse to 0 area so they are invisible
+    faceUV[2] = new BABYLON.Vector4(0, 0, 0, 0);
+    faceUV[3] = new BABYLON.Vector4(0, 0, 0, 0);
+    faceUV[4] = new BABYLON.Vector4(0, 0, 0, 0);
+    faceUV[5] = new BABYLON.Vector4(0, 0, 0, 0);
+    
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const posXZ = gridToWorld(i, j);
@@ -544,10 +555,10 @@ function update(dt) {
     const step = MOVE_SPEED * dt;
 
     if (moveForward) {
-        tryMove(flatDir.scale(step));
+        camera.moveWithCollisions(flatDir.scale(step));
     }
     if (moveBack) {
-        tryMove(flatDir.scale(-step));
+        camera.moveWithCollisions(flatDir.scale(-step));
     }
 
     // Update projectiles
