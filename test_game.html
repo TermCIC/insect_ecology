@@ -46,73 +46,6 @@
         height: 100%;
         display: block;
     }
-
-    @media (orientation: landscape) {
-        #game {
-            height: 70vh;
-            width: auto;
-        }
-    }
-
-    @media (orientation: portrait) {
-        body {
-            justify-content: flex-start;
-            padding-top: 16px;
-            height: auto;
-        }
-
-        #game {
-            width: 95vw;
-            height: 95vw;
-        }
-
-        #controls {
-            width: 95vw;
-            gap: 6px;
-            min-height: 96px;
-            margin-top: 8px;
-        }
-
-        #controls .row {
-            width: 100%;
-        }
-
-        #controls button {
-            flex: 1;
-            min-height: 56px;
-            padding: 10px 0;
-            font-size: 5vw;
-            box-sizing: border-box;
-        }
-    }
-
-    #controls {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 16px;
-    }
-
-    #controls .row {
-        display: flex;
-        gap: 4px;
-    }
-
-    #controls button {
-        padding: 8px 12px;
-        font-size: 16px;
-        border-radius: 6px;
-        border: 1px solid #444;
-        background: #222;
-        color: #eee;
-        cursor: pointer;
-        min-width: 80px;
-    }
-
-    #controls button:active {
-        background: #444;
-    }
 </style>
 
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -149,77 +82,42 @@ function normDeg(a) {
     return a;
 }
 
-// ===== DOM UI =====
-const playerHpEl    = document.getElementById("player-hp");
-const monsterHpEl   = document.getElementById("monster-hp");
+// ===== DOM =====
+const playerHpEl = document.getElementById("player-hp");
+const monsterHpEl = document.getElementById("monster-hp");
 const debugAnglesEl = document.getElementById("debug-angles");
 
-// ===== Player and monster state =====
-const player = {
-    maxHp: 100,
-    hp: 100,
-    atk: 12,
-};
-
-const monsterState = {
-    maxHp: 40,
-    hp: 40,
-    atk: 6,
-    alive: true,
-    cooldown: 0,
-};
+// ===== States =====
+const player = { maxHp: 100, hp: 100, atk: 12 };
+const monsterState = { maxHp: 40, hp: 40, atk: 6, alive: true, cooldown: 0 };
 
 const ATTACK_RANGE = 3.0;
-const MONSTER_ATTACK_INTERVAL = 1.0;
-
-// Projectiles
-const FIREBALL_SPEED    = 12;
+const FIREBALL_SPEED = 12;
+const FIREBALL_RADIUS = 0.4;
 const FIREBALL_LIFETIME = 3;
-const FIREBALL_RADIUS   = 0.4;
 
 let lastFireSpawnAngleDeg = null;
-let lastFireDirAngleDeg   = null;
+let lastFireDirAngleDeg = null;
 
-function updatePlayerHpUI() {
-    playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
-}
-
-function updateMonsterHpUI() {
-    if (!monsterState.alive) {
-        monsterHpEl.textContent = "Monster HP: -";
-    } else {
-        monsterHpEl.textContent = `Monster HP: ${monsterState.hp}/${monsterState.maxHp}`;
-    }
-}
-
-function updateDebugAngles(camera) {
-    if (!debugAnglesEl || !camera) return;
-    const yawDeg = normDeg(BABYLON.Tools.ToDegrees(camera.rotation.y));
-
-    const fireSpawnText = lastFireSpawnAngleDeg != null
-        ? lastFireSpawnAngleDeg.toFixed(2)
-        : "-";
-
-    const fireDirText = lastFireDirAngleDeg != null
-        ? lastFireDirAngleDeg.toFixed(2)
-        : "-";
-
-    debugAnglesEl.textContent =
-        `Cam: ${yawDeg.toFixed(2)} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
-}
-
-// ===== Babylon setup =====
+// ===== BabylonJS =====
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-let scene;
-let camera;
-let monsterMesh = null;
+let scene, camera, monsterMesh;
 const projectiles = [];
 
-// ===== ASCII maps (10 x 10) =====
 const MAP_SIZE = 10;
+const TILE_SIZE = 2;
+const HALF_MAP = MAP_SIZE / 2;
 
+const FLOOR_Y = 0;
+const WALL_Y = TILE_SIZE;
+const CEILING_Y = TILE_SIZE * 2;
+
+// Player collision radius
+const PLAYER_RADIUS = 0.45; // tighter fit
+
+// ===== Maps =====
 const groundMap = [
     "##########",
     "##########",
@@ -246,18 +144,7 @@ const wallMap = [
     "##########",
 ];
 
-const ceilingMap = [
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-    "##########",
-];
+const ceilingMap = groundMap;
 
 const objectMap = [
     "..........",
@@ -272,20 +159,12 @@ const objectMap = [
     "..........",
 ];
 
-// ===== Map parameters =====
-const TILE_SIZE      = 2;
-const HALF_MAP       = MAP_SIZE / 2;
-const FLOOR_Y        = 0;
-const WALL_Y         = TILE_SIZE;
-const CEILING_Y      = TILE_SIZE * 2;
-
 function gridToWorld(i, j) {
     const x = (j - HALF_MAP + 0.5) * TILE_SIZE;
     const z = (i - HALF_MAP + 0.5) * TILE_SIZE;
     return new BABYLON.Vector3(x, 0, z);
 }
 
-// convert world x,z back to grid i,j
 function worldToGrid(x, z) {
     const j = Math.floor(x / TILE_SIZE + HALF_MAP);
     const i = Math.floor(z / TILE_SIZE + HALF_MAP);
@@ -294,311 +173,158 @@ function worldToGrid(x, z) {
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
-    scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.05, 1);
-    // we use our own ASCII collision, no Babylon collisions
     scene.collisionsEnabled = false;
 
-    // Camera
-    camera = new BABYLON.UniversalCamera(
-        "playerCamera",
-        new BABYLON.Vector3(0, WALL_Y, -8),
-        scene
-    );
-    camera.rotation.y = 0;
+    // === FIX 1: lower camera (no more clipping into walls) ===
+    camera = new BABYLON.UniversalCamera("playerCamera", new BABYLON.Vector3(0, 1.0, -8), scene);
     camera.inertia = 0;
-    camera.speed = 0;
-
     camera.checkCollisions = false;
-    camera.applyGravity   = false;
 
     // Lights
-    const hemi = new BABYLON.HemisphericLight(
-        "hemi",
-        new BABYLON.Vector3(0, 1, 0),
-        scene
-    );
-    hemi.intensity = 0.7;
+    new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene).intensity = 0.7;
 
-    const point = new BABYLON.PointLight(
-        "point",
-        new BABYLON.Vector3(0, CEILING_Y + 1, 0),
-        scene
-    );
-    point.intensity = 0.6;
-
-    // Textures and materials
-    const wallTexture = new BABYLON.Texture(
-        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056065/brick_wall_3_asxofr.png",
-        scene
-    );
-    const floorTexture = new BABYLON.Texture(
-        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png",
-        scene
-    );
-    const ceilTexture = new BABYLON.Texture(
-        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png",
-        scene
-    );
-
-    const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
-    floorMat.diffuseTexture = floorTexture;
-    floorMat.specularColor = new BABYLON.Color3(0, 0, 0);
+    // Textures
+    const wallTexture = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056065/brick_wall_3_asxofr.png", scene);
+    const floorTexture = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png", scene);
+    const ceilTexture = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png", scene);
 
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
     wallMat.diffuseTexture = wallTexture;
-    wallMat.specularColor = new BABYLON.Color3(0, 0, 0);
+
+    const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
+    floorMat.diffuseTexture = floorTexture;
 
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
-    ceilMat.specularColor = new BABYLON.Color3(0, 0, 0);
 
-    // Build cubes
+    // === FIX 2: consistent UV orientation for walls ===
+    const wallUV = {
+        faceUV: [
+            new BABYLON.Vector4(0,0,1,1),
+            new BABYLON.Vector4(0,0,1,1),
+            new BABYLON.Vector4(0,0,1,1),
+            new BABYLON.Vector4(0,0,1,1),
+            new BABYLON.Vector4(0,0,1,1),
+            new BABYLON.Vector4(0,0,1,1)
+        ]
+    };
+
+    // Build world
     let playerSpawn = null;
 
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
-            const posXZ = gridToWorld(i, j);
+            const pos = gridToWorld(i, j);
 
             if (groundMap[i][j] === "#") {
-                const box = BABYLON.MeshBuilder.CreateBox(
-                    `floor_${i}_${j}`,
-                    { size: TILE_SIZE },
-                    scene
-                );
-                box.position = new BABYLON.Vector3(posXZ.x, FLOOR_Y, posXZ.z);
-                box.material = floorMat;
+                const b = BABYLON.MeshBuilder.CreateBox(`floor_${i}_${j}`, { size: TILE_SIZE }, scene);
+                b.position = new BABYLON.Vector3(pos.x, FLOOR_Y, pos.z);
+                b.material = floorMat;
             }
 
             if (wallMap[i][j] === "#") {
-                const box = BABYLON.MeshBuilder.CreateBox(
-                    `wall_${i}_${j}`,
-                    { size: TILE_SIZE },
-                    scene
-                );
-                box.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
-                box.material = wallMat;
+                const b = BABYLON.MeshBuilder.CreateBox(`wall_${i}_${j}`, { size: TILE_SIZE, ...wallUV }, scene);
+                b.position = new BABYLON.Vector3(pos.x, WALL_Y, pos.z);
+                b.material = wallMat;
             }
 
             if (ceilingMap[i][j] === "#") {
-                const box = BABYLON.MeshBuilder.CreateBox(
-                    `ceil_${i}_${j}`,
-                    { size: TILE_SIZE },
-                    scene
-                );
-                box.position = new BABYLON.Vector3(posXZ.x, CEILING_Y, posXZ.z);
-                box.material = ceilMat;
+                const b = BABYLON.MeshBuilder.CreateBox(`ceil_${i}_${j}`, { size: TILE_SIZE }, scene);
+                b.position = new BABYLON.Vector3(pos.x, CEILING_Y, pos.z);
+                b.material = ceilMat;
             }
 
-            const objChar = objectMap[i][j];
-            if (objChar === "P") {
-                playerSpawn = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
-            } else if (objChar === "M" && !monsterMesh) {
-                monsterMesh = BABYLON.MeshBuilder.CreateBox(
-                    "monster",
-                    { size: TILE_SIZE * 0.8 },
-                    scene
-                );
-                monsterMesh.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
-                const monsterMat = new BABYLON.StandardMaterial("monsterMat", scene);
-                monsterMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
-                monsterMat.emissiveColor = new BABYLON.Color3(0.3, 0, 0);
-                monsterMesh.material = monsterMat;
+            if (objectMap[i][j] === "P") {
+                playerSpawn = new BABYLON.Vector3(pos.x, 1.0, pos.z);
+            }
+
+            if (objectMap[i][j] === "M" && !monsterMesh) {
+                monsterMesh = BABYLON.MeshBuilder.CreateBox("monster", { size: TILE_SIZE * 0.8 }, scene);
+                monsterMesh.position = new BABYLON.Vector3(pos.x, 1.0, pos.z);
+                monsterMesh.material = new BABYLON.StandardMaterial("mMat", scene);
+                monsterMesh.material.diffuseColor = new BABYLON.Color3(0.6,0.1,0.1);
             }
         }
     }
 
-    if (playerSpawn) {
-        camera.position = playerSpawn.clone();
-    }
+    if (playerSpawn) camera.position = playerSpawn.clone();
 
     return scene;
 }
 
 scene = createScene();
 
-// ===== Input handling =====
-let btnForwardHeld   = false;
-let btnBackHeld      = false;
-let btnTurnLeftHeld  = false;
-let btnTurnRightHeld = false;
-
-function bindHoldButton(id, setter) {
-    const btn = document.getElementById(id);
-    btn.addEventListener("mousedown",  () => setter(true));
-    btn.addEventListener("mouseup",    () => setter(false));
-    btn.addEventListener("mouseleave", () => setter(false));
-    btn.addEventListener("touchstart", e => { e.preventDefault(); setter(true); });
-    btn.addEventListener("touchend",   e => { e.preventDefault(); setter(false); });
-}
-
-bindHoldButton("btn-forward",    v => btnForwardHeld   = v);
-bindHoldButton("btn-back",       v => btnBackHeld      = v);
-bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld  = v);
-bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
-
-document.getElementById("btn-potion").addEventListener("click", () => {
-    player.hp = Math.min(player.maxHp, player.maxHp);
-    updatePlayerHpUI();
-});
-
-document.getElementById("btn-attack").addEventListener("click", () => {
-    spawnFireball();
-});
-
-// Keyboard
-const keys = { forward: false, back: false, left: false, right: false };
-
-window.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.forward = true;
-    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.back = true;
-    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
-    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
-    if (e.code === "Space") spawnFireball();
-    if (e.key === "h" || e.key === "H") {
-        player.hp = Math.min(player.maxHp, player.hp + 25);
-        updatePlayerHpUI();
-    }
-});
-
-window.addEventListener("keyup", e => {
-    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.forward = false;
-    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.back = false;
-    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
-    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
-});
-
-// ===== Fireballs =====
-function spawnFireball() {
-    if (!monsterState.alive) return;
-
-    const origin = camera.position.clone();
-    const dir = camera.getDirection(new BABYLON.Vector3(0, 0, 1)).normalize();
-
-    const fbMesh = BABYLON.MeshBuilder.CreateSphere("fireball", {
-        diameter: FIREBALL_RADIUS,
-        segments: 8,
-    }, scene);
-
-    fbMesh.position = origin.add(dir.scale(1.0));
-
-    const fbMat = new BABYLON.StandardMaterial("fbMat", scene);
-    fbMat.emissiveColor = new BABYLON.Color3(1, 0.6, 0.2);
-    fbMat.diffuseColor = new BABYLON.Color3(0.9, 0.4, 0);
-    fbMesh.material = fbMat;
-
-    projectiles.push({
-        mesh: fbMesh,
-        dir: dir,
-        life: FIREBALL_LIFETIME,
-    });
-
-    const yawDeg = normDeg(BABYLON.Tools.ToDegrees(camera.rotation.y));
-    lastFireSpawnAngleDeg = yawDeg;
-    lastFireDirAngleDeg = yawDeg;
-}
-
-// ===== ASCII collision move =====
+// ===== Movement & Collision =====
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
 function tryMove(stepVec) {
     const newPos = camera.position.add(stepVec);
 
-    const { i, j } = worldToGrid(newPos.x, newPos.z);
+    // === FIX 3: circular collision check ===
+    const checks = [
+        newPos,
+        newPos.add(new BABYLON.Vector3(PLAYER_RADIUS,0,0)),
+        newPos.add(new BABYLON.Vector3(-PLAYER_RADIUS,0,0)),
+        newPos.add(new BABYLON.Vector3(0,0,PLAYER_RADIUS)),
+        newPos.add(new BABYLON.Vector3(0,0,-PLAYER_RADIUS))
+    ];
 
-    if (i < 0 || i >= MAP_SIZE || j < 0 || j >= MAP_SIZE) {
-        return; // outside map
-    }
-
-    if (wallMap[i][j] === "#") {
-        return; // blocked by wall tile
+    for (let c of checks) {
+        const { i, j } = worldToGrid(c.x, c.z);
+        if (wallMap[i][j] === "#") return;
     }
 
     camera.position = newPos;
 }
 
-// ===== Game update =====
-function update(dt) {
-    if (!camera) return;
+// ===== Movement Input =====
+let btnForwardHeld=false, btnBackHeld=false, btnTurnLeftHeld=false, btnTurnRightHeld=false;
+const keys = {forward:false, back:false, left:false, right:false};
 
-    const moveForward = btnForwardHeld || keys.forward;
-    const moveBack    = btnBackHeld || keys.back;
-    const turnLeft    = btnTurnLeftHeld || keys.left;
-    const turnRight   = btnTurnRightHeld || keys.right;
-
-    if (turnLeft) {
-        camera.rotation.y -= TURN_SPEED * dt;
-    }
-    if (turnRight) {
-        camera.rotation.y += TURN_SPEED * dt;
-    }
-
-    const forwardDir = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
-    const flatDir = new BABYLON.Vector3(forwardDir.x, 0, forwardDir.z).normalize();
-    const step = MOVE_SPEED * dt;
-
-    if (moveForward) {
-        tryMove(flatDir.scale(step));
-    }
-    if (moveBack) {
-        tryMove(flatDir.scale(-step));
-    }
-
-    // Update projectiles
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        const p = projectiles[i];
-        p.life -= dt;
-        if (p.life <= 0) {
-            p.mesh.dispose();
-            projectiles.splice(i, 1);
-            continue;
-        }
-
-        p.mesh.position.addInPlace(p.dir.scale(FIREBALL_SPEED * dt));
-
-        if (monsterState.alive && monsterMesh) {
-            const dist = BABYLON.Vector3.Distance(p.mesh.position, monsterMesh.position);
-            if (dist < 0.8) {
-                monsterState.hp = Math.max(0, monsterState.hp - player.atk);
-                if (monsterState.hp <= 0) {
-                    monsterState.alive = false;
-                    monsterMesh.dispose();
-                }
-                p.mesh.dispose();
-                projectiles.splice(i, 1);
-            }
-        }
-    }
-
-    // Monster attack
-    if (monsterState.alive && monsterMesh) {
-        const dist = BABYLON.Vector3.Distance(camera.position, monsterMesh.position);
-        monsterState.cooldown -= dt;
-        if (dist <= ATTACK_RANGE && monsterState.cooldown <= 0) {
-            player.hp = Math.max(0, player.hp - monsterState.atk);
-            monsterState.cooldown = MONSTER_ATTACK_INTERVAL;
-        }
-    }
-
-    updatePlayerHpUI();
-    updateMonsterHpUI();
-    updateDebugAngles(camera);
+function bindHoldButton(id, setter){
+    const btn=document.getElementById(id);
+    btn.onmousedown=()=>setter(true);
+    btn.onmouseup=()=>setter(false);
 }
 
-// ===== Main loop =====
-updatePlayerHpUI();
-updateMonsterHpUI();
+bindHoldButton("btn-forward", v=>btnForwardHeld=v);
+bindHoldButton("btn-back", v=>btnBackHeld=v);
+bindHoldButton("btn-turn-left", v=>btnTurnLeftHeld=v);
+bindHoldButton("btn-turn-right", v=>btnTurnRightHeld=v);
 
-engine.runRenderLoop(function () {
-    const dt = engine.getDeltaTime() / 1000;
+window.addEventListener("keydown", e=>{
+    if (e.key==="w"||e.key==="ArrowUp") keys.forward=true;
+    if (e.key==="s"||e.key==="ArrowDown") keys.back=true;
+    if (e.key==="a"||e.key==="ArrowLeft") keys.left=true;
+    if (e.key==="d"||e.key==="ArrowRight") keys.right=true;
+});
+window.addEventListener("keyup", e=>{
+    if (e.key==="w"||e.key==="ArrowUp") keys.forward=false;
+    if (e.key==="s"||e.key==="ArrowDown") keys.back=false;
+    if (e.key==="a"||e.key==="ArrowLeft") keys.left=false;
+    if (e.key==="d"||e.key==="ArrowRight") keys.right=false;
+});
+
+// ===== Game Loop =====
+function update(dt){
+    if (btnTurnLeftHeld || keys.left) camera.rotation.y -= TURN_SPEED*dt;
+    if (btnTurnRightHeld || keys.right) camera.rotation.y += TURN_SPEED*dt;
+
+    const forward = camera.getDirection(new BABYLON.Vector3(0,0,1));
+    const flat = new BABYLON.Vector3(forward.x,0,forward.z).normalize();
+    const step = MOVE_SPEED * dt;
+
+    if (btnForwardHeld || keys.forward) tryMove(flat.scale(step));
+    if (btnBackHeld || keys.back) tryMove(flat.scale(-step));
+}
+
+engine.runRenderLoop(()=>{
+    const dt=engine.getDeltaTime()/1000;
     update(dt);
     scene.render();
 });
 
-window.addEventListener("resize", function () {
-    engine.resize();
-});
 </script>
-
 </body>
 </html>
