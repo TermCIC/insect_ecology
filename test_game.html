@@ -145,7 +145,7 @@ const CEILING_THICKNESS = 0.2;
 const CEILING_Y = WALL_HEIGHT;  // bottom of ceiling
 
 const CAMERA_HEIGHT = 1.4;      // eye height above floor
-const PLAYER_RADIUS = 0.8;      // slightly larger so you never visually overlap walls
+const PLAYER_RADIUS = 0.75;      // slightly larger so you never visually overlap walls
 
 // ===== Maps =====
 const groundMap = [
@@ -228,7 +228,7 @@ function createScene() {
         scene
     );
     const floorTexture = new BABYLON.Texture(
-        "https://opengameart.org/sites/default/files/Ground_02.png",
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764146611/download_1_tbnvdz.png",
         scene
     );
     const ceilTexture = new BABYLON.Texture(
