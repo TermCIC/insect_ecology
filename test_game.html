@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.4.0</title>
+<title>KEG v0.4.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -194,13 +194,14 @@ const ATTACK_RANGE_TILES_SQ   = 3;
 const FIREBALL_TILES_PER_SECOND = 1;   // speed in tiles / sec
 const FIREBALL_LIFETIME         = 3;   // seconds
 const FIREBALL_HIT_RADIUS       = 8;   // pixels
+const FIREBALL_SHOTS            = 16;  // number of directions per cast
 
 // list of active fireballs
 const projectiles = [];
 
 // debug vars
-let lastFireSpawnAngleDeg = null;   // camera heading (deg) when fireball was spawned
-let lastFireDirAngleDeg   = null;   // atan2(dir.y, dir.x) in degrees
+let lastFireSpawnAngleDeg = null;   // not really used now (multi shot)
+let lastFireDirAngleDeg   = null;   // same
 
 function updatePlayerHpUI() {
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
@@ -645,9 +646,9 @@ const camera = add([
 
             // ===== draw fireballs using same FOV as raycaster =====
             if (fireballSprite && fireballQuad) {
-                const halfFovRad = Math.atan(this.fov / this.focalLength);
-                const FOV        = halfFovRad * 2;
-                const NUM_RAYS   = 120;
+                const halfFovRad  = Math.atan(this.fov / this.focalLength);
+                const FOV         = halfFovRad * 2;
+                const NUM_RAYS    = 120;
                 const DELTA_ANGLE = FOV / NUM_RAYS;
                 const CENTER_RAY  = NUM_RAYS / 2;
 
@@ -728,19 +729,24 @@ onKeyDown("right", () => {
 
 // ===== fireball spawn & potion =====
 function spawnFireball() {
-    lastFireSpawnAngleDeg = normDeg(camera.angle);
+    // we no longer track a single spawn angle / dir, since we shoot all around
+    lastFireSpawnAngleDeg = null;
+    lastFireDirAngleDeg   = null;
 
-    const dir   = Vec2.fromAngle(camera.angle).unit();
-    const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
+    const origin = vec2(camera.pos.x, camera.pos.y);
+    const stepDeg = 360 / FIREBALL_SHOTS;
 
-    // real direction angle from velocity vector
-    lastFireDirAngleDeg = normDeg(radToDeg(Math.atan2(dir.y, dir.x)));
+    for (let i = 0; i < FIREBALL_SHOTS; i++) {
+        const angleDeg = i * stepDeg;
+        const dir      = Vec2.fromAngle(angleDeg).unit();
+        const start    = origin.add(dir.scale(10));
 
-    projectiles.push({
-        pos: start,
-        dir: dir,
-        life: FIREBALL_LIFETIME,
-    });
+        projectiles.push({
+            pos: start.clone ? start.clone() : vec2(start.x, start.y),
+            dir: dir,
+            life: FIREBALL_LIFETIME,
+        });
+    }
 }
 
 function playerAttack() {
