@@ -229,13 +229,13 @@ function createScene() {
     // Player torch: warm point light so it hits walls, floor and ceiling
     playerLight = new BABYLON.PointLight(
         "playerTorch",
-        new BABYLON.Vector3(0.5, 0.5, 0.5), // slightly in front/right of camera
+        new BABYLON.Vector3(1, 1, 1), // slightly in front/right of camera
         scene
     );
     playerLight.parent = camera;
     playerLight.range = 12;
     playerLight.intensity = BASE_TORCH_INTENSITY;
-    playerLight.diffuse = new BABYLON.Color3(1.0, 0.85, 0.6);
+    playerLight.diffuse = new BABYLON.Color3(2.0, 1.85, 1.6);
     playerLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
     playerLight.falloffType = BABYLON.Light.FALLOFF_PHYSICAL;
 
