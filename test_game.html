@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.1.2</title>
+<title>KEG v0.1.3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -77,6 +77,8 @@
 </style>
 
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
+<!-- Needed for GLB / GLTF / OBJ etc -->
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 </head>
 <body>
 
@@ -150,6 +152,12 @@ const CEILING_Y = WALL_HEIGHT;
 
 const CAMERA_HEIGHT = 1.4;
 const PLAYER_RADIUS = 0.75;
+
+// ===== Enemy asset URLs =====
+// Put your own URLs here
+const MONSTER_MODEL_ROOT = "https://assets.babylonjs.com/meshes/";   // example root
+const MONSTER_MODEL_FILE = "alien.glb";                               // example file
+const MONSTER_TEXTURE_URL = ""; // optional: leave empty to use model's own material
 
 // ===== Maps =====
 const groundMap = [
@@ -226,10 +234,10 @@ function createScene() {
     );
     hemi.intensity = 0.06;
 
-    // Player torch: warm point light so it hits walls, floor and ceiling
+    // Player torch: warm point light
     playerLight = new BABYLON.PointLight(
         "playerTorch",
-        new BABYLON.Vector3(1.2, 1.2, 1.2), // slightly in front/right of camera
+        new BABYLON.Vector3(1.2, 1.2, 1.2),
         scene
     );
     playerLight.parent = camera;
@@ -255,7 +263,7 @@ function createScene() {
 
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
     wallMat.diffuseTexture = wallTexture;
-    wallMat.specularColor = new BABYLON.Color3(0.1, 0.08, 0.06); // reduce huge hotspot
+    wallMat.specularColor = new BABYLON.Color3(0.1, 0.08, 0.06);
 
     const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
     floorMat.diffuseTexture = floorTexture;
@@ -286,6 +294,7 @@ function createScene() {
     };
 
     let playerSpawn = null;
+    let monsterSpawnPos = null;
 
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
@@ -336,32 +345,61 @@ function createScene() {
                 ceil.material = ceilMat;
             }
 
-            // Objects
+            // Player spawn
             if (objectMap[i][j] === "P") {
                 playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
 
-            if (objectMap[i][j] === "M" && !monsterMesh) {
-                monsterMesh = BABYLON.MeshBuilder.CreateBox(
-                    "monster",
-                    { width: TILE_SIZE * 0.8, depth: TILE_SIZE * 0.8, height: WALL_HEIGHT * 0.7 },
-                    scene
-                );
-                monsterMesh.position = new BABYLON.Vector3(
+            // Monster spawn position (we will place imported mesh here)
+            if (objectMap[i][j] === "M") {
+                monsterSpawnPos = new BABYLON.Vector3(
                     pos.x,
                     WALL_HEIGHT * 0.35,
                     pos.z
                 );
-                const mMat = new BABYLON.StandardMaterial("mMat", scene);
-                mMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
-                mMat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
-                monsterMesh.material = mMat;
             }
         }
     }
 
     if (playerSpawn) {
         camera.position = playerSpawn.clone();
+    }
+
+    // === Load enemy model from URL ===
+    if (monsterSpawnPos) {
+        BABYLON.SceneLoader.ImportMesh(
+            "",                           // meshNames: empty = all meshes
+            MONSTER_MODEL_ROOT,           // root URL
+            MONSTER_MODEL_FILE,           // file name
+            scene,
+            function (meshes) {
+                if (!meshes || meshes.length === 0) {
+                    console.warn("Monster model not loaded");
+                    return;
+                }
+
+                // Use first mesh as root
+                monsterMesh = meshes[0];
+
+                // If model has many parts, you can create a parent
+                // const parent = new BABYLON.TransformNode("monsterRoot", scene);
+                // meshes.forEach(m => m.parent = parent);
+                // monsterMesh = parent;
+
+                monsterMesh.position = monsterSpawnPos.clone();
+                monsterMesh.scaling = new BABYLON.Vector3(0.6, 0.6, 0.6);
+                monsterMesh.rotation.y = Math.PI; // face player
+
+                // Optional: force our own material with texture URL
+                if (MONSTER_TEXTURE_URL) {
+                    const tex = new BABYLON.Texture(MONSTER_TEXTURE_URL, scene);
+                    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
+                    mat.diffuseTexture = tex;
+                    mat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
+                    monsterMesh.material = mat;
+                }
+            }
+        );
     }
 
     return scene;
