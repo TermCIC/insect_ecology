@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.1.7</title>
+<title>KEG v0.1.8</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -77,7 +77,6 @@
 </style>
 
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-<!-- Needed for GLB / GLTF / OBJ etc -->
 <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 </head>
 <body>
@@ -140,29 +139,15 @@ const projectiles = [];
 let torchTime = 0;
 const BASE_TORCH_INTENSITY = 1.25;
 
-// ===== Footstep sound =====
-// Replace URLs with your own dungeon step sounds
-const footstepClips = [
-    new Audio("https://res.cloudinary.com/dmdpjf8up/video/upload/v1764151497/step_ybhhch.mp3")
-];
+// ===== Footstep sound (looping while moving) =====
+const footstepLoop = new Audio(
+    "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764151497/step_ybhhch.mp3"
+);
+footstepLoop.volume = 0.45;
+footstepLoop.loop = true;  // browser will loop it once it reaches the end
 
-footstepClips.forEach(a => {
-    a.volume = 0.45;   // adjust loudness here
-});
-
-const FOOTSTEP_INTERVAL = 0.42; // seconds between steps while moving
-let footstepTimer = 0;
-let lastFootstepIndex = 0;
-
-function playFootstep() {
-    const clip = footstepClips[lastFootstepIndex];
-    // restart clip from start for snappy response
-    clip.currentTime = 0;
-    clip.play().catch(() => {
-        // ignore autoplay errors, browser will allow after user interaction
-    });
-    lastFootstepIndex = (lastFootstepIndex + 1) % footstepClips.length;
-}
+// Track if we want footsteps this frame
+let wantFootsteps = false;
 
 // Map and geometry constants
 const MAP_SIZE = 30;
@@ -223,24 +208,24 @@ const wallMap = [
   "#............#..#............#", // 3
   "#............#..#............#", // 4
   "#............####............#", // 5
-  "#............................#", // 6 main corridor
-  "#..######..........######....#", // 7 side rooms left and right
+  "#............................#", // 6
+  "#..######..........######....#", // 7
   "#..#....#..........#....#....#", // 8
-  "#..#....#....##....#....#....#", // 9 small central pillar
+  "#..#....#....##....#....#....#", // 9
   "#..#....#....##....#....#....#", // 10
   "#..######..........######....#", // 11
   "#............................#", // 12
-  "#............####............#", // 13 another ring room
+  "#............####............#", // 13
   "#............#..#............#", // 14
   "#............#..#............#", // 15
   "#............#..#............#", // 16
   "#............####............#", // 17
   "#............................#", // 18
-  "#....#########....#########..#", // 19 twin blocky rooms
+  "#....#########....#########..#", // 19
   "#....#.......#....#.......#..#", // 20
   "#....#.......#....#.......#..#", // 21
   "#....#########....#########..#", // 22
-  "#............................#", // 23 open area
+  "#............................#", // 23
   "#............................#", // 24
   "#............................#", // 25
   "#............................#", // 26
@@ -266,7 +251,7 @@ const objectMap = [
   "..............................", // 11
   "..............................", // 12
   "..............................", // 13
-  "...............M..............", // 14 - monster near center
+  "...............M..............", // 14
   "..............................", // 15
   "..............................", // 16
   "..............................", // 17
@@ -276,7 +261,7 @@ const objectMap = [
   "..............................", // 21
   "..............................", // 22
   "..............................", // 23
-  "...............P..............", // 24 - player spawn lower middle
+  "...............P..............", // 24
   "..............................", // 25
   "..............................", // 26
   "..............................", // 27
@@ -309,7 +294,7 @@ function createScene() {
     camera.inertia = 0;
     camera.checkCollisions = false;
 
-    // Ambient light (very low)
+    // Ambient light
     const hemi = new BABYLON.HemisphericLight(
         "hemi",
         new BABYLON.Vector3(0, 1, 0),
@@ -317,7 +302,7 @@ function createScene() {
     );
     hemi.intensity = 0.1;
 
-    // Player torch: warm point light
+    // Player torch
     playerLight = new BABYLON.PointLight(
         "playerTorch",
         new BABYLON.Vector3(0.4, 0.4, 1.0),
@@ -326,7 +311,6 @@ function createScene() {
     playerLight.parent = camera;
     playerLight.range = 10.5;
     playerLight.intensity = BASE_TORCH_INTENSITY;
-    
     playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
     playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
@@ -357,7 +341,6 @@ function createScene() {
     ceilMat.diffuseTexture = ceilTexture;
     ceilMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
 
-    // Box options
     const wallBoxOptions = {
         width: TILE_SIZE,
         depth: TILE_SIZE,
@@ -384,7 +367,6 @@ function createScene() {
         for (let j = 0; j < MAP_SIZE; j++) {
             const pos = gridToWorld(i, j);
 
-            // Floor
             if (groundMap[i][j] === "#") {
                 const floor = BABYLON.MeshBuilder.CreateBox(
                     `floor_${i}_${j}`,
@@ -399,7 +381,6 @@ function createScene() {
                 floor.material = floorMat;
             }
 
-            // Wall
             if (wallMap[i][j] === "#") {
                 const wall = BABYLON.MeshBuilder.CreateBox(
                     `wall_${i}_${j}`,
@@ -414,7 +395,6 @@ function createScene() {
                 wall.material = wallMat;
             }
 
-            // Ceiling
             if (ceilingMap[i][j] === "#") {
                 const ceil = BABYLON.MeshBuilder.CreateBox(
                     `ceil_${i}_${j}`,
@@ -429,12 +409,10 @@ function createScene() {
                 ceil.material = ceilMat;
             }
 
-            // Player spawn
             if (objectMap[i][j] === "P") {
                 playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
 
-            // Monster spawn position (we will place imported mesh here)
             if (objectMap[i][j] === "M") {
                 monsterSpawnPos = new BABYLON.Vector3(
                     pos.x,
@@ -449,7 +427,6 @@ function createScene() {
         camera.position = playerSpawn.clone();
     }
 
-    // === Load enemy model from URL ===
     if (monsterSpawnPos) {
         BABYLON.SceneLoader.ImportMesh(
             "",
@@ -537,7 +514,6 @@ function isCircleCollidingWithWalls(pos) {
     return false;
 }
 
-// Now returns true if movement actually happened
 function tryMove(stepVec) {
     const newPos = camera.position.add(stepVec);
     if (!isCircleCollidingWithWalls(newPos)) {
@@ -594,7 +570,7 @@ function update(dt) {
         camera.rotation.y += TURN_SPEED * dt;
     }
 
-    // movement + check if actually moved
+    // movement
     const forward = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
     const flat = new BABYLON.Vector3(forward.x, 0, forward.z).normalize();
     const step = MOVE_SPEED * dt;
@@ -608,16 +584,18 @@ function update(dt) {
         if (tryMove(flat.scale(-step))) moved = true;
     }
 
-    // footsteps: only while moving
-    if (moved) {
-        footstepTimer += dt;
-        if (footstepTimer >= FOOTSTEP_INTERVAL) {
-            footstepTimer = 0;
-            playFootstep();
+    // footsteps: keep a looping sound while moving
+    wantFootsteps = moved;
+    if (wantFootsteps) {
+        if (footstepLoop.paused) {
+            footstepLoop.play().catch(() => {});
         }
     } else {
-        // reset timer when you stop so step sync feels sharp
-        footstepTimer = 0;
+        if (!footstepLoop.paused) {
+            footstepLoop.pause();
+            // optional: do not reset currentTime so resume feels natural
+            // footstepLoop.currentTime = 0; // uncomment if you prefer reset
+        }
     }
 
     // torch flicker
