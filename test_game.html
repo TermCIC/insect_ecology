@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.8</title>
+<title>KEG v0.3.9</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -149,6 +149,15 @@ function radToDeg(r) {
     return r * 180 / Math.PI;
 }
 
+function normalizeAngleRad(a) {
+    // keep angle in [-pi, pi]
+    a = a % (2 * Math.PI);
+    if (a <= -Math.PI) a += 2 * Math.PI;
+    if (a >  Math.PI)  a -= 2 * Math.PI;
+    return a;
+}
+
+
 const NATIVE_GAME_WIDTH = 240;
 const defaultScale = 3;
 let finalScale = defaultScale;
@@ -191,8 +200,8 @@ const FIREBALL_HIT_RADIUS       = 8;   // pixels
 const projectiles = [];
 
 // debug vars
-let lastFireSpawnAngle = null;      // camera.angle when fireball was spawned
-let lastFireDirAngleDeg = null;     // atan2(dir.y, dir.x) in degrees
+let lastFireSpawnAngleDeg = null;   // camera heading (deg) when fireball was spawned
+let lastFireDirAngleDeg   = null;   // atan2(dir.y, dir.x) in degrees
 
 function radToDeg(r) {
     return r * 180 / Math.PI;
@@ -213,10 +222,12 @@ function updateMonsterHpUI(target) {
 function updateDebugAngles() {
     if (!debugAnglesEl) return;
 
-    const camAngleDeg = radToDeg(camera.angle).toFixed(2);
+    // camera angle in [0, 360)
+    let camDeg = radToDeg(camera.angle);
+    camDeg = ((camDeg % 360) + 360) % 360;
 
-    const fireSpawnText = (lastFireSpawnAngle !== null)
-        ? lastFireSpawnAngle.toFixed(2)
+    const fireSpawnText = (lastFireSpawnAngleDeg !== null)
+        ? lastFireSpawnAngleDeg.toFixed(2)
         : "-";
 
     const fireDirText = (lastFireDirAngleDeg !== null)
@@ -224,8 +235,9 @@ function updateDebugAngles() {
         : "-";
 
     debugAnglesEl.textContent =
-        `Cam: ${camAngleDeg} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
+        `Cam: ${camDeg.toFixed(2)} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
 }
+
 
 // ======== Sprites ========
 loadSprite(
@@ -714,15 +726,15 @@ onKeyDown("down", () => {
     camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
 });
 onKeyDown("left", () => {
-    camera.angle -= ROT_SPEED * dt();
+    camera.angle -= normalizeAngleRad(camera.angle - ROT_SPEED * dt());
 });
 onKeyDown("right", () => {
-    camera.angle += ROT_SPEED * dt();
+    camera.angle += normalizeAngleRad(camera.angle + ROT_SPEED * dt());
 });
 
 // ===== fireball spawn & potion =====
 function spawnFireball() {
-    lastFireSpawnAngle = camera.angle;
+    lastFireSpawnAngleDeg = ((radToDeg(camera.angle) % 360) + 360) % 360;
 
     const dir = Vec2.fromAngle(camera.angle).unit();
     const start = vec2(camera.pos.x, camera.pos.y).add(dir.scale(10));
@@ -792,6 +804,8 @@ onUpdate(() => {
     if (btnTurnRightHeld) {
         camera.angle += ROT_SPEED * d;
     }
+
+    camera.angle = normalizeAngleRad(camera.angle);
 
     // update fireballs (movement + collision)
     for (let i = projectiles.length - 1; i >= 0; i--) {
