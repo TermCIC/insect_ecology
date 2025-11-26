@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.1.6</title>
+<title>KEG v0.1.7</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -140,6 +140,30 @@ const projectiles = [];
 let torchTime = 0;
 const BASE_TORCH_INTENSITY = 1.25;
 
+// ===== Footstep sound =====
+// Replace URLs with your own dungeon step sounds
+const footstepClips = [
+    new Audio("https://res.cloudinary.com/dmdpjf8up/video/upload/v1764151497/step_ybhhch.mp3")
+];
+
+footstepClips.forEach(a => {
+    a.volume = 0.45;   // adjust loudness here
+});
+
+const FOOTSTEP_INTERVAL = 0.42; // seconds between steps while moving
+let footstepTimer = 0;
+let lastFootstepIndex = 0;
+
+function playFootstep() {
+    const clip = footstepClips[lastFootstepIndex];
+    // restart clip from start for snappy response
+    clip.currentTime = 0;
+    clip.play().catch(() => {
+        // ignore autoplay errors, browser will allow after user interaction
+    });
+    lastFootstepIndex = (lastFootstepIndex + 1) % footstepClips.length;
+}
+
 // Map and geometry constants
 const MAP_SIZE = 30;
 const TILE_SIZE = 2;
@@ -154,10 +178,9 @@ const CAMERA_HEIGHT = 1.4;
 const PLAYER_RADIUS = 0.75;
 
 // ===== Enemy asset URLs =====
-// Put your own URLs here
-const MONSTER_MODEL_ROOT = "https://res.cloudinary.com/dmdpjf8up/image/upload/";   // example root
-const MONSTER_MODEL_FILE = "v1764148914/7931623c-4ef3-4e2f-8545-ee10d2ead6c9_sj2w6k.glb";                               // example file
-const MONSTER_TEXTURE_URL = ""; // optional: leave empty to use model's own material
+const MONSTER_MODEL_ROOT = "https://res.cloudinary.com/dmdpjf8up/image/upload/";
+const MONSTER_MODEL_FILE = "v1764148914/7931623c-4ef3-4e2f-8545-ee10d2ead6c9_sj2w6k.glb";
+const MONSTER_TEXTURE_URL = "";
 
 // ===== Maps =====
 const groundMap = [
@@ -261,7 +284,6 @@ const objectMap = [
   "..............................", // 29
 ];
 
-
 function gridToWorld(i, j) {
     const x = (j - HALF_MAP + 0.5) * TILE_SIZE;
     const z = (i - HALF_MAP + 0.5) * TILE_SIZE;
@@ -287,15 +309,13 @@ function createScene() {
     camera.inertia = 0;
     camera.checkCollisions = false;
 
-    // Ambient light - very low, but with some ground light so floor is visible
+    // Ambient light (very low)
     const hemi = new BABYLON.HemisphericLight(
         "hemi",
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    hemi.intensity = 0.14; // was 0.1
-    // NEW - light coming from below, very soft bluish grey for the ground
-    hemi.groundColor = new BABYLON.Color3(0.16, 0.17, 0.2);
+    hemi.intensity = 0.1;
 
     // Player torch: warm point light
     playerLight = new BABYLON.PointLight(
@@ -304,10 +324,9 @@ function createScene() {
         scene
     );
     playerLight.parent = camera;
-    playerLight.range = 11.5; // slightly more reach so it hits more floor
+    playerLight.range = 10.5;
     playerLight.intensity = BASE_TORCH_INTENSITY;
     
-    // Warm orange, but not super bright
     playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
     playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
@@ -333,8 +352,6 @@ function createScene() {
     const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
     floorMat.diffuseTexture = floorTexture;
     floorMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
-    // NEW - faint emissive so ground is always a little visible
-    floorMat.emissiveColor = new BABYLON.Color3(0.05, 0.05, 0.055);
 
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
@@ -417,9 +434,13 @@ function createScene() {
                 playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
 
-            // Monster spawn
+            // Monster spawn position (we will place imported mesh here)
             if (objectMap[i][j] === "M") {
-                monsterSpawnPos = new BABYLON.Vector3(pos.x, 0, pos.z);
+                monsterSpawnPos = new BABYLON.Vector3(
+                    pos.x,
+                    0,
+                    pos.z
+                );
             }
         }
     }
@@ -428,11 +449,53 @@ function createScene() {
         camera.position = playerSpawn.clone();
     }
 
-    // ... your ImportMesh block stays unchanged ...
+    // === Load enemy model from URL ===
+    if (monsterSpawnPos) {
+        BABYLON.SceneLoader.ImportMesh(
+            "",
+            MONSTER_MODEL_ROOT,
+            MONSTER_MODEL_FILE,
+            scene,
+            function (meshes) {
+                if (!meshes || meshes.length === 0) {
+                    console.warn("Monster model not loaded");
+                    return;
+                }
+    
+                const root = new BABYLON.TransformNode("monsterRoot", scene);
+                meshes.forEach(m => {
+                    m.parent = root;
+                });
+    
+                root.position = monsterSpawnPos.clone();
+                root.rotation = new BABYLON.Vector3(0, Math.PI, 0);
+                root.scaling = new BABYLON.Vector3(1, 1, 1);
+    
+                const targetHeight = 1.8;
+                const bbox = root.getHierarchyBoundingVectors();
+                const currentHeight = bbox.max.y - bbox.min.y || 1;
+                const scale = targetHeight / currentHeight;
+                root.scaling = new BABYLON.Vector3(scale, scale, scale);
+    
+                const bbox2 = root.getHierarchyBoundingVectors();
+                const lowestY = bbox2.min.y;
+                root.position.y -= lowestY;
+    
+                if (MONSTER_TEXTURE_URL) {
+                    const tex = new BABYLON.Texture(MONSTER_TEXTURE_URL, scene);
+                    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
+                    mat.diffuseTexture = tex;
+                    mat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
+                    meshes.forEach(m => m.material = mat);
+                }
+    
+                monsterMesh = root;
+            }
+        );
+    }
 
     return scene;
 }
-
 
 scene = createScene();
 
@@ -474,11 +537,14 @@ function isCircleCollidingWithWalls(pos) {
     return false;
 }
 
+// Now returns true if movement actually happened
 function tryMove(stepVec) {
     const newPos = camera.position.add(stepVec);
     if (!isCircleCollidingWithWalls(newPos)) {
         camera.position = newPos;
+        return true;
     }
+    return false;
 }
 
 // ===== Input =====
@@ -528,27 +594,40 @@ function update(dt) {
         camera.rotation.y += TURN_SPEED * dt;
     }
 
-    // movement
+    // movement + check if actually moved
     const forward = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
     const flat = new BABYLON.Vector3(forward.x, 0, forward.z).normalize();
     const step = MOVE_SPEED * dt;
 
+    let moved = false;
+
     if (btnForwardHeld || keys.forward) {
-        tryMove(flat.scale(step));
+        if (tryMove(flat.scale(step))) moved = true;
     }
     if (btnBackHeld || keys.back) {
-        tryMove(flat.scale(-step));
+        if (tryMove(flat.scale(-step))) moved = true;
+    }
+
+    // footsteps: only while moving
+    if (moved) {
+        footstepTimer += dt;
+        if (footstepTimer >= FOOTSTEP_INTERVAL) {
+            footstepTimer = 0;
+            playFootstep();
+        }
+    } else {
+        // reset timer when you stop so step sync feels sharp
+        footstepTimer = 0;
     }
 
     // torch flicker
     torchTime += dt;
     const flicker =
-    Math.sin(torchTime * 6.3) * 0.08 +
-    Math.sin(torchTime * 11.1) * 0.05 +
-    (Math.random() - 0.5) * 0.02;  // tiny random jitter
+        Math.sin(torchTime * 6.3) * 0.08 +
+        Math.sin(torchTime * 11.1) * 0.05 +
+        (Math.random() - 0.5) * 0.02;
 
     let intensity = BASE_TORCH_INTENSITY + flicker;
-    // clamp so it never goes crazy bright or fully dark
     intensity = Math.min(1.6, Math.max(0.95, intensity));
     playerLight.intensity = intensity;
 }
