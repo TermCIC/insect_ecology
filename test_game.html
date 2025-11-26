@@ -354,7 +354,7 @@ function createScene() {
             if (objectMap[i][j] === "M") {
                 monsterSpawnPos = new BABYLON.Vector3(
                     pos.x,
-                    WALL_HEIGHT * 0.35,
+                    0,
                     pos.z
                 );
             }
@@ -368,36 +368,50 @@ function createScene() {
     // === Load enemy model from URL ===
     if (monsterSpawnPos) {
         BABYLON.SceneLoader.ImportMesh(
-            "",                           // meshNames: empty = all meshes
-            MONSTER_MODEL_ROOT,           // root URL
-            MONSTER_MODEL_FILE,           // file name
+            "",
+            MONSTER_MODEL_ROOT,
+            MONSTER_MODEL_FILE,
             scene,
             function (meshes) {
                 if (!meshes || meshes.length === 0) {
                     console.warn("Monster model not loaded");
                     return;
                 }
-
-                // Use first mesh as root
-                monsterMesh = meshes[0];
-
-                // If model has many parts, you can create a parent
-                // const parent = new BABYLON.TransformNode("monsterRoot", scene);
-                // meshes.forEach(m => m.parent = parent);
-                // monsterMesh = parent;
-
-                monsterMesh.position = monsterSpawnPos.clone();
-                monsterMesh.scaling = new BABYLON.Vector3(0.6, 0.6, 0.6);
-                monsterMesh.rotation.y = Math.PI; // face player
-
-                // Optional: force our own material with texture URL
+    
+                // Create a single root node and parent all imported meshes
+                const root = new BABYLON.TransformNode("monsterRoot", scene);
+                meshes.forEach(m => {
+                    m.parent = root;
+                });
+    
+                // Start at spawn XZ, y = 0
+                root.position = monsterSpawnPos.clone();
+                root.rotation = new BABYLON.Vector3(0, Math.PI, 0); // face player
+                root.scaling = new BABYLON.Vector3(1, 1, 1);
+    
+                // --- Scale to target height ---
+                const targetHeight = 1.8; // how tall you want the monster (world units)
+                const bbox = root.getHierarchyBoundingVectors();
+                const currentHeight = bbox.max.y - bbox.min.y || 1;
+                const scale = targetHeight / currentHeight;
+                root.scaling = new BABYLON.Vector3(scale, scale, scale);
+    
+                // --- Snap feet to floor (y = 0) ---
+                const bbox2 = root.getHierarchyBoundingVectors();
+                const lowestY = bbox2.min.y;
+                root.position.y -= lowestY; // lift or drop so min.y == 0
+    
+                // Optional: override material/texture
                 if (MONSTER_TEXTURE_URL) {
                     const tex = new BABYLON.Texture(MONSTER_TEXTURE_URL, scene);
                     const mat = new BABYLON.StandardMaterial("monsterMat", scene);
                     mat.diffuseTexture = tex;
                     mat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
-                    monsterMesh.material = mat;
+                    meshes.forEach(m => m.material = mat);
                 }
+    
+                // Save for game logic
+                monsterMesh = root;
             }
         );
     }
