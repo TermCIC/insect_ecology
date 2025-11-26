@@ -176,7 +176,7 @@ function createScene() {
     scene.collisionsEnabled = false;
 
     // === FIX 1: lower camera (no more clipping into walls) ===
-    camera = new BABYLON.UniversalCamera("playerCamera", new BABYLON.Vector3(0, 1.0, -8), scene);
+    camera = new BABYLON.UniversalCamera("playerCamera", new BABYLON.Vector3(0, 2.0, -8), scene);
     camera.inertia = 0;
     camera.checkCollisions = false;
 
