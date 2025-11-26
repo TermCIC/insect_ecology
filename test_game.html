@@ -138,7 +138,7 @@ const projectiles = [];
 
 // Torch flicker
 let torchTime = 0;
-const BASE_TORCH_INTENSITY = 1.15;
+const BASE_TORCH_INTENSITY = 1.25;
 
 // Map and geometry constants
 const MAP_SIZE = 10;
@@ -241,7 +241,7 @@ function createScene() {
         scene
     );
     playerLight.parent = camera;
-    playerLight.range = 9;
+    playerLight.range = 10.5;
     playerLight.intensity = BASE_TORCH_INTENSITY;
     
     // Warm orange, but not super bright
@@ -538,7 +538,7 @@ function update(dt) {
 
     let intensity = BASE_TORCH_INTENSITY + flicker;
     // clamp so it never goes crazy bright or fully dark
-    intensity = Math.min(1.4, Math.max(0.8, intensity));
+    intensity = Math.min(1.6, Math.max(0.95, intensity));
     playerLight.intensity = intensity;
 }
 
