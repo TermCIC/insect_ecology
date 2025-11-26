@@ -285,6 +285,7 @@ function gridToWorld(i, j) {
     return new BABYLON.Vector3(x, 0, z);
 }
 
+// convert world x,z back to grid i,j
 function worldToGrid(x, z) {
     const j = Math.floor(x / TILE_SIZE + HALF_MAP);
     const i = Math.floor(z / TILE_SIZE + HALF_MAP);
@@ -294,7 +295,8 @@ function worldToGrid(x, z) {
 function createScene() {
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.05, 1);
-    scene.collisionsEnabled = true;
+    // we use our own ASCII collision, no Babylon collisions
+    scene.collisionsEnabled = false;
 
     // Camera
     camera = new BABYLON.UniversalCamera(
@@ -306,9 +308,8 @@ function createScene() {
     camera.inertia = 0;
     camera.speed = 0;
 
-    camera.checkCollisions = true;
+    camera.checkCollisions = false;
     camera.applyGravity   = false;
-    camera.ellipsoid      = new BABYLON.Vector3(0.5, 0.9, 0.5);
 
     // Lights
     const hemi = new BABYLON.HemisphericLight(
@@ -346,23 +347,10 @@ function createScene() {
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
     wallMat.diffuseTexture = wallTexture;
     wallMat.specularColor = new BABYLON.Color3(0, 0, 0);
-    wallMat.backFaceCulling = false;
 
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
     ceilMat.specularColor = new BABYLON.Color3(0, 0, 0);
-
-    // faceUV for Option A - only front face visible
-    const faceUV = [];
-    // back
-    faceUV[0] = new BABYLON.Vector4(0, 0, 0, 0);
-    // front (visible face, normal UV)
-    faceUV[1] = new BABYLON.Vector4(0, 0, 1, 1);
-    // right, left, top, bottom collapsed to zero area (invisible)
-    faceUV[2] = new BABYLON.Vector4(0, 0, 0, 0);
-    faceUV[3] = new BABYLON.Vector4(0, 0, 0, 0);
-    faceUV[4] = new BABYLON.Vector4(0, 0, 0, 0);
-    faceUV[5] = new BABYLON.Vector4(0, 0, 0, 0);
 
     // Build cubes
     let playerSpawn = null;
@@ -382,21 +370,13 @@ function createScene() {
             }
 
             if (wallMap[i][j] === "#") {
-                // Option A - thin wall with only one textured face
-                const wallBox = BABYLON.MeshBuilder.CreateBox(
+                const box = BABYLON.MeshBuilder.CreateBox(
                     `wall_${i}_${j}`,
-                    {
-                        width: TILE_SIZE,
-                        height: TILE_SIZE,
-                        depth: 0.3,
-                        faceUV: faceUV,
-                        wrap: true,
-                    },
+                    { size: TILE_SIZE },
                     scene
                 );
-                wallBox.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
-                wallBox.material = wallMat;
-                wallBox.checkCollisions = true;
+                box.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
+                box.material = wallMat;
             }
 
             if (ceilingMap[i][j] === "#") {
@@ -457,7 +437,7 @@ bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld  = v);
 bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
 
 document.getElementById("btn-potion").addEventListener("click", () => {
-    player.hp = Math.min(player.maxHp, player.hp + 25);
+    player.hp = Math.min(player.maxHp, player.maxHp);
     updatePlayerHpUI();
 });
 
@@ -517,10 +497,27 @@ function spawnFireball() {
     lastFireDirAngleDeg = yawDeg;
 }
 
-// ===== Game update =====
+// ===== ASCII collision move =====
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
+function tryMove(stepVec) {
+    const newPos = camera.position.add(stepVec);
+
+    const { i, j } = worldToGrid(newPos.x, newPos.z);
+
+    if (i < 0 || i >= MAP_SIZE || j < 0 || j >= MAP_SIZE) {
+        return; // outside map
+    }
+
+    if (wallMap[i][j] === "#") {
+        return; // blocked by wall tile
+    }
+
+    camera.position = newPos;
+}
+
+// ===== Game update =====
 function update(dt) {
     if (!camera) return;
 
@@ -541,10 +538,10 @@ function update(dt) {
     const step = MOVE_SPEED * dt;
 
     if (moveForward) {
-        camera.moveWithCollisions(flatDir.scale(step));
+        tryMove(flatDir.scale(step));
     }
     if (moveBack) {
-        camera.moveWithCollisions(flatDir.scale(-step));
+        tryMove(flatDir.scale(-step));
     }
 
     // Update projectiles
