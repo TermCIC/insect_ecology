@@ -131,8 +131,12 @@ let lastFireDirAngleDeg = null;
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-let scene, camera, monsterMesh, playerLight;  // playerLight added
+let scene, camera, monsterMesh, playerLight;
 const projectiles = [];
+
+// torch flicker
+let torchTime = 0;
+const BASE_TORCH_INTENSITY = 1.8;
 
 // Map and geometry constants
 const MAP_SIZE = 10;
@@ -220,20 +224,19 @@ function createScene() {
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    hemi.intensity = 0.15; // very low ambient so dungeon is mostly dark
+    hemi.intensity = 0.08; // just a tiny ambient so nothing is pure black
 
-    // Player torch - spotlight attached to camera
-    playerLight = new BABYLON.SpotLight(
-        "playerLight",
-        new BABYLON.Vector3(0, 0, 0),            // local position, will be relative to camera
-        new BABYLON.Vector3(0, 0, 1),            // local forward direction
-        Math.PI / 2.3,                           // cone angle
-        4,                                       // falloff exponent - sharper edge
+    // Player torch - warm point light attached to camera
+    playerLight = new BABYLON.PointLight(
+        "playerTorch",
+        new BABYLON.Vector3(0.2, 0, 0.2),  // slight offset from camera center
         scene
     );
-    playerLight.parent = camera;                // follows camera position and rotation
-    playerLight.intensity = 2.2;
-    playerLight.range = 18;
+    playerLight.parent = camera;          // follows camera position and rotation
+    playerLight.range = 12;
+    playerLight.intensity = BASE_TORCH_INTENSITY;
+    playerLight.diffuse = new BABYLON.Color3(1.0, 0.85, 0.6);
+    playerLight.specular = new BABYLON.Color3(1.0, 0.9, 0.7);
 
     // Textures
     const wallTexture = new BABYLON.Texture(
@@ -470,6 +473,14 @@ function update(dt) {
     if (btnBackHeld || keys.back) {
         tryMove(flat.scale(-step));
     }
+
+    // torch flicker
+    torchTime += dt;
+    const flicker =
+        Math.sin(torchTime * 10.7) * 0.2 +
+        Math.sin(torchTime * 3.3) * 0.1;
+    const intensity = BASE_TORCH_INTENSITY + flicker;
+    playerLight.intensity = Math.max(1.0, intensity); // avoid going too low
 }
 
 engine.runRenderLoop(() => {
