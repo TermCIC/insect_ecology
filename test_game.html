@@ -639,7 +639,7 @@ const camera = add([
                 const DELTA_ANGLE = FOV / NUM_RAYS;
                 const CENTER_RAY = NUM_RAYS / 2;
 
-                const viewDir = Vec2.fromAngle(100);
+                const viewDir = Vec2.fromAngle(this.angle);
                 const viewAngle = Math.atan2(viewDir.y, viewDir.x);
 
                 for (const fb of projectiles) {
