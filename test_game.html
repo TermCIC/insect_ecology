@@ -46,6 +46,34 @@
         height: 100%;
         display: block;
     }
+
+    #controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+
+    #controls .row {
+        display: flex;
+        gap: 4px;
+    }
+
+    #controls button {
+        padding: 8px 12px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: #222;
+        color: #eee;
+        cursor: pointer;
+        min-width: 80px;
+    }
+
+    #controls button:active {
+        background: #444;
+    }
 </style>
 
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -106,16 +134,18 @@ const engine = new BABYLON.Engine(canvas, true);
 let scene, camera, monsterMesh;
 const projectiles = [];
 
+// Map and geometry constants
 const MAP_SIZE = 10;
 const TILE_SIZE = 2;
 const HALF_MAP = MAP_SIZE / 2;
 
-const FLOOR_Y = 0;
-const WALL_Y = TILE_SIZE;
-const CEILING_Y = TILE_SIZE * 2;
+const FLOOR_THICKNESS = 0.2;
+const WALL_HEIGHT = 3.0;        // walls from y = 0 to y = 3
+const CEILING_THICKNESS = 0.2;
+const CEILING_Y = WALL_HEIGHT;  // bottom of ceiling
 
-// Player collision radius
-const PLAYER_RADIUS = 0.45; // tighter fit
+const CAMERA_HEIGHT = 1.4;      // eye height above floor
+const PLAYER_RADIUS = 0.45;     // collision radius
 
 // ===== Maps =====
 const groundMap = [
@@ -175,18 +205,36 @@ function createScene() {
     const scene = new BABYLON.Scene(engine);
     scene.collisionsEnabled = false;
 
-    // === FIX 1: lower camera (no more clipping into walls) ===
-    camera = new BABYLON.UniversalCamera("playerCamera", new BABYLON.Vector3(0, 2.0, -8), scene);
+    // Camera
+    camera = new BABYLON.UniversalCamera(
+        "playerCamera",
+        new BABYLON.Vector3(0, CAMERA_HEIGHT, -8),
+        scene
+    );
     camera.inertia = 0;
     camera.checkCollisions = false;
 
     // Lights
-    new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene).intensity = 0.7;
+    const hemi = new BABYLON.HemisphericLight(
+        "hemi",
+        new BABYLON.Vector3(0, 1, 0),
+        scene
+    );
+    hemi.intensity = 0.8;
 
     // Textures
-    const wallTexture = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056065/brick_wall_3_asxofr.png", scene);
-    const floorTexture = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png", scene);
-    const ceilTexture = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png", scene);
+    const wallTexture = new BABYLON.Texture(
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056065/brick_wall_3_asxofr.png",
+        scene
+    );
+    const floorTexture = new BABYLON.Texture(
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764056933/brick_wall_4_xuoebx.png",
+        scene
+    );
+    const ceilTexture = new BABYLON.Texture(
+        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png",
+        scene
+    );
 
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
     wallMat.diffuseTexture = wallTexture;
@@ -197,57 +245,104 @@ function createScene() {
     const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
     ceilMat.diffuseTexture = ceilTexture;
 
-    // === FIX 2: consistent UV orientation for walls ===
-    const wallUV = {
-        faceUV: [
-            new BABYLON.Vector4(0,0,1,1),
-            new BABYLON.Vector4(0,0,1,1),
-            new BABYLON.Vector4(0,0,1,1),
-            new BABYLON.Vector4(0,0,1,1),
-            new BABYLON.Vector4(0,0,1,1),
-            new BABYLON.Vector4(0,0,1,1)
-        ]
+    // This is the important bit: ensure all faces share orientation
+    // wrap: true fixes Babylon's rotated box texture sides
+    const wallBoxOptions = {
+        width: TILE_SIZE,
+        depth: TILE_SIZE,
+        height: WALL_HEIGHT,
+        wrap: true
     };
 
-    // Build world
+    const floorBoxOptions = {
+        width: TILE_SIZE,
+        depth: TILE_SIZE,
+        height: FLOOR_THICKNESS
+    };
+
+    const ceilBoxOptions = {
+        width: TILE_SIZE,
+        depth: TILE_SIZE,
+        height: CEILING_THICKNESS
+    };
+
     let playerSpawn = null;
 
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const pos = gridToWorld(i, j);
 
+            // Floor - thin slab around y = 0
             if (groundMap[i][j] === "#") {
-                const b = BABYLON.MeshBuilder.CreateBox(`floor_${i}_${j}`, { size: TILE_SIZE }, scene);
-                b.position = new BABYLON.Vector3(pos.x, FLOOR_Y, pos.z);
-                b.material = floorMat;
+                const floor = BABYLON.MeshBuilder.CreateBox(
+                    `floor_${i}_${j}`,
+                    floorBoxOptions,
+                    scene
+                );
+                floor.position = new BABYLON.Vector3(
+                    pos.x,
+                    -FLOOR_THICKNESS / 2,
+                    pos.z
+                );
+                floor.material = floorMat;
             }
 
+            // Wall - tall box, bottom at y = 0
             if (wallMap[i][j] === "#") {
-                const b = BABYLON.MeshBuilder.CreateBox(`wall_${i}_${j}`, { size: TILE_SIZE, ...wallUV }, scene);
-                b.position = new BABYLON.Vector3(pos.x, WALL_Y, pos.z);
-                b.material = wallMat;
+                const wall = BABYLON.MeshBuilder.CreateBox(
+                    `wall_${i}_${j}`,
+                    wallBoxOptions,
+                    scene
+                );
+                wall.position = new BABYLON.Vector3(
+                    pos.x,
+                    WALL_HEIGHT / 2,
+                    pos.z
+                );
+                wall.material = wallMat;
             }
 
+            // Ceiling - thin slab at top
             if (ceilingMap[i][j] === "#") {
-                const b = BABYLON.MeshBuilder.CreateBox(`ceil_${i}_${j}`, { size: TILE_SIZE }, scene);
-                b.position = new BABYLON.Vector3(pos.x, CEILING_Y, pos.z);
-                b.material = ceilMat;
+                const ceil = BABYLON.MeshBuilder.CreateBox(
+                    `ceil_${i}_${j}`,
+                    ceilBoxOptions,
+                    scene
+                );
+                ceil.position = new BABYLON.Vector3(
+                    pos.x,
+                    CEILING_Y + CEILING_THICKNESS / 2,
+                    pos.z
+                );
+                ceil.material = ceilMat;
             }
 
+            // Objects
             if (objectMap[i][j] === "P") {
-                playerSpawn = new BABYLON.Vector3(pos.x, 1.0, pos.z);
+                playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
 
             if (objectMap[i][j] === "M" && !monsterMesh) {
-                monsterMesh = BABYLON.MeshBuilder.CreateBox("monster", { size: TILE_SIZE * 0.8 }, scene);
-                monsterMesh.position = new BABYLON.Vector3(pos.x, 1.0, pos.z);
-                monsterMesh.material = new BABYLON.StandardMaterial("mMat", scene);
-                monsterMesh.material.diffuseColor = new BABYLON.Color3(0.6,0.1,0.1);
+                monsterMesh = BABYLON.MeshBuilder.CreateBox(
+                    "monster",
+                    { width: TILE_SIZE * 0.8, depth: TILE_SIZE * 0.8, height: WALL_HEIGHT * 0.7 },
+                    scene
+                );
+                monsterMesh.position = new BABYLON.Vector3(
+                    pos.x,
+                    WALL_HEIGHT * 0.35,
+                    pos.z
+                );
+                const mMat = new BABYLON.StandardMaterial("mMat", scene);
+                mMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
+                monsterMesh.material = mMat;
             }
         }
     }
 
-    if (playerSpawn) camera.position = playerSpawn.clone();
+    if (playerSpawn) {
+        camera.position = playerSpawn.clone();
+    }
 
     return scene;
 }
@@ -258,73 +353,102 @@ scene = createScene();
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
+// Collision based on 2D grid with radius, out of bounds = blocked
 function tryMove(stepVec) {
     const newPos = camera.position.add(stepVec);
 
-    // === FIX 3: circular collision check ===
     const checks = [
         newPos,
-        newPos.add(new BABYLON.Vector3(PLAYER_RADIUS,0,0)),
-        newPos.add(new BABYLON.Vector3(-PLAYER_RADIUS,0,0)),
-        newPos.add(new BABYLON.Vector3(0,0,PLAYER_RADIUS)),
-        newPos.add(new BABYLON.Vector3(0,0,-PLAYER_RADIUS))
+        newPos.add(new BABYLON.Vector3(PLAYER_RADIUS, 0, 0)),
+        newPos.add(new BABYLON.Vector3(-PLAYER_RADIUS, 0, 0)),
+        newPos.add(new BABYLON.Vector3(0, 0, PLAYER_RADIUS)),
+        newPos.add(new BABYLON.Vector3(0, 0, -PLAYER_RADIUS))
     ];
 
     for (let c of checks) {
         const { i, j } = worldToGrid(c.x, c.z);
-        if (wallMap[i][j] === "#") return;
+
+        // out of map -> treat as wall
+        if (i < 0 || i >= MAP_SIZE || j < 0 || j >= MAP_SIZE) {
+            return;
+        }
+
+        if (wallMap[i][j] === "#") {
+            return;
+        }
     }
 
     camera.position = newPos;
 }
 
-// ===== Movement Input =====
-let btnForwardHeld=false, btnBackHeld=false, btnTurnLeftHeld=false, btnTurnRightHeld=false;
-const keys = {forward:false, back:false, left:false, right:false};
+// ===== Input =====
+let btnForwardHeld = false,
+    btnBackHeld = false,
+    btnTurnLeftHeld = false,
+    btnTurnRightHeld = false;
 
-function bindHoldButton(id, setter){
-    const btn=document.getElementById(id);
-    btn.onmousedown=()=>setter(true);
-    btn.onmouseup=()=>setter(false);
+const keys = { forward: false, back: false, left: false, right: false };
+
+function bindHoldButton(id, setter) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener("mousedown", () => setter(true));
+    btn.addEventListener("mouseup", () => setter(false));
+    btn.addEventListener("mouseleave", () => setter(false));
+    btn.addEventListener("touchstart", e => { e.preventDefault(); setter(true); });
+    btn.addEventListener("touchend", e => { e.preventDefault(); setter(false); });
 }
 
-bindHoldButton("btn-forward", v=>btnForwardHeld=v);
-bindHoldButton("btn-back", v=>btnBackHeld=v);
-bindHoldButton("btn-turn-left", v=>btnTurnLeftHeld=v);
-bindHoldButton("btn-turn-right", v=>btnTurnRightHeld=v);
+bindHoldButton("btn-forward", v => (btnForwardHeld = v));
+bindHoldButton("btn-back", v => (btnBackHeld = v));
+bindHoldButton("btn-turn-left", v => (btnTurnLeftHeld = v));
+bindHoldButton("btn-turn-right", v => (btnTurnRightHeld = v));
 
-window.addEventListener("keydown", e=>{
-    if (e.key==="w"||e.key==="ArrowUp") keys.forward=true;
-    if (e.key==="s"||e.key==="ArrowDown") keys.back=true;
-    if (e.key==="a"||e.key==="ArrowLeft") keys.left=true;
-    if (e.key==="d"||e.key==="ArrowRight") keys.right=true;
-});
-window.addEventListener("keyup", e=>{
-    if (e.key==="w"||e.key==="ArrowUp") keys.forward=false;
-    if (e.key==="s"||e.key==="ArrowDown") keys.back=false;
-    if (e.key==="a"||e.key==="ArrowLeft") keys.left=false;
-    if (e.key==="d"||e.key==="ArrowRight") keys.right=false;
+window.addEventListener("keydown", e => {
+    if (e.key === "w" || e.key === "ArrowUp") keys.forward = true;
+    if (e.key === "s" || e.key === "ArrowDown") keys.back = true;
+    if (e.key === "a" || e.key === "ArrowLeft") keys.left = true;
+    if (e.key === "d" || e.key === "ArrowRight") keys.right = true;
 });
 
-// ===== Game Loop =====
-function update(dt){
-    if (btnTurnLeftHeld || keys.left) camera.rotation.y -= TURN_SPEED*dt;
-    if (btnTurnRightHeld || keys.right) camera.rotation.y += TURN_SPEED*dt;
+window.addEventListener("keyup", e => {
+    if (e.key === "w" || e.key === "ArrowUp") keys.forward = false;
+    if (e.key === "s" || e.key === "ArrowDown") keys.back = false;
+    if (e.key === "a" || e.key === "ArrowLeft") keys.left = false;
+    if (e.key === "d" || e.key === "ArrowRight") keys.right = false;
+});
 
-    const forward = camera.getDirection(new BABYLON.Vector3(0,0,1));
-    const flat = new BABYLON.Vector3(forward.x,0,forward.z).normalize();
+// ===== Game loop =====
+function update(dt) {
+    // rotation
+    if (btnTurnLeftHeld || keys.left) {
+        camera.rotation.y -= TURN_SPEED * dt;
+    }
+    if (btnTurnRightHeld || keys.right) {
+        camera.rotation.y += TURN_SPEED * dt;
+    }
+
+    // forward/back
+    const forward = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
+    const flat = new BABYLON.Vector3(forward.x, 0, forward.z).normalize();
     const step = MOVE_SPEED * dt;
 
-    if (btnForwardHeld || keys.forward) tryMove(flat.scale(step));
-    if (btnBackHeld || keys.back) tryMove(flat.scale(-step));
+    if (btnForwardHeld || keys.forward) {
+        tryMove(flat.scale(step));
+    }
+    if (btnBackHeld || keys.back) {
+        tryMove(flat.scale(-step));
+    }
 }
 
-engine.runRenderLoop(()=>{
-    const dt=engine.getDeltaTime()/1000;
+engine.runRenderLoop(() => {
+    const dt = engine.getDeltaTime() / 1000;
     update(dt);
     scene.render();
 });
 
+window.addEventListener("resize", () => engine.resize());
 </script>
+
 </body>
 </html>
