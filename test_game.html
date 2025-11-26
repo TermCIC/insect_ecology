@@ -220,7 +220,6 @@ const projectiles = [];
 // ===== ASCII maps (10 x 10) =====
 const MAP_SIZE = 10;
 
-// '.' = empty, '#' = solid floor tile (visual only here)
 const groundMap = [
     "##########",
     "##########",
@@ -234,7 +233,6 @@ const groundMap = [
     "##########",
 ];
 
-// wall layer for collision
 const wallMap = [
     "##########",
     "#........#",
@@ -248,7 +246,6 @@ const wallMap = [
     "##########",
 ];
 
-// ceiling layer
 const ceilingMap = [
     "##########",
     "##########",
@@ -262,7 +259,6 @@ const ceilingMap = [
     "##########",
 ];
 
-// object layer: P = player, M = monster
 const objectMap = [
     "..........",
     "..........",
@@ -289,7 +285,6 @@ function gridToWorld(i, j) {
     return new BABYLON.Vector3(x, 0, z);
 }
 
-// convert world x,z back to grid i,j
 function worldToGrid(x, z) {
     const j = Math.floor(x / TILE_SIZE + HALF_MAP);
     const i = Math.floor(z / TILE_SIZE + HALF_MAP);
@@ -299,6 +294,7 @@ function worldToGrid(x, z) {
 function createScene() {
     const scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.05, 1);
+    scene.collisionsEnabled = true;
 
     // Camera
     camera = new BABYLON.UniversalCamera(
@@ -356,20 +352,21 @@ function createScene() {
     ceilMat.diffuseTexture = ceilTexture;
     ceilMat.specularColor = new BABYLON.Color3(0, 0, 0);
 
-    // Build cubes
-    let playerSpawn = null;
-
+    // faceUV for Option A - only front face visible
     const faceUV = [];
     // back
     faceUV[0] = new BABYLON.Vector4(0, 0, 0, 0);
     // front (visible face, normal UV)
     faceUV[1] = new BABYLON.Vector4(0, 0, 1, 1);
-    // right, left, top, bottom – collapse to 0 area so they are invisible
+    // right, left, top, bottom collapsed to zero area (invisible)
     faceUV[2] = new BABYLON.Vector4(0, 0, 0, 0);
     faceUV[3] = new BABYLON.Vector4(0, 0, 0, 0);
     faceUV[4] = new BABYLON.Vector4(0, 0, 0, 0);
     faceUV[5] = new BABYLON.Vector4(0, 0, 0, 0);
-    
+
+    // Build cubes
+    let playerSpawn = null;
+
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const posXZ = gridToWorld(i, j);
@@ -385,14 +382,21 @@ function createScene() {
             }
 
             if (wallMap[i][j] === "#") {
-                const box = BABYLON.MeshBuilder.CreateBox(
+                // Option A - thin wall with only one textured face
+                const wallBox = BABYLON.MeshBuilder.CreateBox(
                     `wall_${i}_${j}`,
-                    { size: TILE_SIZE },
+                    {
+                        width: TILE_SIZE,
+                        height: TILE_SIZE,
+                        depth: 0.3,
+                        faceUV: faceUV,
+                        wrap: true,
+                    },
                     scene
                 );
-                box.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
-                box.material = wallMat;
-                box.checkCollisions = true;
+                wallBox.position = new BABYLON.Vector3(posXZ.x, WALL_Y, posXZ.z);
+                wallBox.material = wallMat;
+                wallBox.checkCollisions = true;
             }
 
             if (ceilingMap[i][j] === "#") {
@@ -513,28 +517,10 @@ function spawnFireball() {
     lastFireDirAngleDeg = yawDeg;
 }
 
-// ===== Movement with ASCII collision =====
+// ===== Game update =====
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
-function tryMove(stepVec) {
-    const newPos = camera.position.add(stepVec);
-
-    // Only check x,z against wallMap
-    const { i, j } = worldToGrid(newPos.x, newPos.z);
-
-    if (i < 0 || i >= MAP_SIZE || j < 0 || j >= MAP_SIZE) {
-        return; // outside map
-    }
-
-    if (wallMap[i][j] === "#") {
-        return; // blocked
-    }
-
-    camera.position = newPos;
-}
-
-// ===== Game update =====
 function update(dt) {
     if (!camera) return;
 
