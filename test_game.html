@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.5</title>
+<title>KEG v0.3.6</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -639,7 +639,7 @@ const camera = add([
                 const DELTA_ANGLE = FOV / NUM_RAYS;
                 const CENTER_RAY = NUM_RAYS / 2;
 
-                const viewDir = Vec2.fromAngle(-this.angle);
+                const viewDir = Vec2.fromAngle(100);
                 const viewAngle = Math.atan2(viewDir.y, viewDir.x);
 
                 for (const fb of projectiles) {
