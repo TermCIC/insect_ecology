@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.4.2</title>
+<title>KEG Babylon v0.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -39,6 +39,12 @@
         aspect-ratio: 1 / 1;
         width: 80vw;
         max-width: 480px;
+    }
+
+    #renderCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
     }
 
     @media (orientation: landscape) {
@@ -80,12 +86,6 @@
         }
     }
 
-    canvas {
-        width: 100%;
-        height: 100%;
-        image-rendering: pixelated;
-    }
-
     #controls {
         display: flex;
         flex-direction: column;
@@ -115,15 +115,16 @@
     }
 </style>
 
-<script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
 <body>
 
 <div id="game-wrapper">
     <div id="monster-hp" class="hp-bar">Monster HP: -</div>
-    <div id="game"></div>
+    <div id="game">
+        <canvas id="renderCanvas"></canvas>
+    </div>
     <div id="player-hp" class="hp-bar">Player HP: 100/100</div>
-    <!-- DEBUG ANGLES LINE -->
     <div id="debug-angles" class="hp-bar">Cam: 0 | Fire spawn: - | Fire dir: -</div>
 </div>
 
@@ -142,625 +143,171 @@
 
 <script>
 // ===== Helpers =====
-function degToRad(a) {
-    return a * Math.PI / 180;
-}
-
-function radToDeg(r) {
-    return r * 180 / Math.PI;
-}
-
 function normDeg(a) {
     a = a % 360;
     if (a < 0) a += 360;
     return a;
 }
 
-// ===== Kaplay init =====
-const NATIVE_GAME_WIDTH = 240;
-const defaultScale = 3;
-let finalScale = defaultScale;
-const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-
-if (isPortrait) {
-    const actualGameContainerWidth = window.innerWidth;
-    finalScale = actualGameContainerWidth / NATIVE_GAME_WIDTH;
-}
-
-kaplay({
-    root: document.getElementById("game"),
-    scale: finalScale,
-    width: 240,
-    height: 240,
-    debug: true,
-});
-
 // ===== DOM UI =====
-const playerHpEl      = document.getElementById("player-hp");
-const monsterHpEl     = document.getElementById("monster-hp");
-const debugAnglesEl   = document.getElementById("debug-angles");
+const playerHpEl    = document.getElementById("player-hp");
+const monsterHpEl   = document.getElementById("monster-hp");
+const debugAnglesEl = document.getElementById("debug-angles");
 
-// ===== Player & Monster stats =====
+// ===== Player and monster state =====
 const player = {
     maxHp: 100,
     hp: 100,
     atk: 12,
 };
 
-const MONSTER_MAX_HP          = 40;
-const MONSTER_ATK             = 6;
+const monsterState = {
+    maxHp: 40,
+    hp: 40,
+    atk: 6,
+    alive: true,
+    cooldown: 0,
+};
+
+const ATTACK_RANGE = 3.0; // in world units
 const MONSTER_ATTACK_INTERVAL = 1.0;
-const ATTACK_RANGE_TILES_SQ   = 3;
 
-// fireball parameters
-const FIREBALL_TILES_PER_SECOND = 1;   // speed in tiles / sec
-const FIREBALL_LIFETIME         = 3;   // seconds
-const FIREBALL_HIT_RADIUS       = 8;   // pixels
-const FIREBALL_SHOTS            = 16;  // number of directions per cast
+// Projectiles
+const FIREBALL_SPEED   = 12;
+const FIREBALL_LIFETIME = 3;
+const FIREBALL_RADIUS   = 0.4;
 
-// list of active fireballs
-const projectiles = [];
-
-// debug vars
-let lastFireSpawnAngleDeg = null;   // not really used now (multi shot)
-let lastFireDirAngleDeg   = null;   // same
+let lastFireSpawnAngleDeg = null;
+let lastFireDirAngleDeg   = null;
 
 function updatePlayerHpUI() {
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
 }
 
-function updateMonsterHpUI(target) {
-    if (!target || !target.alive) {
+function updateMonsterHpUI() {
+    if (!monsterState.alive) {
         monsterHpEl.textContent = "Monster HP: -";
     } else {
-        monsterHpEl.textContent = `Monster HP: ${target.hp}/${target.maxHp}`;
+        monsterHpEl.textContent = `Monster HP: ${monsterState.hp}/${monsterState.maxHp}`;
     }
 }
 
-function updateDebugAngles() {
-    if (!debugAnglesEl) return;
+function updateDebugAngles(camera) {
+    if (!debugAnglesEl || !camera) return;
+    const yawDeg = normDeg(BABYLON.Tools.ToDegrees(camera.rotation.y));
 
-    const camDeg = normDeg(camera.angle);
-
-    const fireSpawnText = (lastFireSpawnAngleDeg !== null)
+    const fireSpawnText = lastFireSpawnAngleDeg != null
         ? lastFireSpawnAngleDeg.toFixed(2)
         : "-";
 
-    const fireDirText = (lastFireDirAngleDeg !== null)
+    const fireDirText = lastFireDirAngleDeg != null
         ? lastFireDirAngleDeg.toFixed(2)
         : "-";
 
     debugAnglesEl.textContent =
-        `Cam: ${camDeg.toFixed(2)} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
+        `Cam: ${yawDeg.toFixed(2)} | Fire spawn: ${fireSpawnText} | Fire dir: ${fireDirText}`;
 }
 
-// ===== Sprites =====
-loadSprite(
-    "enemy",
-    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057430/pixellab-jump-and-attack-toward-camera-1764054681406_zlxbfb.png",
-    { sliceX: 4, sliceY: 4 },
-);
+// ===== Babylon setup =====
+const canvas = document.getElementById("renderCanvas");
+const engine = new BABYLON.Engine(canvas, true);
 
-loadSprite(
-    "enemyIdle",
-    "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764058491/pixellab-walk-and-idle-toward-camera-1764054830881_f6biy9.png",
-    { sliceX: 4, sliceY: 4 },
-);
+let scene;
+let camera;
+let monsterMesh;
+const projectiles = [];
 
-loadSprite("wall_1",   "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764073173/brick_wall_1_hjoaxn.png");
-loadSprite("wall_2",   "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764073221/brick_wall_2_ua8zgt.png");
-loadSprite("wall_3",   "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png");
-loadSprite("fireball", "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764066293/fireball_mnjxyq.png");
+function createScene() {
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.05, 1);
 
-let enemy;
-let enemyIdle;
-let wall_1;
-let wall_2;
-let wall_3;
-let fireballSprite;
-let fireballQuad;
-
-// slices
-let enemySlices     = [];
-let enemyIdleSlices = [];
-let wall_1_Slices   = [];
-let wall_2_Slices   = [];
-let wall_3_Slices   = [];
-
-onLoad(() => {
-    enemy          = getSprite("enemy").data;
-    enemyIdle      = getSprite("enemyIdle").data;
-    wall_1         = getSprite("wall_1").data;
-    wall_2         = getSprite("wall_2").data;
-    wall_3         = getSprite("wall_3").data;
-    fireballSprite = getSprite("fireball").data;
-
-    // full quad for fireball
-    fireballQuad = fireballSprite.frames[0].scale(new Quad(0, 0, 1, 1));
-
-    // enemy attack / walk slices
-    const attackFrameWidth = enemy.width;
-    const attackFrames     = enemy.frames.length;
-    for (let f = 0; f < attackFrames; f++) {
-        const frame = enemy.frames[f];
-        const cols  = [];
-        for (let i = 0; i < attackFrameWidth; i++) {
-            cols.push(frame.scale(new Quad(i / attackFrameWidth, 0, 1 / attackFrameWidth, 1)));
-        }
-        enemySlices.push(cols);
-    }
-
-    // enemy idle slices
-    const idleFrameWidth = enemyIdle.width;
-    const idleFrames     = enemyIdle.frames.length;
-    for (let f = 0; f < idleFrames; f++) {
-        const frame = enemyIdle.frames[f];
-        const cols  = [];
-        for (let i = 0; i < idleFrameWidth; i++) {
-            cols.push(frame.scale(new Quad(i / idleFrameWidth, 0, 1 / idleFrameWidth, 1)));
-        }
-        enemyIdleSlices.push(cols);
-    }
-
-    // wall slices
-    for (let i = 0; i < wall_1.width; i++) {
-        wall_1_Slices.push(
-            wall_1.frames[0].scale(new Quad(i / wall_1.width, 0, 1 / wall_1.width, 1)),
-        );
-    }
-    for (let i = 0; i < wall_2.width; i++) {
-        wall_2_Slices.push(
-            wall_2.frames[0].scale(new Quad(i / wall_2.width, 0, 1 / wall_2.width, 1)),
-        );
-    }
-    for (let i = 0; i < wall_3.width; i++) {
-        wall_3_Slices.push(
-            wall_3.frames[0].scale(new Quad(i / wall_3.width, 0, 1 / wall_3.width, 1)),
-        );
-    }
-});
-
-// ===== Grid and raycast =====
-const colors = {
-    "#": RED,
-    "$": GREEN,
-    "%": BLUE,
-    "&": YELLOW,
-};
-
-const baseGrid = [
-    "##################",
-    "#                #",
-    "# $$$$$$$ $$$$$$ #",
-    "# $            $ #",
-    "# $ %% %%%%%%% $ #",
-    "# $ %        % $ #",
-    "#&$&%%%%%  %%%&$&#",
-    "# $ %          $ #",
-    "# $ %%%%%%%%%%   #",
-    "# $            $ #",
-    "# $$$$$$$ $$$$$$ #",
-    "#          &     #",
-    "##################",
-];
-
-const grid      = baseGrid.map(row => row.split(""));
-const TILE_SIZE = 16;
-
-// monsters from '&' tiles
-const monsters = [];
-for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-        if (grid[y][x] === "&") {
-            monsters.push({
-                tileX: x,
-                tileY: y,
-                gx: x + 0.5,
-                gy: y + 0.5,
-                maxHp: MONSTER_MAX_HP,
-                hp: MONSTER_MAX_HP,
-                atk: MONSTER_ATK,
-                attackTimer: 0,
-                alive: true,
-            });
-        }
-    }
-}
-
-function inBounds(gx, gy) {
-    return gy >= 0 && gy < grid.length && gx >= 0 && gx < grid[gy].length;
-}
-
-function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-}
-
-function rayCastGrid(origin, direction, gridPosHit, maxDistance = 64) {
-    const pos = origin;
-    const len = direction.len();
-    const dir = direction.scale(1 / len);
-    let t = 0;
-    let gridPos = vec2(Math.floor(origin.x), Math.floor(origin.y));
-    const step   = vec2(dir.x > 0 ? 1 : -1, dir.y > 0 ? 1 : -1);
-    const tDelta = vec2(Math.abs(1 / dir.x), Math.abs(1 / dir.y));
-    let dist     = vec2(
-        (step.x > 0) ? (gridPos.x + 1 - origin.x) : (origin.x - gridPos.x),
-        (step.y > 0) ? (gridPos.y + 1 - origin.y) : (origin.y - gridPos.y),
+    // Camera
+    camera = new BABYLON.UniversalCamera(
+        "playerCamera",
+        new BABYLON.Vector3(0, 1.6, -8),
+        scene
     );
-    let tMax = vec2(
-        (tDelta.x < Infinity) ? tDelta.x * dist.x : Infinity,
-        (tDelta.y < Infinity) ? tDelta.y * dist.y : Infinity,
+    camera.rotation.y = 0;
+    camera.inertia = 0;
+    camera.speed = 0;
+    // do not attach mouse controls, we use buttons and keys
+    // camera.attachControl(canvas, true);
+
+    // Lights
+    const hemi = new BABYLON.HemisphericLight(
+        "hemi",
+        new BABYLON.Vector3(0, 1, 0),
+        scene
     );
-    let steppedIndex = -1;
+    hemi.intensity = 0.7;
 
-    while (t <= maxDistance) {
-        if (!inBounds(gridPos.x, gridPos.y)) break;
+    const point = new BABYLON.PointLight(
+        "point",
+        new BABYLON.Vector3(0, 2.5, -6),
+        scene
+    );
+    point.intensity = 0.6;
 
-        const hit = gridPosHit(gridPos);
-        if (hit === true) {
-            return {
-                point:  pos.add(dir.scale(t)),
-                normal: vec2(
-                    steppedIndex === 0 ? -step.x : 0,
-                    steppedIndex === 1 ? -step.y : 0,
-                ),
-                t: t / len,
-                gridPos,
-            };
-        } else if (hit) {
-            return hit;
-        }
+    // Ground and corridor
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {
+        width: 10,
+        height: 30,
+    }, scene);
+    ground.position.z = 0;
+    const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
+    groundMat.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    ground.material = groundMat;
 
-        if (tMax.x < tMax.y) {
-            gridPos.x += step.x;
-            t          = tMax.x;
-            tMax.x    += tDelta.x;
-            steppedIndex = 0;
-        } else {
-            gridPos.y += step.y;
-            t          = tMax.y;
-            tMax.y    += tDelta.y;
-            steppedIndex = 1;
-        }
-    }
-    return null;
+    const ceiling = BABYLON.MeshBuilder.CreateGround("ceiling", {
+        width: 10,
+        height: 30,
+    }, scene);
+    ceiling.position.y = 3;
+    ceiling.position.z = 0;
+    ceiling.rotation.x = Math.PI;
+    const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
+    ceilMat.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.15);
+    ceiling.material = ceilMat;
+
+    const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+    wallMat.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.1);
+
+    const leftWall = BABYLON.MeshBuilder.CreateBox("leftWall", {
+        width: 0.3,
+        height: 3,
+        depth: 30,
+    }, scene);
+    leftWall.position = new BABYLON.Vector3(-3, 1.5, 0);
+    leftWall.material = wallMat;
+
+    const rightWall = leftWall.clone("rightWall");
+    rightWall.position.x = 3;
+
+    // End wall
+    const endWall = BABYLON.MeshBuilder.CreateBox("endWall", {
+        width: 6,
+        height: 3,
+        depth: 0.3,
+    }, scene);
+    endWall.position = new BABYLON.Vector3(0, 1.5, 8);
+    endWall.material = wallMat;
+
+    // Monster
+    monsterMesh = BABYLON.MeshBuilder.CreateBox("monster", {
+        size: 1.2,
+    }, scene);
+    monsterMesh.position = new BABYLON.Vector3(0, 1.0, 4);
+    const monsterMat = new BABYLON.StandardMaterial("monsterMat", scene);
+    monsterMat.diffuseColor = new BABYLON.Color3(0.6, 0.1, 0.1);
+    monsterMat.emissiveColor = new BABYLON.Color3(0.3, 0, 0);
+    monsterMesh.material = monsterMat;
+
+    return scene;
 }
 
-function raycastEdge(origin, direction, line) {
-    const a  = origin;
-    const c  = line.p1.add(line.pos);
-    const d  = line.p2.add(line.pos);
-    const ab = direction;
-    const cd = d.sub(c);
-    const abxcd = ab.cross(cd);
+scene = createScene();
 
-    if (Math.abs(abxcd) < Number.EPSILON) return false;
-
-    const ac = c.sub(a);
-    const s  = ac.cross(cd) / abxcd;
-    if (s <= 0 || s >= 1) return false;
-    const t = ac.cross(ab) / abxcd;
-    if (t <= 0 || t >= 1) return false;
-
-    const normal = cd.normal().unit();
-    if (direction.dot(normal) > 0) {
-        normal.x *= -1;
-        normal.y *= -1;
-    }
-
-    return {
-        point: a.add(ab.scale(s)),
-        normal,
-        t: s,
-        s: t,
-        object: line,
-    };
-}
-
-function rayCastAsciiGrid(origin, direction) {
-    origin    = origin.scale(1 / 16);
-    direction = direction.scale(1 / 16);
-    const objects = [];
-
-    const hit = rayCastGrid(origin, direction, ({ x, y }) => {
-        if (y >= 0 && y < grid.length) {
-            const row = grid[y];
-            if (x >= 0 && x < row.length) {
-                const tile = row[x];
-
-                if (tile === "&") {
-                    const monster = monsters.find(m => m.tileX === x && m.tileY === y && m.alive);
-                    if (!monster) return false;
-
-                    const perp    = direction.normal().unit();
-                    const planeP1 = perp.scale(-0.2);
-                    const planeP2 = perp.scale(0.2);
-
-                    const line = {
-                        pos: vec2(x + 0.5, y + 0.5),
-                        p1: planeP1,
-                        p2: planeP2,
-                        monster: monster,
-                    };
-
-                    const objectHit = raycastEdge(origin, direction, line);
-                    if (objectHit) objects.push(objectHit);
-                    return false; // '&' not a wall
-                }
-                return tile !== " " && tile !== "&";
-            }
-        }
-    }, direction.len());
-
-    if (hit) {
-        hit.point  = hit.point.scale(16);
-        hit.object = { color: colors[grid[hit.gridPos.y][hit.gridPos.x]] };
-        hit.objects = objects;
-    }
-    return hit;
-}
-
-// ===== Camera entity (draw only) =====
-const startGX = 8;
-const startGY = 9;
-
-let animTime = 0;
-
-const camera = add([
-    pos((startGX + 0.5) * TILE_SIZE, (startGY + 0.5) * TILE_SIZE),
-    rotate(0),
-    z(-1),
-    rect(8, 8),
-    anchor("center"),
-    area(),
-    opacity(0),
-    body(),
-    {
-        focalLength: 40,
-        fov: 10,
-
-        draw() {
-            pushTransform();
-            pushRotate(-this.angle);
-
-            // camera direction in DEGREES (Kaplay) -> convert to vector
-            const dir  = Vec2.fromAngle(this.angle);
-            const perp = dir.normal();
-
-            const planeP1 = this.pos
-                .add(dir.scale(this.focalLength))
-                .add(perp.scale(this.fov))
-                .sub(this.pos);
-            const planeP2 = this.pos
-                .add(dir.scale(this.focalLength))
-                .sub(perp.scale(this.fov))
-                .sub(this.pos);
-
-            pushTranslate(this.pos.scale(-1).add(0, 0));
-
-            drawRect({ width: 240, height: 120, color: rgb(50, 50, 50) });
-            drawRect({ pos: vec2(0, 120), width: 240, height: 120, color: rgb(128, 128, 128) });
-
-            // current frames for attack and idle
-            let currentAttackSlices = null;
-            let currentIdleSlices   = null;
-
-            if (enemySlices.length > 0) {
-                const attackSpeed = 12;
-                const attackIndex = Math.floor(animTime * attackSpeed) % enemySlices.length;
-                currentAttackSlices = enemySlices[attackIndex];
-            }
-
-            if (enemyIdleSlices.length > 0) {
-                const idleSpeed = 6;
-                const idleIndex = Math.floor(animTime * idleSpeed) % enemyIdleSlices.length;
-                currentIdleSlices = enemyIdleSlices[idleIndex];
-            }
-
-            const playerGX = this.pos.x / TILE_SIZE;
-            const playerGY = this.pos.y / TILE_SIZE;
-
-            for (let x = 0; x <= 120; x++) {
-                const direction = lerp(planeP1, planeP2, x / 120).scale(6);
-                const hit       = rayCastAsciiGrid(this.pos, direction);
-
-                if (hit) {
-                    const t = hit.t;
-                    const d = clamp(1 - t * 1.2, 0.2, 1);
-
-                    let u = Math.abs(hit.normal.x) > Math.abs(hit.normal.y)
-                        ? hit.point.y
-                        : hit.point.x;
-                    u = (u % 16) / 16;
-                    u = u - Math.floor(u);
-
-                    const h = 240 / (t * direction.len() / 16);
-
-                    const tileChar = grid[hit.gridPos.y][hit.gridPos.x];
-                    let wallTex;
-                    let wallSlicesArr;
-
-                    if (tileChar === "#") {
-                        wallTex      = wall_1 ? wall_1.tex : null;
-                        wallSlicesArr = wall_1_Slices;
-                    } else if (tileChar === "$") {
-                        wallTex      = wall_2 ? wall_2.tex : null;
-                        wallSlicesArr = wall_2_Slices;
-                    } else if (tileChar === "%") {
-                        wallTex      = wall_3 ? wall_3.tex : null;
-                        wallSlicesArr = wall_3_Slices;
-                    } else {
-                        wallTex      = wall_1 ? wall_1.tex : null;
-                        wallSlicesArr = wall_1_Slices;
-                    }
-
-                    const sliceIdx = wallSlicesArr.length > 0
-                        ? Math.round(u * (wallSlicesArr.length - 1))
-                        : 0;
-
-                    drawUVQuad({
-                        width: 2,
-                        height: h,
-                        pos: vec2(x * 2, 120 - h / 2),
-                        tex: wallTex,
-                        quad: wallSlicesArr[sliceIdx],
-                        color: BLACK.lerp(WHITE, d),
-                    });
-
-                    // animated monsters
-                    if (hit.objects && currentAttackSlices && currentIdleSlices) {
-                        hit.objects.slice().reverse().forEach((o) => {
-                            const monster = o.object.monster;
-                            if (!monster || !monster.alive) return;
-
-                            const t2 = o.t;
-                            const wh = 240 / (t2 * direction.len() / 16);
-                            const oh = 180 / (t2 * direction.len() / 16);
-
-                            const u2 = o.s;
-
-                            const dx = monster.gx - playerGX;
-                            const dy = monster.gy - playerGY;
-                            const distSq = dx * dx + dy * dy;
-
-                            const useIdle = distSq > ATTACK_RANGE_TILES_SQ;
-
-                            const slices = useIdle ? currentIdleSlices : currentAttackSlices;
-                            const tex    = useIdle ? enemyIdle.tex : enemy.tex;
-
-                            const sliceIndex = Math.round(
-                                u2 * (slices.length - 1),
-                            );
-
-                            drawUVQuad({
-                                width: 2,
-                                height: oh,
-                                pos: vec2(x * 2, 120 + wh / 2 - oh),
-                                tex: tex,
-                                quad: slices[sliceIndex],
-                                color: WHITE,
-                            });
-                        });
-                    }
-                }
-            }
-            popTransform();
-
-            // ===== draw fireballs using same FOV as raycaster =====
-            if (fireballSprite && fireballQuad) {
-                const halfFovRad  = Math.atan(this.fov / this.focalLength);
-                const FOV         = halfFovRad * 2;
-                const NUM_RAYS    = 120;
-                const DELTA_ANGLE = FOV / NUM_RAYS;
-                const CENTER_RAY  = NUM_RAYS / 2;
-
-                // view direction in radians (from dir vector)
-                const viewAngleRad = Math.atan2(dir.y, dir.x);
-
-                for (const fb of projectiles) {
-                    const rel      = fb.pos.sub(this.pos);
-                    const distance = rel.len();
-                    if (distance < 1) continue;
-
-                    const theta = Math.atan2(rel.y, rel.x); // world angle to fireball (rad)
-                    let gamma   = theta - viewAngleRad;     // relative angle
-
-                    while (gamma < -Math.PI) gamma += 2 * Math.PI;
-                    while (gamma >  Math.PI) gamma -= 2 * Math.PI;
-
-                    if (Math.abs(gamma) > halfFovRad) continue;
-
-                    const rayOffset  = gamma / DELTA_ANGLE;
-                    const currentRay = CENTER_RAY + rayOffset;
-                    if (currentRay < 0 || currentRay > NUM_RAYS) continue;
-
-                    const screenX = currentRay * 2;
-
-                    const distCorrected = distance * Math.cos(gamma);
-                    const distTiles     = distCorrected / TILE_SIZE;
-
-                    const spriteH = 120 / distTiles;
-                    const spriteW = spriteH;
-
-                    const bottomY = 220;
-                    const centerY = bottomY - spriteH / 2;
-
-                    drawUVQuad({
-                        width: spriteW,
-                        height: spriteH,
-                        pos: vec2(screenX - spriteW / 2, centerY - spriteH / 2),
-                        tex: fireballSprite.tex,
-                        quad: fireballQuad,
-                        color: WHITE,
-                    });
-                }
-            }
-        },
-    },
-]);
-
-// ===== Level collisions =====
-addLevel(baseGrid, {
-    pos: vec2(0, 0),
-    tileWidth: TILE_SIZE,
-    tileHeight: TILE_SIZE,
-    tiles: {
-        "#": () => [rect(16, 16), color(RED),   area(), body({ isStatic: true }), opacity(0)],
-        "$": () => [rect(16, 16), color(GREEN), area(), body({ isStatic: true }), opacity(0)],
-        "%": () => [rect(16, 16), color(BLUE),  area(), body({ isStatic: true }), opacity(0)],
-        "&": () => [pos(4, 4), rect(8, 8), color(YELLOW), opacity(0)],
-    },
-});
-
-const STEP_DIST = 40;
-const ROT_SPEED = 90; // degrees per second
-
-// keyboard movement
-onKeyDown("up", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
-});
-onKeyDown("down", () => {
-    camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
-});
-onKeyDown("left", () => {
-    camera.angle -= ROT_SPEED * dt();
-});
-onKeyDown("right", () => {
-    camera.angle += ROT_SPEED * dt();
-});
-
-// ===== fireball spawn & potion =====
-function spawnFireball() {
-    // we no longer track a single spawn angle / dir, since we shoot all around
-    lastFireSpawnAngleDeg = null;
-    lastFireDirAngleDeg   = null;
-
-    const origin = vec2(camera.pos.x, camera.pos.y);
-    const stepDeg = 360 / FIREBALL_SHOTS;
-
-    for (let i = 0; i < FIREBALL_SHOTS; i++) {
-        const angleDeg = i * stepDeg;
-        const dir      = Vec2.fromAngle(angleDeg).unit();
-        const start    = origin.add(dir.scale(10));
-
-        projectiles.push({
-            pos: start.clone ? start.clone() : vec2(start.x, start.y),
-            dir: dir,
-            life: FIREBALL_LIFETIME,
-        });
-    }
-}
-
-function playerAttack() {
-    spawnFireball();
-}
-
-function drinkPotion() {
-    player.hp = Math.min(player.maxHp, player.hp + 25);
-    updatePlayerHpUI();
-}
-
-// ===== HTML buttons (hold) =====
+// ===== Input handling =====
 let btnForwardHeld   = false;
 let btnBackHeld      = false;
 let btnTurnLeftHeld  = false;
@@ -780,122 +327,157 @@ bindHoldButton("btn-back",       v => btnBackHeld      = v);
 bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld  = v);
 bindHoldButton("btn-turn-right", v => btnTurnRightHeld = v);
 
-document.getElementById("btn-attack").addEventListener("click", playerAttack);
-document.getElementById("btn-potion").addEventListener("click", drinkPotion);
+document.getElementById("btn-potion").addEventListener("click", () => {
+    player.hp = Math.min(player.maxHp, player.hp + 25);
+    updatePlayerHpUI();
+});
 
-onKeyPress("space", playerAttack);
-onKeyPress("h", drinkPotion);
+document.getElementById("btn-attack").addEventListener("click", () => {
+    spawnFireball();
+});
 
-// ===== global update =====
-let currentTarget = null;
+// Keyboard
+const keys = {
+    forward: false,
+    back: false,
+    left: false,
+    right: false,
+};
 
-onUpdate(() => {
-    const d = dt();
-    animTime += d;
-
-    // movement (button hold)
-    if (btnForwardHeld) {
-        camera.move(Vec2.fromAngle(camera.angle).scale(STEP_DIST));
-    }
-    if (btnBackHeld) {
-        camera.move(Vec2.fromAngle(camera.angle).scale(-STEP_DIST));
-    }
-    if (btnTurnLeftHeld) {
-        camera.angle -= ROT_SPEED * d;
-    }
-    if (btnTurnRightHeld) {
-        camera.angle += ROT_SPEED * d;
-    }
-
-    // update fireballs (movement + collision)
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        const fb = projectiles[i];
-        fb.life -= d;
-        if (fb.life <= 0) {
-            projectiles.splice(i, 1);
-            continue;
-        }
-
-        const speedPxPerSec = FIREBALL_TILES_PER_SECOND * TILE_SIZE;
-        fb.pos = fb.pos.add(fb.dir.scale(speedPxPerSec * d));
-
-        // out of bounds or hit wall
-        const gx = Math.floor(fb.pos.x / TILE_SIZE);
-        const gy = Math.floor(fb.pos.y / TILE_SIZE);
-        if (!inBounds(gx, gy)) {
-            projectiles.splice(i, 1);
-            continue;
-        }
-        const tile = grid[gy][gx];
-        if (tile !== " " && tile !== "&") {
-            projectiles.splice(i, 1);
-            continue;
-        }
-
-        // hit monster
-        let hit = false;
-        for (const m of monsters) {
-            if (!m.alive) continue;
-            const mx = m.gx * TILE_SIZE;
-            const my = m.gy * TILE_SIZE;
-            const dx = mx - fb.pos.x;
-            const dy = my - fb.pos.y;
-            if (dx * dx + dy * dy <= FIREBALL_HIT_RADIUS * FIREBALL_HIT_RADIUS) {
-                m.hp = Math.max(0, m.hp - player.atk);
-                if (m.hp <= 0) {
-                    m.alive = false;
-                    grid[m.tileY][m.tileX] = " ";
-                }
-                hit = true;
-                break;
-            }
-        }
-        if (hit) {
-            projectiles.splice(i, 1);
-        }
-    }
-
-    // monster auto-attack when in range
-    const playerGX = camera.pos.x / TILE_SIZE;
-    const playerGY = camera.pos.y / TILE_SIZE;
-
-    currentTarget = null;
-    let nearestDistSq = Infinity;
-
-    for (const m of monsters) {
-        if (!m.alive) continue;
-        const dx = m.gx - playerGX;
-        const dy = m.gy - playerGY;
-        const distSq = dx * dx + dy * dy;
-
-        if (distSq < nearestDistSq) {
-            nearestDistSq = distSq;
-            currentTarget = m;
-        }
-
-        if (distSq <= ATTACK_RANGE_TILES_SQ) {
-            m.attackTimer -= d;
-            if (m.attackTimer <= 0) {
-                player.hp = Math.max(0, player.hp - m.atk);
-                m.attackTimer = MONSTER_ATTACK_INTERVAL;
-                updatePlayerHpUI();
-            }
-        }
-    }
-
-    updateMonsterHpUI(currentTarget);
-    updateDebugAngles();
-
-    if (player.hp <= 0) {
-        player.hp = 0;
+window.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.forward = true;
+    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.back = true;
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
+    if (e.code === "Space") spawnFireball();
+    if (e.key === "h" || e.key === "H") {
+        player.hp = Math.min(player.maxHp, player.hp + 25);
         updatePlayerHpUI();
     }
 });
 
-// init UI
+window.addEventListener("keyup", e => {
+    if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.forward = false;
+    if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.back = false;
+    if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
+    if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = false;
+});
+
+// ===== Fireballs =====
+function spawnFireball() {
+    if (!monsterState.alive) return;
+
+    const origin = camera.position.clone();
+    const dir = camera.getDirection(new BABYLON.Vector3(0, 0, 1)).normalize();
+
+    const fbMesh = BABYLON.MeshBuilder.CreateSphere("fireball", {
+        diameter: FIREBALL_RADIUS,
+        segments: 8,
+    }, scene);
+
+    fbMesh.position = origin.add(dir.scale(1.0));
+
+    const fbMat = new BABYLON.StandardMaterial("fbMat", scene);
+    fbMat.emissiveColor = new BABYLON.Color3(1, 0.6, 0.2);
+    fbMat.diffuseColor = new BABYLON.Color3(0.9, 0.4, 0);
+    fbMesh.material = fbMat;
+
+    projectiles.push({
+        mesh: fbMesh,
+        dir: dir,
+        life: FIREBALL_LIFETIME,
+    });
+
+    const yawDeg = normDeg(BABYLON.Tools.ToDegrees(camera.rotation.y));
+    lastFireSpawnAngleDeg = yawDeg;
+    lastFireDirAngleDeg = yawDeg;
+}
+
+// ===== Game update =====
+const MOVE_SPEED = 4;           // units per second
+const TURN_SPEED = Math.PI;     // radians per second
+
+function update(dt) {
+    if (!camera) return;
+
+    // Movement
+    const moveForward = btnForwardHeld || keys.forward;
+    const moveBack    = btnBackHeld || keys.back;
+    const turnLeft    = btnTurnLeftHeld || keys.left;
+    const turnRight   = btnTurnRightHeld || keys.right;
+
+    if (turnLeft) {
+        camera.rotation.y -= TURN_SPEED * dt;
+    }
+    if (turnRight) {
+        camera.rotation.y += TURN_SPEED * dt;
+    }
+
+    const forwardDir = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
+    const forwardNorm = forwardDir.normalize();
+
+    if (moveForward) {
+        camera.position.addInPlace(forwardNorm.scale(MOVE_SPEED * dt));
+    }
+    if (moveBack) {
+        camera.position.addInPlace(forwardNorm.scale(-MOVE_SPEED * dt));
+    }
+
+    // Update projectiles
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        p.life -= dt;
+        if (p.life <= 0) {
+            p.mesh.dispose();
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        p.mesh.position.addInPlace(p.dir.scale(FIREBALL_SPEED * dt));
+
+        // Hit monster
+        if (monsterState.alive && monsterMesh) {
+            const dist = BABYLON.Vector3.Distance(p.mesh.position, monsterMesh.position);
+            if (dist < 0.8) {
+                monsterState.hp = Math.max(0, monsterState.hp - player.atk);
+                if (monsterState.hp <= 0) {
+                    monsterState.alive = false;
+                    monsterMesh.dispose();
+                }
+                p.mesh.dispose();
+                projectiles.splice(i, 1);
+            }
+        }
+    }
+
+    // Monster attack
+    if (monsterState.alive && monsterMesh) {
+        const dist = BABYLON.Vector3.Distance(camera.position, monsterMesh.position);
+        monsterState.cooldown -= dt;
+        if (dist <= ATTACK_RANGE && monsterState.cooldown <= 0) {
+            player.hp = Math.max(0, player.hp - monsterState.atk);
+            monsterState.cooldown = MONSTER_ATTACK_INTERVAL;
+        }
+    }
+
+    updatePlayerHpUI();
+    updateMonsterHpUI();
+    updateDebugAngles(camera);
+}
+
+// ===== Main loop =====
 updatePlayerHpUI();
-updateMonsterHpUI(null);
-updateDebugAngles();
+updateMonsterHpUI();
+
+engine.runRenderLoop(function () {
+    const dt = engine.getDeltaTime() / 1000;
+    update(dt);
+    scene.render();
+});
+
+window.addEventListener("resize", function () {
+    engine.resize();
+});
 </script>
 
 </body>
