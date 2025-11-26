@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.7</title>
+<title>KEG v0.3.8</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -213,7 +213,7 @@ function updateMonsterHpUI(target) {
 function updateDebugAngles() {
     if (!debugAnglesEl) return;
 
-    const camAngleDeg = camera.angle.toFixed(2);
+    const camAngleDeg = radToDeg(camera.angle).toFixed(2);
 
     const fireSpawnText = (lastFireSpawnAngle !== null)
         ? lastFireSpawnAngle.toFixed(2)
@@ -516,8 +516,7 @@ const camera = add([
             pushTransform();
             pushRotate(-this.angle);
 
-            const angleRad = degToRad(this.angle);     // convert to radians for trig
-            const dir = Vec2.fromAngle(angleRad);
+            const dir = Vec2.fromAngle(this.angle);
             const perp = dir.normal();
 
             const planeP1 = this.pos
@@ -648,7 +647,7 @@ const camera = add([
                 const CENTER_RAY = NUM_RAYS / 2;
             
                 // use same angleRad as above
-                const viewAngle = angleRad;
+                const viewAngle = this.angle;
             
                 for (const fb of projectiles) {
                     const rel = fb.pos.sub(this.pos);
