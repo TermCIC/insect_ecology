@@ -252,21 +252,21 @@ function createScene() {
         scene
     );
     wallTexture.uScale = 6;   // repeat horizontally
-    wallTexture.vScale = 3;   // repeat vertically
+    wallTexture.vScale = 6;   // repeat vertically
 
     const floorTexture = new BABYLON.Texture(
         "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764057126/brick_wall_5_qtebvm.png",
         scene
     );
     floorTexture.uScale = 6;
-    floorTexture.vScale = 18;
+    floorTexture.vScale = 6;
 
     const ceilTexture = new BABYLON.Texture(
         "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764073221/brick_wall_2_ua8zgt.png",
         scene
     );
     ceilTexture.uScale = 6;
-    ceilTexture.vScale = 18;
+    ceilTexture.vScale = 6;
 
     // Ground
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {
