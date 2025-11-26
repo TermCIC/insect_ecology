@@ -141,6 +141,14 @@
 </div>
 
 <script>
+function degToRad(a) {
+    return a * Math.PI / 180;
+}
+
+function radToDeg(r) {
+    return r * 180 / Math.PI;
+}
+
 const NATIVE_GAME_WIDTH = 240;
 const defaultScale = 3;
 let finalScale = defaultScale;
@@ -508,7 +516,8 @@ const camera = add([
             pushTransform();
             pushRotate(-this.angle);
 
-            const dir = Vec2.fromAngle(this.angle);
+            const angleRad = degToRad(this.angle);     // convert to radians for trig
+            const dir = Vec2.fromAngle(angleRad);
             const perp = dir.normal();
 
             const planeP1 = this.pos
@@ -632,49 +641,43 @@ const camera = add([
 
             // ===== draw fireballs using same FOV as raycaster =====
             if (fireballSprite && fireballQuad) {
-                // derive horizontal FOV from camera.focalLength and camera.fov
-                const halfFovRad = Math.atan(this.fov / this.focalLength); // matches planeP1/P2
+                const halfFovRad = Math.atan(this.fov / this.focalLength);
                 const FOV = halfFovRad * 2;
                 const NUM_RAYS = 120;
                 const DELTA_ANGLE = FOV / NUM_RAYS;
                 const CENTER_RAY = NUM_RAYS / 2;
-
-                const viewDir = Vec2.fromAngle(this.angle);
-                const viewAngle = Math.atan2(viewDir.y, viewDir.x);
-
+            
+                // use same angleRad as above
+                const viewAngle = angleRad;
+            
                 for (const fb of projectiles) {
                     const rel = fb.pos.sub(this.pos);
                     const distance = rel.len();
                     if (distance < 1) continue;
-
+            
                     const theta = Math.atan2(rel.y, rel.x);
                     let gamma = theta - viewAngle;
-
-                    // wrap to [-pi, pi]
+            
                     while (gamma < -Math.PI) gamma += 2 * Math.PI;
                     while (gamma >  Math.PI) gamma -= 2 * Math.PI;
-
-                    // outside FOV: not visible
+            
                     if (Math.abs(gamma) > halfFovRad) continue;
-
+            
                     const rayOffset = gamma / DELTA_ANGLE;
                     const currentRay = CENTER_RAY + rayOffset;
-
                     if (currentRay < 0 || currentRay > NUM_RAYS) continue;
-
-                    const screenX = currentRay * 2; // each ray column is 2 px
-
-                    // fish-eye correction: use distance along view direction
+            
+                    const screenX = currentRay * 2;
+            
                     const distCorrected = distance * Math.cos(gamma);
                     const distTiles = distCorrected / TILE_SIZE;
-
-                    // size decreases with distance
+            
                     const spriteH = 120 / distTiles;
                     const spriteW = spriteH;
-
+            
                     const bottomY = 220;
                     const centerY = bottomY - spriteH / 2;
-
+            
                     drawUVQuad({
                         width: spriteW,
                         height: spriteH,
