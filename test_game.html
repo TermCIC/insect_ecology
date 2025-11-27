@@ -515,13 +515,19 @@ function isCircleCollidingWithWalls(pos) {
 }
 
 function tryMove(stepVec) {
-    const newPos = camera.position.add(stepVec);
-    if (!isCircleCollidingWithWalls(newPos)) {
-        camera.position = newPos;
-        return true;
+    // X-axis attempt
+    const posX = camera.position.add(new BABYLON.Vector3(stepVec.x, 0, 0));
+    if (!isCircleCollidingWithWalls(posX)) {
+        camera.position.x = posX.x;
     }
-    return false;
+
+    // Z-axis attempt
+    const posZ = camera.position.add(new BABYLON.Vector3(0, 0, stepVec.z));
+    if (!isCircleCollidingWithWalls(posZ)) {
+        camera.position.z = posZ.z;
+    }
 }
+
 
 // ===== Input =====
 let btnForwardHeld = false,
