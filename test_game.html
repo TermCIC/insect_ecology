@@ -299,7 +299,7 @@ function createMonster(scene, worldPos) {
     }, scene);
 
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
-    plane.billboardMode = BABYLON.BABYLON.Mesh.BILLBOARDMODE_Y;
+    plane.billboardMode = BABYLON.BABYLON.AbstractMesh.BILLBOARDMODE_Y;
 
     const mat = new BABYLON.StandardMaterial("monsterMat", scene);
     mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
