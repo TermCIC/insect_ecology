@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.3</title>
+<title>KEG v0.2.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -18,458 +18,179 @@
         font-family: system-ui, sans-serif;
         color: #eee;
     }
-
-    #game-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .hp-bar {
-        font-size: 14px;
-        text-align: center;
-    }
-
-    #game {
-        position: relative;
-        overflow: hidden;
-        background: black;
-        border: 4px solid #555;
-        aspect-ratio: 1 / 1;
-        width: 80vw;
-        max-width: 480px;
-    }
-
-    #renderCanvas {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
-
-    #controls {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 16px;
-    }
-
-    #controls .row {
-        display: flex;
-        gap: 4px;
-    }
-
-    #controls button {
-        padding: 8px 12px;
-        font-size: 16px;
-        border-radius: 6px;
-        border: 1px solid #444;
-        background: #222;
-        color: #eee;
-        cursor: pointer;
-        min-width: 80px;
-    }
-
-    #controls button:active {
-        background: #444;
-    }
+    #game { width: 80vw; max-width:480px; aspect-ratio:1/1; background:black; border:4px solid #555; }
+    canvas { width:100%; height:100%; display:block; }
 </style>
-
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
-<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 </head>
 <body>
 
-<div id="game-wrapper">
-    <div id="monster-hp" class="hp-bar">Monster HP: -</div>
-    <div id="game">
-        <canvas id="renderCanvas"></canvas>
-    </div>
-    <div id="player-hp" class="hp-bar">Player HP: 100/100</div>
-    <div id="debug-angles" class="hp-bar">Cam: 0 | Fire spawn: - | Fire dir: -</div>
-</div>
-
-<div id="controls">
-    <div class="row">
-        <button id="btn-attack">⚔</button>
-        <button id="btn-forward">↑</button>
-        <button id="btn-potion">🧪</button>
-    </div>
-    <div class="row">
-        <button id="btn-turn-left">↺</button>
-        <button id="btn-back">↓</button>
-        <button id="btn-turn-right">↻</button>
-    </div>
+<div id="game">
+    <canvas id="renderCanvas"></canvas>
 </div>
 
 <script>
-// ===== Helpers =====
-function normDeg(a) {
-    a = a % 360;
-    if (a < 0) a += 360;
-    return a;
-}
-
-// ===== DOM =====
-const playerHpEl = document.getElementById("player-hp");
-const monsterHpEl = document.getElementById("monster-hp");
-const debugAnglesEl = document.getElementById("debug-angles");
-
-// ===== States =====
-const player = { maxHp: 100, hp: 100, atk: 12 };
-const monsterState = { maxHp: 40, hp: 40, atk: 6, alive: true, cooldown: 0 };
-
-const ATTACK_RANGE = 3.0;
-const FIREBALL_SPEED = 12;
-const FIREBALL_RADIUS = 0.4;
-const FIREBALL_LIFETIME = 3;
-
-let lastFireSpawnAngleDeg = null;
-let lastFireDirAngleDeg = null;
-
-// ===== BabylonJS =====
+// ------------------------------------------------------------
+// 基本變數
+// ------------------------------------------------------------
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-let scene, camera, monsterMesh, playerLight;
-const projectiles = [];
+let scene, camera, playerLight;
+let playerPos = null;   // 玩家真正位置（唯一一個）
 
-// Torch flicker
-let torchTime = 0;
-const BASE_TORCH_INTENSITY = 1.25;
-
-// ===== Footstep sound (looping while moving) =====
-const footstepLoop = new Audio(
-    "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764151497/step_ybhhch.mp3"
-);
-footstepLoop.volume = 0.85;
-footstepLoop.loop = true;  // browser will loop it once it reaches the end
-
-// Track if we want footsteps this frame
-let wantFootsteps = false;
-
-// Map and geometry constants
 const MAP_SIZE = 30;
-const TILE_SIZE = 2;
-const HALF_MAP = MAP_SIZE / 2;
+const TILE = 2;
+const HALF = MAP_SIZE / 2;
+const PLAYER_HEIGHT = 1.4;
+const PLAYER_RADIUS = 0.6;
+const MOVE_SPEED = 4;
+const TURN_SPEED = Math.PI;
 
-const FLOOR_THICKNESS = 0.2;
-const WALL_HEIGHT = 3.0;
-const CEILING_THICKNESS = 0.2;
-const CEILING_Y = WALL_HEIGHT;
-
-const CAMERA_HEIGHT = 1.4;
-const PLAYER_RADIUS = 0.8;
-
-// ===== Enemy asset URLs =====
-const MONSTER_MODEL_ROOT = "https://res.cloudinary.com/dmdpjf8up/image/upload/";
-const MONSTER_MODEL_FILE = "v1764148914/7931623c-4ef3-4e2f-8545-ee10d2ead6c9_sj2w6k.glb";
-const MONSTER_TEXTURE_URL = "";
-
-// ===== Maps =====
-const groundMap = [
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-];
-
+// ------------------------------------------------------------
+// 地圖（沿用你原本的）
+// ------------------------------------------------------------
 const wallMap = [
-  "##############################", // 0
-  "#............#.##............#", // 1
-  "#............#..#............#", // 2
-  "#............#..#............#", // 3
-  "#............#..#............#", // 4
-  "#............##.#............#", // 5
-  "#............................#", // 6
-  "#..###.##..........######....#", // 7
-  "#..#....#...............#....#", // 8
-  "#..#....#....#.....#....#....#", // 9
-  "#..#....#....###...#....#....#", // 10
-  "#..####.#..........###.##....#", // 11
-  "#............................#", // 12
-  "#............####............#", // 13
-  "#............#..#............#", // 14
-  "#............#..#............#", // 15
-  "#............#...............#", // 16
-  "#............####............#", // 17
-  "#............................#", // 18
-  "#....#########....######.##..#", // 19
-  "#....#.......#....#.......#..#", // 20
-  "#....#.......#....#.......#..#", // 21
-  "#....#####.###....#########..#", // 22
-  "#............................#", // 23
-  "#............................#", // 24
-  "#............................#", // 25
-  "#............................#", // 26
-  "#............................#", // 27
-  "#............................#", // 28
-  "##############################", // 29
+"##############################",
+"#............#.##............#",
+"#............#..#............#",
+"#............#..#............#",
+"#............#..#............#",
+"#............##.#............#",
+"#............................#",
+"#..###.##..........######....#",
+"#..#....#...............#....#",
+"#..#....#....#.....#....#....#",
+"#..#....#....###...#....#....#",
+"#..####.#..........###.##....#",
+"#............................#",
+"#............####............#",
+"#............#..#............#",
+"#............#..#............#",
+"#............#...............#",
+"#............####............#",
+"#............................#",
+"#....#########....######.##..#",
+"#....#.......#....#.......#..#",
+"#....#.......#....#.......#..#",
+"#....#####.###....#########..#",
+"#............................#",
+"#............................#",
+"#............................#",
+"#............................#",
+"#............................#",
+"#............................#",
+"##############################"
 ];
-
-const ceilingMap = groundMap;
 
 const objectMap = [
-  "..............................", // 0
-  "..............................", // 1
-  "..............................", // 2
-  "..............................", // 3
-  "..............................", // 4
-  "..............................", // 5
-  "..............................", // 6
-  "..............................", // 7
-  "..............................", // 8
-  "..............................", // 9
-  "..............................", // 10
-  "..............................", // 11
-  "..............................", // 12
-  "..............................", // 13
-  "...............M..............", // 14
-  "..............................", // 15
-  "..............................", // 16
-  "..............................", // 17
-  "..............................", // 18
-  "..............................", // 19
-  "..............................", // 20
-  "..............................", // 21
-  "..............................", // 22
-  "..............................", // 23
-  "...............P..............", // 24
-  "..............................", // 25
-  "..............................", // 26
-  "..............................", // 27
-  "..............................", // 28
-  "..............................", // 29
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"...............M..............",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+"...............P..............",
+"..............................",
+"..............................",
+"..............................",
+"..............................",
+".............................."
 ];
 
+// ------------------------------------------------------------
+// 工具
+// ------------------------------------------------------------
 function gridToWorld(i, j) {
-    const x = (j - HALF_MAP + 0.5) * TILE_SIZE;
-    const z = (i - HALF_MAP + 0.5) * TILE_SIZE;
-    return new BABYLON.Vector3(x, 0, z);
+    return new BABYLON.Vector3(
+        (j - HALF + 0.5) * TILE,
+        0,
+        (i - HALF + 0.5) * TILE
+    );
 }
 
-function worldToGrid(x, z) {
-    const j = Math.floor(x / TILE_SIZE + HALF_MAP);
-    const i = Math.floor(z / TILE_SIZE + HALF_MAP);
-    return { i, j };
+function isWall(i, j) {
+    if (i < 0 || i >= MAP_SIZE || j < 0 || j >= MAP_SIZE) return true;
+    return wallMap[i][j] === "#";
 }
 
+// ------------------------------------------------------------
+// 建立場景
+// ------------------------------------------------------------
 function createScene() {
     const scene = new BABYLON.Scene(engine);
-    scene.collisionsEnabled = false;
 
-    // Camera
-    camera = new BABYLON.UniversalCamera(
-        "playerCamera",
-        new BABYLON.Vector3(0, CAMERA_HEIGHT, -8),
-        scene
-    );
+    camera = new BABYLON.UniversalCamera("cam", new BABYLON.Vector3(0, PLAYER_HEIGHT, 0), scene);
     camera.inertia = 0;
-    camera.checkCollisions = false;
 
-    // Ambient light
-    const hemi = new BABYLON.HemisphericLight(
-        "hemi",
-        new BABYLON.Vector3(0, 1, 0),
-        scene
-    );
-    hemi.intensity = 0.1;
-
-    // Player torch
-    playerLight = new BABYLON.PointLight(
-        "playerTorch",
-        new BABYLON.Vector3(0.4, 0.4, 1.0),
-        scene
-    );
+    // torch light
+    playerLight = new BABYLON.PointLight("torch", new BABYLON.Vector3(0.4, 0.4, 1.0), scene);
     playerLight.parent = camera;
-    playerLight.range = 10.5;
-    playerLight.intensity = BASE_TORCH_INTENSITY;
-    playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
-    playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
-    playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
+    playerLight.intensity = 1.25;
+    playerLight.range = 10;
 
-    // Textures
-    const wallTexture = new BABYLON.Texture(
-        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764201544/dark_stone_wall_3_bclnch.png",
-        scene
-    );
-    const floorTexture = new BABYLON.Texture(
-        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764202147/dark_stone_floor_2_km9hfy.png",
-        scene
-    );
-    const ceilTexture = new BABYLON.Texture(
-        "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764147143/dark_stone_ceil_wepupg.png",
-        scene
-    );
+    const wallTex = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764201544/dark_stone_wall_3_bclnch.png");
+    const floorTex = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764202147/dark_stone_floor_2_km9hfy.png");
+    const ceilTex = new BABYLON.Texture("https://res.cloudinary.com/dmdpjf8up/image/upload/v1764147143/dark_stone_ceil_wepupg.png");
 
-    const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-    wallMat.diffuseTexture = wallTexture;
-    wallMat.specularColor = new BABYLON.Color3(0.1, 0.08, 0.06);
+    const wallMat = new BABYLON.StandardMaterial("wm", scene);
+    wallMat.diffuseTexture = wallTex;
 
-    const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
-    floorMat.diffuseTexture = floorTexture;
-    floorMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
+    const floorMat = new BABYLON.StandardMaterial("fm", scene);
+    floorMat.diffuseTexture = floorTex;
 
-    const ceilMat = new BABYLON.StandardMaterial("ceilMat", scene);
-    ceilMat.diffuseTexture = ceilTexture;
-    ceilMat.specularColor = new BABYLON.Color3(0.08, 0.07, 0.05);
+    const ceilMat = new BABYLON.StandardMaterial("cm", scene);
+    ceilMat.diffuseTexture = ceilTex;
 
-    const wallBoxOptions = {
-        width: TILE_SIZE,
-        depth: TILE_SIZE,
-        height: WALL_HEIGHT,
-        wrap: true
-    };
-
-    const floorBoxOptions = {
-        width: TILE_SIZE,
-        depth: TILE_SIZE,
-        height: FLOOR_THICKNESS
-    };
-
-    const ceilBoxOptions = {
-        width: TILE_SIZE,
-        depth: TILE_SIZE,
-        height: CEILING_THICKNESS
-    };
-
-    let playerSpawn = null;
-    let monsterSpawnPos = null;
-
+    // 建立地板/牆/天花
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
+
             const pos = gridToWorld(i, j);
 
-            if (groundMap[i][j] === "#") {
-                const floor = BABYLON.MeshBuilder.CreateBox(
-                    `floor_${i}_${j}`,
-                    floorBoxOptions,
-                    scene
-                );
-                floor.position = new BABYLON.Vector3(
-                    pos.x,
-                    -FLOOR_THICKNESS / 2,
-                    pos.z
-                );
-                floor.material = floorMat;
-            }
+            // floor
+            const f = BABYLON.MeshBuilder.CreateGround(`f${i}_${j}`, { width: TILE, height: TILE }, scene);
+            f.position = pos.clone();
+            f.material = floorMat;
 
-            if (wallMap[i][j] === "#") {
-                const wall = BABYLON.MeshBuilder.CreateBox(
-                    `wall_${i}_${j}`,
-                    wallBoxOptions,
-                    scene
-                );
-                wall.position = new BABYLON.Vector3(
-                    pos.x,
-                    WALL_HEIGHT / 2,
-                    pos.z
-                );
-                wall.material = wallMat;
-            }
+            // ceil
+            const c = BABYLON.MeshBuilder.CreateGround(`c${i}_${j}`, { width:TILE, height:TILE }, scene);
+            c.position = pos.clone();
+            c.position.y = 3.2;
+            c.rotation.x = Math.PI;
+            c.material = ceilMat;
 
-            if (ceilingMap[i][j] === "#") {
-                const ceil = BABYLON.MeshBuilder.CreateBox(
-                    `ceil_${i}_${j}`,
-                    ceilBoxOptions,
-                    scene
-                );
-                ceil.position = new BABYLON.Vector3(
-                    pos.x,
-                    CEILING_Y + CEILING_THICKNESS / 2,
-                    pos.z
-                );
-                ceil.material = ceilMat;
+            // wall
+            if (isWall(i, j)) {
+                const w = BABYLON.MeshBuilder.CreateBox(`w${i}_${j}`, { width:TILE, height:3, depth:TILE }, scene);
+                w.position = pos.clone();
+                w.position.y = 1.5;
+                w.material = wallMat;
             }
 
             if (objectMap[i][j] === "P") {
-                playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
-            }
-
-            if (objectMap[i][j] === "M") {
-                monsterSpawnPos = new BABYLON.Vector3(
-                    pos.x,
-                    0,
-                    pos.z
-                );
+                playerPos = new BABYLON.Vector3(pos.x, 0, pos.z);
+                camera.position = new BABYLON.Vector3(pos.x, PLAYER_HEIGHT, pos.z);
             }
         }
-    }
-
-    if (playerSpawn) {
-        camera.position = playerSpawn.clone();
-        playerPos = new BABYLON.Vector3(playerSpawn.x, 0, playerSpawn.z);
-    }
-
-    if (monsterSpawnPos) {
-        BABYLON.SceneLoader.ImportMesh(
-            "",
-            MONSTER_MODEL_ROOT,
-            MONSTER_MODEL_FILE,
-            scene,
-            function (meshes) {
-                if (!meshes || meshes.length === 0) {
-                    console.warn("Monster model not loaded");
-                    return;
-                }
-    
-                const root = new BABYLON.TransformNode("monsterRoot", scene);
-                meshes.forEach(m => {
-                    m.parent = root;
-                });
-    
-                root.position = monsterSpawnPos.clone();
-                root.rotation = new BABYLON.Vector3(0, Math.PI, 0);
-                root.scaling = new BABYLON.Vector3(1, 1, 1);
-    
-                const targetHeight = 1.8;
-                const bbox = root.getHierarchyBoundingVectors();
-                const currentHeight = bbox.max.y - bbox.min.y || 1;
-                const scale = targetHeight / currentHeight;
-                root.scaling = new BABYLON.Vector3(scale, scale, scale);
-    
-                const bbox2 = root.getHierarchyBoundingVectors();
-                const lowestY = bbox2.min.y;
-                root.position.y -= lowestY;
-    
-                if (MONSTER_TEXTURE_URL) {
-                    const tex = new BABYLON.Texture(MONSTER_TEXTURE_URL, scene);
-                    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
-                    mat.diffuseTexture = tex;
-                    mat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
-                    meshes.forEach(m => m.material = mat);
-                }
-    
-                monsterMesh = root;
-            }
-        );
     }
 
     return scene;
@@ -477,158 +198,91 @@ function createScene() {
 
 scene = createScene();
 
-// ===== Movement & Collision (NEW PERFECT VERSION) =====
+// ------------------------------------------------------------
+// 碰撞
+// ------------------------------------------------------------
+function collides(vec) {
+    const i = Math.floor(vec.z / TILE + HALF);
+    const j = Math.floor(vec.x / TILE + HALF);
 
-// 玩家真正的位置（碰撞中心）
-let playerPos = null;
-
-const MOVE_SPEED = 4;
-const TURN_SPEED = Math.PI;
-const PLAYER_RADIUS = 0.6;  // 小一點＝不會卡牆角
-
-// 檢查如果玩家半徑碰到牆
-function isCircleCollidingWithWalls(pos) {
-    const grid = worldToGrid(pos.x, pos.z);
-
+    // 檢查自身格子與周邊 8 格
     for (let di = -1; di <= 1; di++) {
         for (let dj = -1; dj <= 1; dj++) {
-            const wi = grid.i + di;
-            const wj = grid.j + dj;
+            if (isWall(i + di, j + dj)) {
 
-            if (wi < 0 || wi >= MAP_SIZE || wj < 0 || wj >= MAP_SIZE) continue;
-            if (wallMap[wi][wj] !== "#") continue;
+                // 計算牆 bounding box
+                const wx = (j + dj - HALF) * TILE;
+                const wz = (i + di - HALF) * TILE;
 
-            const xMin = (wj - HALF_MAP) * TILE_SIZE;
-            const xMax = xMin + TILE_SIZE;
-            const zMin = (wi - HALF_MAP) * TILE_SIZE;
-            const zMax = zMin + TILE_SIZE;
+                const xMin = wx;
+                const xMax = wx + TILE;
+                const zMin = wz;
+                const zMax = wz + TILE;
 
-            const cx = Math.max(xMin, Math.min(pos.x, xMax));
-            const cz = Math.max(zMin, Math.min(pos.z, zMax));
+                const cx = Math.max(xMin, Math.min(vec.x, xMax));
+                const cz = Math.max(zMin, Math.min(vec.z, zMax));
 
-            const dx = pos.x - cx;
-            const dz = pos.z - cz;
-            if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) {
-                return true;
+                const dx = vec.x - cx;
+                const dz = vec.z - cz;
+
+                if (dx*dx + dz*dz < PLAYER_RADIUS*PLAYER_RADIUS)
+                    return true;
             }
         }
     }
     return false;
 }
 
-// 嘗試移動（包含滑牆效果）
-function tryMove(stepVec) {
-    let newX = playerPos.add(new BABYLON.Vector3(stepVec.x, 0, 0));
-    let newZ = playerPos.add(new BABYLON.Vector3(0, 0, stepVec.z));
+// ------------------------------------------------------------
+// 控制
+// ------------------------------------------------------------
+const keys = { f:false, b:false, l:false, r:false };
 
-    // 先嘗試沿 X 軸
-    if (!isCircleCollidingWithWalls(newX)) {
-        playerPos.x = newX.x;
-    }
+window.onkeydown = e => {
+    if (e.key==="w") keys.f=true;
+    if (e.key==="s") keys.b=true;
+    if (e.key==="a") keys.l=true;
+    if (e.key==="d") keys.r=true;
+};
 
-    // 再嘗試沿 Z 軸
-    if (!isCircleCollidingWithWalls(newZ)) {
-        playerPos.z = newZ.z;
-    }
-}
+window.onkeyup = e => {
+    if (e.key==="w") keys.f=false;
+    if (e.key==="s") keys.b=false;
+    if (e.key==="a") keys.l=false;
+    if (e.key==="d") keys.r=false;
+};
 
-// ===== Input =====
-let btnForwardHeld = false,
-    btnBackHeld = false,
-    btnTurnLeftHeld = false,
-    btnTurnRightHeld = false;
+// ------------------------------------------------------------
+// 更新
+// ------------------------------------------------------------
+engine.runRenderLoop(() => {
+    const dt = engine.getDeltaTime() / 1000;
 
-const keys = { forward: false, back: false, left: false, right: false };
+    // 旋轉
+    if (keys.l) camera.rotation.y -= TURN_SPEED * dt;
+    if (keys.r) camera.rotation.y += TURN_SPEED * dt;
 
-function bindHoldButton(id, setter) {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.addEventListener("mousedown", () => setter(true));
-    btn.addEventListener("mouseup", () => setter(false));
-    btn.addEventListener("mouseleave", () => setter(false));
-    btn.addEventListener("touchstart", e => { e.preventDefault(); setter(true); });
-    btn.addEventListener("touchend", e => { e.preventDefault(); setter(false); });
-}
-
-bindHoldButton("btn-forward", v => (btnForwardHeld = v));
-bindHoldButton("btn-back", v => (btnBackHeld = v));
-bindHoldButton("btn-turn-left", v => (btnTurnLeftHeld = v));
-bindHoldButton("btn-turn-right", v => (btnTurnRightHeld = v));
-
-window.addEventListener("keydown", e => {
-    if (e.key === "w" || e.key === "ArrowUp") keys.forward = true;
-    if (e.key === "s" || e.key === "ArrowDown") keys.back = true;
-    if (e.key === "a" || e.key === "ArrowLeft") keys.left = true;
-    if (e.key === "d" || e.key === "ArrowRight") keys.right = true;
-});
-
-window.addEventListener("keyup", e => {
-    if (e.key === "w" || e.key === "ArrowUp") keys.forward = false;
-    if (e.key === "s" || e.key === "ArrowDown") keys.back = false;
-    if (e.key === "a" || e.key === "ArrowLeft") keys.left = false;
-    if (e.key === "d" || e.key === "ArrowRight") keys.right = false;
-});
-
-// ===== Game loop =====
-function update(dt) {
-    // rotation
-    if (btnTurnLeftHeld || keys.left) {
-        camera.rotation.y -= TURN_SPEED * dt;
-    }
-    if (btnTurnRightHeld || keys.right) {
-        camera.rotation.y += TURN_SPEED * dt;
-    }
-
-    // movement
-    const forward = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
-    const flat = new BABYLON.Vector3(forward.x, 0, forward.z).normalize();
-    const step = MOVE_SPEED * dt;
+    // 前後移動
+    const fw = camera.getDirection(new BABYLON.Vector3(0,0,1));
+    fw.y = 0;
+    fw.normalize();
 
     let moved = false;
 
-    if (btnForwardHeld || keys.forward) {
-        if (tryMove(flat.scale(step))) moved = true;
+    if (keys.f) {
+        const np = playerPos.add(fw.scale(MOVE_SPEED * dt));
+        if (!collides(np)) { playerPos = np; moved = true; }
     }
-    if (btnBackHeld || keys.back) {
-        if (tryMove(flat.scale(-step))) moved = true;
-    }
-
-    // footsteps: keep a looping sound while moving
-    wantFootsteps = moved;
-    if (wantFootsteps) {
-        if (footstepLoop.paused) {
-            footstepLoop.play().catch(() => {});
-        }
-    } else {
-        if (!footstepLoop.paused) {
-            footstepLoop.pause();
-            // optional: do not reset currentTime so resume feels natural
-            // footstepLoop.currentTime = 0; // uncomment if you prefer reset
-        }
+    if (keys.b) {
+        const np = playerPos.add(fw.scale(-MOVE_SPEED * dt));
+        if (!collides(np)) { playerPos = np; moved = true; }
     }
 
-    // torch flicker
-    torchTime += dt;
-    const flicker =
-        Math.sin(torchTime * 6.3) * 0.08 +
-        Math.sin(torchTime * 11.1) * 0.05 +
-        (Math.random() - 0.5) * 0.02;
-
-    let intensity = BASE_TORCH_INTENSITY + flicker;
-    intensity = Math.min(1.6, Math.max(0.95, intensity));
-    playerLight.intensity = intensity;
     camera.position.x = playerPos.x;
     camera.position.z = playerPos.z;
-    camera.position.y = CAMERA_HEIGHT; // 不變
-}
 
-engine.runRenderLoop(() => {
-    const dt = engine.getDeltaTime() / 1000;
-    update(dt);
     scene.render();
 });
-
-window.addEventListener("resize", () => engine.resize());
 </script>
 
 </body>
