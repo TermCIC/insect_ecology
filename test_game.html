@@ -139,6 +139,13 @@ const projectiles = [];
 let torchTime = 0;
 const BASE_TORCH_INTENSITY = 1.25;
 
+// ===== Background music =====
+const bgm = new Audio(
+    "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764212100/Shadows_Whisper_ochrfz.mp3"
+);
+bgm.loop = true;
+bgm.volume = 0.4; // 0 - 1
+
 // ===== Footstep sound (looping while moving) =====
 const footstepLoop = new Audio(
     "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764211209/step_out_2_out_ajknof.mp3"
@@ -625,9 +632,17 @@ engine.runRenderLoop(() => {
     const dt = engine.getDeltaTime() / 1000;
     update(dt);
     scene.render();
+    // background music autoplay attempt
+    bgm.play().catch(() => {
+        console.log("BGM will start on first user input.");
+    });
 });
 
 window.addEventListener("resize", () => engine.resize());
+window.addEventListener("click", () => {
+    if (bgm.paused) bgm.play().catch(() => {});
+});
+
 </script>
 
 </body>
