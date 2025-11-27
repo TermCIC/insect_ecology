@@ -305,6 +305,9 @@ function createMonster(scene, worldPos) {
     mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
     mat.diffuseTexture.hasAlpha = true;
     mat.backFaceCulling = false;
+    mat.useAlphaFromDiffuseTexture = true;
+    mat.disableLighting = false;
+    mat.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3);
     plane.material = mat;
 
     return {
