@@ -528,6 +528,20 @@ function tryMove(stepVec) {
     }
 }
 
+function keepCameraInsideHitbox() {
+    // 取攝影機的面向方向
+    const forward = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
+    
+    // 往反方向退後（避免鏡頭貼到牆壁）
+    const back = new BABYLON.Vector3(-forward.x, 0, -forward.z).scale(0.18);
+
+    const newPos = camera.position.add(back);
+
+    // 只要後退後不會撞牆，就更新位置
+    if (!isCircleCollidingWithWalls(newPos)) {
+        camera.position = newPos;
+    }
+}
 
 // ===== Input =====
 let btnForwardHeld = false,
@@ -614,6 +628,7 @@ function update(dt) {
     let intensity = BASE_TORCH_INTENSITY + flicker;
     intensity = Math.min(1.6, Math.max(0.95, intensity));
     playerLight.intensity = intensity;
+    keepCameraInsideHitbox();
 }
 
 engine.runRenderLoop(() => {
