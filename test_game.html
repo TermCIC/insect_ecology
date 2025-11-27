@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.8</title>
+<title>KEG v0.2.9</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -141,7 +141,7 @@ const bgm = new Audio(
     "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764212100/Shadows_Whisper_ochrfz.mp3"
 );
 bgm.loop = true;
-bgm.volume = 0.02; // 0 - 1
+bgm.volume = 0.03; // 0 - 1
 
 // ===== Footstep sound (looping while moving) =====
 const footstepLoop = new Audio(
@@ -299,7 +299,7 @@ function createMonster(scene, worldPos) {
     }, scene);
 
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
-    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+    plane.billboardMode = BABYLON.BABYLON.Mesh.BILLBOARDMODE_Y;
 
     const mat = new BABYLON.StandardMaterial("monsterMat", scene);
     mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
