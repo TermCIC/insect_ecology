@@ -280,6 +280,75 @@ function worldToGrid(x, z) {
     return { i, j };
 }
 
+// =====================
+// 2D Sprite Monster System
+// =====================
+
+// 存所有怪物
+const monsters = [];
+
+// 怪物參數
+const MONSTER_MAX_HP = 40;
+const MONSTER_SCALE = 2.2;  // 精靈大小
+const MONSTER_TEXTURE = "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763977803/enemy_3_olbbj7.png";
+
+// 建立一隻紙片怪物
+function createMonster(scene, worldPos) {
+    const plane = BABYLON.MeshBuilder.CreatePlane("monster", {
+        size: MONSTER_SCALE,
+    }, scene);
+
+    plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
+    mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
+    mat.diffuseTexture.hasAlpha = true;
+    mat.backFaceCulling = false;
+    plane.material = mat;
+
+    return {
+        mesh: plane,
+        hp: MONSTER_MAX_HP,
+        maxHp: MONSTER_MAX_HP,
+        alive: true,
+        cooldown: 0,
+    };
+}
+
+// 掃描 objectMap 找 M → 生成怪物
+function spawnMonsters(scene) {
+    for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+            if (objectMap[i][j] === "M") {
+                const pos = gridToWorld(i, j);
+                const monster = createMonster(scene, pos);
+                monsters.push(monster);
+            }
+        }
+    }
+}
+
+document.getElementById("btn-attack").onclick = () => {
+    for (const m of monsters) {
+        if (!m.alive) continue;
+
+        const dx = camera.position.x - m.mesh.position.x;
+        const dz = camera.position.z - m.mesh.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+
+        // 攻擊距離 2.2 公尺
+        if (dist < 2.2) {
+            m.hp -= 12;
+
+            if (m.hp <= 0) {
+                m.alive = false;
+                m.mesh.dispose(); // 移除怪物模型
+            }
+        }
+    }
+};
+    
 function createScene() {
     const scene = new BABYLON.Scene(engine);
     scene.collisionsEnabled = false;
@@ -517,75 +586,6 @@ window.addEventListener("keyup", e => {
     if (e.key === "a" || e.key === "ArrowLeft") keys.left = false;
     if (e.key === "d" || e.key === "ArrowRight") keys.right = false;
 });
-
-// =====================
-// 2D Sprite Monster System
-// =====================
-
-// 存所有怪物
-const monsters = [];
-
-// 怪物參數
-const MONSTER_MAX_HP = 40;
-const MONSTER_SCALE = 2.2;  // 精靈大小
-const MONSTER_TEXTURE = "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763977803/enemy_3_olbbj7.png";
-
-// 建立一隻紙片怪物
-function createMonster(scene, worldPos) {
-    const plane = BABYLON.MeshBuilder.CreatePlane("monster", {
-        size: MONSTER_SCALE,
-    }, scene);
-
-    plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
-    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
-
-    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
-    mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
-    mat.diffuseTexture.hasAlpha = true;
-    mat.backFaceCulling = false;
-    plane.material = mat;
-
-    return {
-        mesh: plane,
-        hp: MONSTER_MAX_HP,
-        maxHp: MONSTER_MAX_HP,
-        alive: true,
-        cooldown: 0,
-    };
-}
-
-// 掃描 objectMap 找 M → 生成怪物
-function spawnMonsters(scene) {
-    for (let i = 0; i < MAP_SIZE; i++) {
-        for (let j = 0; j < MAP_SIZE; j++) {
-            if (objectMap[i][j] === "M") {
-                const pos = gridToWorld(i, j);
-                const monster = createMonster(scene, pos);
-                monsters.push(monster);
-            }
-        }
-    }
-}
-
-document.getElementById("btn-attack").onclick = () => {
-    for (const m of monsters) {
-        if (!m.alive) continue;
-
-        const dx = camera.position.x - m.mesh.position.x;
-        const dz = camera.position.z - m.mesh.position.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-
-        // 攻擊距離 2.2 公尺
-        if (dist < 2.2) {
-            m.hp -= 12;
-
-            if (m.hp <= 0) {
-                m.alive = false;
-                m.mesh.dispose(); // 移除怪物模型
-            }
-        }
-    }
-};
 
 // ===== Game loop =====
 function update(dt) {
