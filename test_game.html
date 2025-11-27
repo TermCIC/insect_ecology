@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.7</title>
+<title>KEG v0.2.8</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -82,7 +82,6 @@
 <body>
 
 <div id="game-wrapper">
-    <div id="monster-hp" class="hp-bar">Monster HP: -</div>
     <div id="game">
         <canvas id="renderCanvas"></canvas>
     </div>
@@ -113,12 +112,10 @@ function normDeg(a) {
 
 // ===== DOM =====
 const playerHpEl = document.getElementById("player-hp");
-const monsterHpEl = document.getElementById("monster-hp");
 const debugAnglesEl = document.getElementById("debug-angles");
 
 // ===== States =====
 const player = { maxHp: 100, hp: 100, atk: 12 };
-const monsterState = { maxHp: 40, hp: 40, atk: 6, alive: true, cooldown: 0 };
 
 const ATTACK_RANGE = 3.0;
 const FIREBALL_SPEED = 12;
@@ -132,7 +129,7 @@ let lastFireDirAngleDeg = null;
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
 
-let scene, camera, monsterMesh, playerLight;
+let scene, camera, playerLight;
 const projectiles = [];
 
 // Torch flicker
@@ -168,11 +165,6 @@ const CEILING_Y = WALL_HEIGHT;
 
 const CAMERA_HEIGHT = 1.4;
 const PLAYER_RADIUS = 0.75;
-
-// ===== Enemy asset URLs =====
-const MONSTER_MODEL_ROOT = "https://res.cloudinary.com/dmdpjf8up/image/upload/";
-const MONSTER_MODEL_FILE = "v1764148914/7931623c-4ef3-4e2f-8545-ee10d2ead6c9_sj2w6k.glb";
-const MONSTER_TEXTURE_URL = "";
 
 // ===== Maps =====
 const groundMap = [
@@ -250,12 +242,12 @@ const objectMap = [
   "..............................", // 3
   "..............................", // 4
   "..............................", // 5
-  "..............................", // 6
+  "...........M..................", // 6
   "..............................", // 7
   "..............................", // 8
   "..............................", // 9
   "..............................", // 10
-  "..............................", // 11
+  ".....................M........", // 11
   "..............................", // 12
   "..............................", // 13
   "...............M..............", // 14
@@ -369,7 +361,6 @@ function createScene() {
     };
 
     let playerSpawn = null;
-    let monsterSpawnPos = null;
 
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
@@ -420,14 +411,6 @@ function createScene() {
             if (objectMap[i][j] === "P") {
                 playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
-
-            if (objectMap[i][j] === "M") {
-                monsterSpawnPos = new BABYLON.Vector3(
-                    pos.x,
-                    0,
-                    pos.z
-                );
-            }
         }
     }
 
@@ -435,55 +418,12 @@ function createScene() {
         camera.position = playerSpawn.clone();
     }
 
-    if (monsterSpawnPos) {
-        BABYLON.SceneLoader.ImportMesh(
-            "",
-            MONSTER_MODEL_ROOT,
-            MONSTER_MODEL_FILE,
-            scene,
-            function (meshes) {
-                if (!meshes || meshes.length === 0) {
-                    console.warn("Monster model not loaded");
-                    return;
-                }
-    
-                const root = new BABYLON.TransformNode("monsterRoot", scene);
-                meshes.forEach(m => {
-                    m.parent = root;
-                });
-    
-                root.position = monsterSpawnPos.clone();
-                root.rotation = new BABYLON.Vector3(0, Math.PI, 0);
-                root.scaling = new BABYLON.Vector3(1, 1, 1);
-    
-                const targetHeight = 1.8;
-                const bbox = root.getHierarchyBoundingVectors();
-                const currentHeight = bbox.max.y - bbox.min.y || 1;
-                const scale = targetHeight / currentHeight;
-                root.scaling = new BABYLON.Vector3(scale, scale, scale);
-    
-                const bbox2 = root.getHierarchyBoundingVectors();
-                const lowestY = bbox2.min.y;
-                root.position.y -= lowestY;
-    
-                if (MONSTER_TEXTURE_URL) {
-                    const tex = new BABYLON.Texture(MONSTER_TEXTURE_URL, scene);
-                    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
-                    mat.diffuseTexture = tex;
-                    mat.specularColor = new BABYLON.Color3(0.1, 0.05, 0.05);
-                    meshes.forEach(m => m.material = mat);
-                }
-    
-                monsterMesh = root;
-            }
-        );
-    }
-
     return scene;
 }
 
 scene = createScene();
-
+spawnMonsters(scene);
+    
 // ===== Movement & Collision =====
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
@@ -578,6 +518,75 @@ window.addEventListener("keyup", e => {
     if (e.key === "d" || e.key === "ArrowRight") keys.right = false;
 });
 
+// =====================
+// 2D Sprite Monster System
+// =====================
+
+// 存所有怪物
+const monsters = [];
+
+// 怪物參數
+const MONSTER_MAX_HP = 40;
+const MONSTER_SCALE = 2.2;  // 精靈大小
+const MONSTER_TEXTURE = "https://res.cloudinary.com/dmdpjf8up/image/upload/v1763977803/enemy_3_olbbj7.png";
+
+// 建立一隻紙片怪物
+function createMonster(scene, worldPos) {
+    const plane = BABYLON.MeshBuilder.CreatePlane("monster", {
+        size: MONSTER_SCALE,
+    }, scene);
+
+    plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
+    mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
+    mat.diffuseTexture.hasAlpha = true;
+    mat.backFaceCulling = false;
+    plane.material = mat;
+
+    return {
+        mesh: plane,
+        hp: MONSTER_MAX_HP,
+        maxHp: MONSTER_MAX_HP,
+        alive: true,
+        cooldown: 0,
+    };
+}
+
+// 掃描 objectMap 找 M → 生成怪物
+function spawnMonsters(scene) {
+    for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+            if (objectMap[i][j] === "M") {
+                const pos = gridToWorld(i, j);
+                const monster = createMonster(scene, pos);
+                monsters.push(monster);
+            }
+        }
+    }
+}
+
+document.getElementById("btn-attack").onclick = () => {
+    for (const m of monsters) {
+        if (!m.alive) continue;
+
+        const dx = camera.position.x - m.mesh.position.x;
+        const dz = camera.position.z - m.mesh.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+
+        // 攻擊距離 2.2 公尺
+        if (dist < 2.2) {
+            m.hp -= 12;
+
+            if (m.hp <= 0) {
+                m.alive = false;
+                m.mesh.dispose(); // 移除怪物模型
+            }
+        }
+    }
+};
+
 // ===== Game loop =====
 function update(dt) {
     // rotation
@@ -626,6 +635,41 @@ function update(dt) {
     let intensity = BASE_TORCH_INTENSITY + flicker;
     intensity = Math.min(1.6, Math.max(0.95, intensity));
     playerLight.intensity = intensity;
+
+    // =====================
+    // Monster AI Update
+    // =====================
+    for (const m of monsters) {
+        if (!m.alive) continue;
+    
+        // always face camera (for safety)
+        m.mesh.lookAt(camera.position);
+    
+        const dx = camera.position.x - m.mesh.position.x;
+        const dz = camera.position.z - m.mesh.position.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+    
+        // 簡易追蹤 (近才開始走)
+        if (dist < 8 && dist > 1.5) {
+            const spd = 1.4 * dt;
+            m.mesh.position.x += (dx / dist) * spd;
+            m.mesh.position.z += (dz / dist) * spd;
+        }
+    
+        // 攻擊玩家
+        if (dist < 1.5) {
+            if (m.cooldown <= 0) {
+                player.hp -= 4;
+                m.cooldown = 1.2; // CD
+            }
+        }
+    
+        if (m.cooldown > 0) m.cooldown -= dt;
+    }
+    
+    // 更新玩家 HP 顯示
+    playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
+
 }
 
 engine.runRenderLoop(() => {
