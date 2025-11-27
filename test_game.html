@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.2.9</title>
+<title>KEG v0.3.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -299,7 +299,7 @@ function createMonster(scene, worldPos) {
     }, scene);
 
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
-    plane.billboardMode = BABYLON.TransformNode.BILLBOARDMODE_Y;
+    plane.billboardMode = BABYLON.TransformNode.BILLBOARDMODE_NONE;
 
     const mat = new BABYLON.StandardMaterial("monsterMat", scene);
     mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
@@ -642,13 +642,14 @@ function update(dt) {
     for (const m of monsters) {
         if (!m.alive) continue;
     
-        // always face camera (for safety)
-        m.mesh.lookAt(camera.position);
-    
         const dx = camera.position.x - m.mesh.position.x;
         const dz = camera.position.z - m.mesh.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-    
+        const angle = Math.atan2(dx, dz); // face toward camera horizontally only
+
+        // Rotate monster around Y only
+        m.mesh.rotation.y = angle;
+        
         // 簡易追蹤 (近才開始走)
         if (dist < 8 && dist > 1.5) {
             const spd = 1.4 * dt;
