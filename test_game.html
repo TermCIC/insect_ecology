@@ -293,6 +293,7 @@ function createScene() {
     );
     camera.inertia = 0;
     camera.checkCollisions = false;
+    camera.minZ = 0.01;
 
     // Ambient light
     const hemi = new BABYLON.HemisphericLight(
