@@ -425,6 +425,7 @@ function createScene() {
 
     if (playerSpawn) {
         camera.position = playerSpawn.clone();
+        playerPos = new BABYLON.Vector3(playerSpawn.x, 0, playerSpawn.z);
     }
 
     if (monsterSpawnPos) {
@@ -479,7 +480,7 @@ scene = createScene();
 // ===== Movement & Collision (NEW PERFECT VERSION) =====
 
 // 玩家真正的位置（碰撞中心）
-let playerPos = new BABYLON.Vector3(0, 0, 0);
+let playerPos = null;
 
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
