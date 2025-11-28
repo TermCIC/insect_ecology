@@ -20,7 +20,7 @@
 
   "monsters": {
     "A": {
-      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764336175/ogre_1_anim_w3frbj.png",
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337833/skeleton_3_anim_wdkwbw.png",
       "rows": 2,
       "cols": 2,
       "frames": 4,
@@ -39,6 +39,33 @@
     },
     "C": {
       "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337002/skeleton_2_anim_p9i4z7.png",
+      "rows": 2,
+      "cols": 2,
+      "frames": 4,
+      "scale": 2.4,
+      "speed": 0.12,
+      "maxHp": 40
+    },
+    "D": {
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337890/skeleton_4_anim_gwuaoq.png",
+      "rows": 2,
+      "cols": 2,
+      "frames": 4,
+      "scale": 2.4,
+      "speed": 0.12,
+      "maxHp": 40
+    },
+    "E": {
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337997/skeleton_5_anim_qm40ae.png",
+      "rows": 2,
+      "cols": 2,
+      "frames": 4,
+      "scale": 2.4,
+      "speed": 0.12,
+      "maxHp": 40
+    },
+    "F": {
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764338056/skeleton_6_anim_wuyg49.png",
       "rows": 2,
       "cols": 2,
       "frames": 4,
