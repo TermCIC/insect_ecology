@@ -24,7 +24,25 @@
       "rows": 4,
       "cols": 4,
       "frames": 16,
-      "scale": 2.4,
+      "scale": 1.4,
+      "speed": 0.12,
+      "maxHp": 40
+    },
+    "B": {
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764325445/slime_red_anim_p88ozb.png",
+      "rows": 4,
+      "cols": 4,
+      "frames": 16,
+      "scale": 1.4,
+      "speed": 0.12,
+      "maxHp": 40
+    },
+    "C": {
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764325574/slime_blue_anim_d5dsde.png",
+      "rows": 4,
+      "cols": 4,
+      "frames": 16,
+      "scale": 1.4,
       "speed": 0.12,
       "maxHp": 40
     }
