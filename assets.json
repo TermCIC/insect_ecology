@@ -20,7 +20,7 @@
 
   "monsters": {
     "A": {
-      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764322463/slime_type_1_pnie8c.png",
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764334900/slime_green_anim_olvovc.png",
       "rows": 4,
       "cols": 4,
       "frames": 16,
