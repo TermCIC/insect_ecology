@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.0</title>
+<title>KEG v0.3.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <style>
     body {
@@ -301,11 +301,21 @@ function createMonster(scene, worldPos) {
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
     plane.billboardMode = BABYLON.TransformNode.BILLBOARDMODE_NONE;
 
+    const tex = new BABYLON.Texture(MONSTER_TEXTURE, scene);
+
+    // tell Babylon this is a sprite sheet
+    tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+    tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+
+    tex.uScale = 1 / 4;  // 4 columns
+    tex.vScale = 1 / 4;  // 4 rows
+
+    tex.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST); // pixel-art sharp
+
     const mat = new BABYLON.StandardMaterial("monsterMat", scene);
-    mat.diffuseTexture = new BABYLON.Texture(MONSTER_TEXTURE, scene);
+    mat.diffuseTexture = tex;
     mat.diffuseTexture.hasAlpha = true;
     mat.backFaceCulling = false;
-    mat.diffuseTexture.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST);
     mat.useAlphaFromDiffuseTexture = true;
     mat.disableLighting = false;
     mat.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3);
@@ -317,6 +327,13 @@ function createMonster(scene, worldPos) {
         maxHp: MONSTER_MAX_HP,
         alive: true,
         cooldown: 0,
+
+        // animation
+        frame: 0,
+        frameCount: 16,
+        framesPerRow: 4,
+        animSpeed: 0.12,
+        animTime: 0
     };
 }
 
@@ -645,7 +662,23 @@ function update(dt) {
     // =====================
     for (const m of monsters) {
         if (!m.alive) continue;
+
+        // update animation timer
+        m.animTime += dt;
+        if (m.animTime >= m.animSpeed) {
+            m.animTime = 0;
+            m.frame = (m.frame + 1) % m.frameCount;
     
+            // compute UV
+            const col = m.frame % m.framesPerRow;
+            const row = Math.floor(m.frame / m.framesPerRow);
+    
+            const u = col / m.framesPerRow;
+            const v = row / m.framesPerRow;
+    
+            m.mesh.material.diffuseTexture.uOffset = u;
+            m.mesh.material.diffuseTexture.vOffset = v;
+        }
         const dx = camera.position.x - m.mesh.position.x;
         const dz = camera.position.z - m.mesh.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
@@ -671,6 +704,8 @@ function update(dt) {
     
         if (m.cooldown > 0) m.cooldown -= dt;
     }
+
+    
     
     // 更新玩家 HP 顯示
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
