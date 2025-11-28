@@ -20,13 +20,13 @@
 
   "monsters": {
     "A": {
-      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764335648/minotaur_red_anim_wzpora.png",
-      "rows": 4,
-      "cols": 4,
-      "frames": 16,
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764336175/ogre_1_anim_w3frbj.png",
+      "rows": 2,
+      "cols": 2,
+      "frames": 4,
       "scale": 2.4,
       "speed": 0.12,
-      "maxHp": 40
+      "maxHp": 80
     },
     "B": {
       "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764325445/slime_red_anim_p88ozb.png",
