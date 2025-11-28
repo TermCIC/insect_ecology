@@ -20,11 +20,11 @@
 
   "monsters": {
     "A": {
-      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764334900/slime_green_anim_olvovc.png",
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764335648/minotaur_red_anim_wzpora.png",
       "rows": 4,
       "cols": 4,
       "frames": 16,
-      "scale": 1.4,
+      "scale": 2.4,
       "speed": 0.12,
       "maxHp": 40
     },
