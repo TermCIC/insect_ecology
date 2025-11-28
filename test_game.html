@@ -268,8 +268,8 @@ function createMonster(scene, worldPos, conf) {
 
     const tex = new BABYLON.Texture(conf.sprite, scene);
     tex.hasAlpha = true;
-    const cols = conf.cols || 4;
-    const rows = conf.rows || 4;
+    const cols = conf.cols || 2;
+    const rows = conf.rows || 2;
     
     tex.uScale = 1 / cols;
     tex.vScale = 1 / rows;
@@ -529,8 +529,8 @@ document.getElementById("btn-attack").onclick = () => {
 function animateMonster(mon, dt) {
     mon.animTime += dt;
 
-    const frames = 16;        // 4x4 sheet
-    const perRow = 4;
+    const frames = 4;        // 4x4 sheet
+    const perRow = 2;
     const frameDuration = 1 / mon.animSpeed;
 
     // advance frame
