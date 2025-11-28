@@ -543,8 +543,8 @@ function animateMonster(mon, dt) {
     const fx = mon.animFrame % perRow;
     const fy = Math.floor(mon.animFrame / perRow);
 
-    const u = fx * 0.25;
-    const v = fy * 0.25;
+    const u = fx * 0.5;
+    const v = fy * 0.5;
 
     const tex = mon.mesh.material.diffuseTexture;
     tex.uOffset = u;
