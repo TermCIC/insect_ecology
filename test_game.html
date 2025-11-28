@@ -268,8 +268,11 @@ function createMonster(scene, worldPos, conf) {
 
     const tex = new BABYLON.Texture(conf.sprite, scene);
     tex.hasAlpha = true;
-    tex.uScale = 1 / conf.cols;   // 0.25
-    tex.vScale = 1 / conf.rows;   // 0.25
+    const cols = conf.cols || 4;
+    const rows = conf.rows || 4;
+    
+    tex.uScale = 1 / cols;
+    tex.vScale = 1 / rows;
 
     tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
     tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
