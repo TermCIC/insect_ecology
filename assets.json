@@ -30,18 +30,18 @@
     },
     "B": {
       "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764336879/skeleton_1_anim_bea2li.png",
-      "rows": 4,
-      "cols": 4,
-      "frames": 16,
+      "rows": 2,
+      "cols": 2,
+      "frames": 4,
       "scale": 2.4,
       "speed": 0.12,
       "maxHp": 40
     },
     "C": {
       "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337002/skeleton_2_anim_p9i4z7.png",
-      "rows": 4,
-      "cols": 4,
-      "frames": 16,
+      "rows": 2,
+      "cols": 2,
+      "frames": 4,
       "scale": 2.4,
       "speed": 0.12,
       "maxHp": 40
