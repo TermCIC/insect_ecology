@@ -1,1 +1,25 @@
+{
+  "walls": {
+    "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764201544/dark_stone_wall_3_bclnch.png"
+  },
 
+  "floors": {
+    "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764202147/dark_stone_floor_2_km9hfy.png"
+  },
+
+  "ceilings": {
+    "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764147143/dark_stone_ceil_wepupg.png"
+  },
+
+  "monsters": {
+    "A": {
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764322463/slime_type_1_pnie8c.png",
+      "rows": 4,
+      "cols": 4,
+      "frames": 16,
+      "scale": 2.4,
+      "speed": 0.12,
+      "maxHp": 40
+    }
+  }
+}
