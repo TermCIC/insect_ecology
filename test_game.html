@@ -347,7 +347,7 @@ function createScene() {
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
     /* build map */
-    const wallOps = { width: TILE_SIZE, depth: TILE_SIZE, height: WALL_HEIGHT };
+    const wallOps = { width: TILE_SIZE, depth: TILE_SIZE, height: WALL_HEIGHT, wrap: true };
     const floorOps = { width: TILE_SIZE, depth: TILE_SIZE, height: FLOOR_THICKNESS };
     const ceilOps  = { width: TILE_SIZE, depth: TILE_SIZE, height: CEILING_THICKNESS };
 
