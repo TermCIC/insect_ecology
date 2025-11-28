@@ -29,20 +29,20 @@
       "maxHp": 80
     },
     "B": {
-      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764325445/slime_red_anim_p88ozb.png",
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764336879/skeleton_1_anim_bea2li.png",
       "rows": 4,
       "cols": 4,
       "frames": 16,
-      "scale": 1.4,
+      "scale": 2.4,
       "speed": 0.12,
       "maxHp": 40
     },
     "C": {
-      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764325574/slime_blue_anim_d5dsde.png",
+      "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337002/skeleton_2_anim_p9i4z7.png",
       "rows": 4,
       "cols": 4,
       "frames": 16,
-      "scale": 1.4,
+      "scale": 2.4,
       "speed": 0.12,
       "maxHp": 40
     }
