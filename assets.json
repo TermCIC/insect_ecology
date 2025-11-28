@@ -1,4 +1,11 @@
 {
+  "audio": {
+    "bgm": "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764212100/Shadows_Whisper_ochrfz.mp3",
+    "footstep": "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764211209/step_out_2_out_ajknof.mp3",
+    "attack": "https://your-attack.mp3",
+    "potion": "https://your-potion.mp3"
+  },
+
   "walls": {
     "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764201544/dark_stone_wall_3_bclnch.png"
   },
