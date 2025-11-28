@@ -282,6 +282,11 @@ function createMonster(scene, worldPos, conf) {
         maxHp: conf.maxHp,
         alive: true,
         cooldown: 0
+
+        // === animation ===
+        animFrame: 0,
+        animTime: 0,
+        animSpeed: conf.animSpeed ?? 8,  // frames per second
     };
 }
 
@@ -511,6 +516,34 @@ document.getElementById("btn-attack").onclick = () => {
 };
 
 /* ============================================================
+   Monster animation
+   ============================================================ */
+function animateMonster(mon, dt) {
+    mon.animTime += dt;
+
+    const frames = 16;        // 4x4 sheet
+    const perRow = 4;
+    const frameDuration = 1 / mon.animSpeed;
+
+    // advance frame
+    while (mon.animTime >= frameDuration) {
+        mon.animFrame = (mon.animFrame + 1) % frames;
+        mon.animTime -= frameDuration;
+    }
+
+    // calculate UV offsets
+    const fx = mon.animFrame % perRow;
+    const fy = Math.floor(mon.animFrame / perRow);
+
+    const u = fx * 0.25;
+    const v = fy * 0.25;
+
+    const tex = mon.mesh.material.diffuseTexture;
+    tex.uOffset = u;
+    tex.vOffset = v;
+}
+    
+/* ============================================================
    Game Loop
    ============================================================ */
 
@@ -565,6 +598,11 @@ function update(dt) {
         }
 
         if (m.cooldown > 0) m.cooldown -= dt;
+    }
+    
+    // animate monsters
+    for (const m of monsters) {
+        if (m.alive) animateMonster(m, dt);
     }
 
     playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
