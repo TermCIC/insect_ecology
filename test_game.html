@@ -2,8 +2,9 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.3.3</title>
+<title>KEG v0.4.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
 <style>
     body {
         margin: 0;
@@ -79,6 +80,7 @@
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 </head>
+
 <body>
 
 <div id="game-wrapper">
@@ -86,7 +88,6 @@
         <canvas id="renderCanvas"></canvas>
     </div>
     <div id="player-hp" class="hp-bar">Player HP: 100/100</div>
-    <div id="debug-angles" class="hp-bar">Cam: 0 | Fire spawn: - | Fire dir: -</div>
 </div>
 
 <div id="controls">
@@ -104,52 +105,45 @@
 
 <script>
 /* ============================================================
-   JSON-DRIVEN ASSET LOADING
+   Load JSON from your GitHub assets.json
    ============================================================ */
-
 let ASSETS = null;
 let bgm = null;
 let footstepLoop = null;
 
 async function loadAssets() {
-    const url = "https://termcic.github.io/insect_ecology/assets.json";
-
     try {
-        const res = await fetch(url);
+        const res = await fetch("https://termcic.github.io/insect_ecology/assets.json");
         ASSETS = await res.json();
-        console.log("Loaded assets:", ASSETS);
+        console.log("Assets loaded:", ASSETS);
+
+        // audio
+        if (ASSETS.audio?.bgm) {
+            bgm = new Audio(ASSETS.audio.bgm);
+            bgm.loop = true;
+            bgm.volume = 0.03;
+        }
+        if (ASSETS.audio?.footstep) {
+            footstepLoop = new Audio(ASSETS.audio.footstep);
+            footstepLoop.loop = true;
+            footstepLoop.volume = 0.95;
+        }
+
     } catch (err) {
-        console.error("Failed to load JSON:", err);
-    }
-
-    // Load audio
-    if (ASSETS?.audio?.bgm) {
-        bgm = new Audio(ASSETS.audio.bgm);
-        bgm.loop = true;
-        bgm.volume = 0.03;
-    }
-
-    if (ASSETS?.audio?.footstep) {
-        footstepLoop = new Audio(ASSETS.audio.footstep);
-        footstepLoop.loop = true;
-        footstepLoop.volume = 0.95;
+        console.error("Failed to load assets.json", err);
     }
 }
 
 /* ============================================================
-   BASIC HELPERS + DOM
+   Base variables and DOM
    ============================================================ */
 
-function normDeg(a) {
-    a = a % 360;
-    if (a < 0) a += 360;
-    return a;
-}
-
 const playerHpEl = document.getElementById("player-hp");
-const debugAnglesEl = document.getElementById("debug-angles");
 
-const player = { maxHp: 100, hp: 100, atk: 12 };
+const player = { maxHp: 100, hp: 100 };
+
+const BASE_TORCH_INTENSITY = 1.25;
+let torchTime = 0;
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true);
@@ -171,41 +165,11 @@ const PLAYER_RADIUS = 0.75;
 let wantFootsteps = false;
 
 /* ============================================================
-   MAPS
+   MAPS (unchanged)
    ============================================================ */
 
-const groundMap = [
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################",
-  "##############################"
-];
+const groundMap = [...Array(30)].map(() => "##############################");
+const ceilingMap = groundMap;
 
 const wallMap = [
   "##############################",
@@ -240,11 +204,7 @@ const wallMap = [
   "##############################"
 ];
 
-const ceilingMap = groundMap;
-
-/*  
-   A/B/C now represent monster types
-*/
+/* --------- NEW: A/B/C monsters --------- */
 const objectMap = [
   "..............................",
   "..............................",
@@ -279,7 +239,7 @@ const objectMap = [
 ];
 
 /* ============================================================
-   GEO HELPERS
+   Helpers
    ============================================================ */
 
 function gridToWorld(i, j) {
@@ -295,27 +255,24 @@ function worldToGrid(x, z) {
 }
 
 /* ============================================================
-   MONSTER SYSTEM — JSON DRIVEN
+   Monster System (billboard style)
    ============================================================ */
 
 const monsters = [];
 
 function createMonster(scene, worldPos, conf) {
     const plane = BABYLON.MeshBuilder.CreatePlane("monster", { size: conf.scale }, scene);
+
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;   // always face camera
 
     const tex = new BABYLON.Texture(conf.sprite, scene);
-    tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
-    tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-    tex.uScale = 1 / conf.cols;
-    tex.vScale = 1 / conf.rows;
-    tex.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST);
+    tex.hasAlpha = true;
 
     const mat = new BABYLON.StandardMaterial("monsterMat", scene);
     mat.diffuseTexture = tex;
     mat.backFaceCulling = false;
     mat.useAlphaFromDiffuseTexture = true;
-    mat.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3);
 
     plane.material = mat;
 
@@ -324,13 +281,7 @@ function createMonster(scene, worldPos, conf) {
         hp: conf.maxHp,
         maxHp: conf.maxHp,
         alive: true,
-        cooldown: 0,
-
-        frame: 0,
-        frameCount: conf.frames,
-        framesPerRow: conf.cols,
-        animSpeed: conf.speed,
-        animTime: 0
+        cooldown: 0
     };
 }
 
@@ -338,46 +289,54 @@ function spawnMonsters(scene) {
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const sym = objectMap[i][j];
-
             if (ASSETS.monsters[sym]) {
                 const conf = ASSETS.monsters[sym];
                 const pos = gridToWorld(i, j);
-
-                const m = createMonster(scene, pos, conf);
-                monsters.push(m);
+                monsters.push(createMonster(scene, pos, conf));
             }
         }
     }
 }
 
 /* ============================================================
-   SCENE CREATION — TEXTURES FROM JSON
+   Create Scene — JSON-driven walls/floors/ceilings
    ============================================================ */
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
 
-    camera = new BABYLON.UniversalCamera("playerCamera",
-        new BABYLON.Vector3(0, CAMERA_HEIGHT, -8), scene);
-
+    /* camera (unchanged) */
+    camera = new BABYLON.UniversalCamera(
+        "playerCamera",
+        new BABYLON.Vector3(0, CAMERA_HEIGHT, -8),
+        scene
+    );
     camera.inertia = 0;
     camera.checkCollisions = false;
     camera.minZ = 0.01;
 
+    /* ambient light */
     const hemi = new BABYLON.HemisphericLight("hemi",
-        new BABYLON.Vector3(0,1,0), scene);
+        new BABYLON.Vector3(0, 1, 0), scene);
     hemi.intensity = 0.1;
 
-    playerLight = new BABYLON.PointLight("playerTorch",
-        new BABYLON.Vector3(0.4,0.4,1.0), scene);
+    /* torch (unchanged) */
+    playerLight = new BABYLON.PointLight(
+        "playerTorch",
+        new BABYLON.Vector3(0.4, 0.4, 1.0),
+        scene
+    );
     playerLight.parent = camera;
     playerLight.range = 10.5;
-    playerLight.intensity = 1.25;
+    playerLight.intensity = BASE_TORCH_INTENSITY;
     playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
+    playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
+    playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
-    const wallBoxOptions = { width: TILE_SIZE, depth: TILE_SIZE, height: WALL_HEIGHT };
-    const floorBoxOptions = { width: TILE_SIZE, depth: TILE_SIZE, height: FLOOR_THICKNESS };
-    const ceilBoxOptions  = { width: TILE_SIZE, depth: TILE_SIZE, height: CEILING_THICKNESS };
+    /* build map */
+    const wallOps = { width: TILE_SIZE, depth: TILE_SIZE, height: WALL_HEIGHT };
+    const floorOps = { width: TILE_SIZE, depth: TILE_SIZE, height: FLOOR_THICKNESS };
+    const ceilOps  = { width: TILE_SIZE, depth: TILE_SIZE, height: CEILING_THICKNESS };
 
     let playerSpawn = null;
 
@@ -387,43 +346,40 @@ function createScene() {
 
             // FLOOR
             if (groundMap[i][j] === "#") {
-                const floor = BABYLON.MeshBuilder.CreateBox(`floor${i}_${j}`, floorBoxOptions, scene);
-                floor.position = new BABYLON.Vector3(pos.x, -FLOOR_THICKNESS/2, pos.z);
+                const f = BABYLON.MeshBuilder.CreateBox(`f${i}_${j}`, floorOps, scene);
+                f.position = new BABYLON.Vector3(pos.x, -FLOOR_THICKNESS/2, pos.z);
 
-                const tex = ASSETS.floors["#"];
-                if (tex) {
+                const url = ASSETS.floors?.["#"];
+                if (url) {
                     const m = new BABYLON.StandardMaterial(`fm${i}_${j}`, scene);
-                    m.diffuseTexture = new BABYLON.Texture(tex, scene);
-                    m.diffuseTexture.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST);
-                    floor.material = m;
+                    m.diffuseTexture = new BABYLON.Texture(url, scene);
+                    f.material = m;
                 }
             }
 
             // WALL
             if (wallMap[i][j] === "#") {
-                const wall = BABYLON.MeshBuilder.CreateBox(`wall${i}_${j}`, wallBoxOptions, scene);
-                wall.position = new BABYLON.Vector3(pos.x, WALL_HEIGHT/2, pos.z);
+                const w = BABYLON.MeshBuilder.CreateBox(`w${i}_${j}`, wallOps, scene);
+                w.position = new BABYLON.Vector3(pos.x, WALL_HEIGHT/2, pos.z);
 
-                const tex = ASSETS.walls["#"];
-                if (tex) {
+                const url = ASSETS.walls?.["#"];
+                if (url) {
                     const m = new BABYLON.StandardMaterial(`wm${i}_${j}`, scene);
-                    m.diffuseTexture = new BABYLON.Texture(tex, scene);
-                    m.diffuseTexture.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST);
-                    wall.material = m;
+                    m.diffuseTexture = new BABYLON.Texture(url, scene);
+                    w.material = m;
                 }
             }
 
             // CEILING
             if (ceilingMap[i][j] === "#") {
-                const ceil = BABYLON.MeshBuilder.CreateBox(`ceil${i}_${j}`, ceilBoxOptions, scene);
-                ceil.position = new BABYLON.Vector3(pos.x, CEILING_Y + CEILING_THICKNESS/2, pos.z);
+                const c = BABYLON.MeshBuilder.CreateBox(`c${i}_${j}`, ceilOps, scene);
+                c.position = new BABYLON.Vector3(pos.x, CEILING_Y + CEILING_THICKNESS/2, pos.z);
 
-                const tex = ASSETS.ceilings["#"];
-                if (tex) {
+                const url = ASSETS.ceilings?.["#"];
+                if (url) {
                     const m = new BABYLON.StandardMaterial(`cm${i}_${j}`, scene);
-                    m.diffuseTexture = new BABYLON.Texture(tex, scene);
-                    m.diffuseTexture.updateSamplingMode(BABYLON.Texture.NEAREST_NEAREST);
-                    ceil.material = m;
+                    m.diffuseTexture = new BABYLON.Texture(url, scene);
+                    c.material = m;
                 }
             }
 
@@ -433,31 +389,27 @@ function createScene() {
         }
     }
 
-    if (playerSpawn) {
+    if (playerSpawn)
         camera.position = playerSpawn.clone();
-    }
 
     return scene;
 }
 
 /* ============================================================
-   MOVEMENT, MONSTER AI, LOOP
+   Movement + collision
    ============================================================ */
 
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
 function isCircleCollidingWithWalls(pos) {
-    const grid = worldToGrid(pos.x, pos.z);
-
-    if (grid.i < 0 || grid.i >= MAP_SIZE) return true;
-    if (grid.j < 0 || grid.j >= MAP_SIZE) return true;
+    const g = worldToGrid(pos.x, pos.z);
+    if (g.i < 0 || g.i >= MAP_SIZE || g.j < 0 || g.j >= MAP_SIZE) return true;
 
     for (let di=-1; di<=1; di++) {
         for (let dj=-1; dj<=1; dj++) {
-            const wi = grid.i + di;
-            const wj = grid.j + dj;
-
+            const wi = g.i + di;
+            const wj = g.j + dj;
             if (wi<0 || wi>=MAP_SIZE || wj<0 || wj>=MAP_SIZE) continue;
             if (wallMap[wi][wj] !== "#") continue;
 
@@ -472,7 +424,8 @@ function isCircleCollidingWithWalls(pos) {
             const dx = pos.x - cx;
             const dz = pos.z - cz;
 
-            if (dx*dx + dz*dz < PLAYER_RADIUS*PLAYER_RADIUS) return true;
+            if (dx*dx + dz*dz < PLAYER_RADIUS*PLAYER_RADIUS)
+                return true;
         }
     }
     return false;
@@ -481,22 +434,24 @@ function isCircleCollidingWithWalls(pos) {
 function tryMove(step) {
     let moved = false;
 
-    const posX = camera.position.add(new BABYLON.Vector3(step.x, 0, 0));
-    if (!isCircleCollidingWithWalls(posX)) {
-        camera.position.x = posX.x;
+    const px = camera.position.add(new BABYLON.Vector3(step.x, 0, 0));
+    if (!isCircleCollidingWithWalls(px)) {
+        camera.position.x = px.x;
         moved = true;
     }
 
-    const posZ = camera.position.add(new BABYLON.Vector3(0, 0, step.z));
-    if (!isCircleCollidingWithWalls(posZ)) {
-        camera.position.z = posZ.z;
+    const pz = camera.position.add(new BABYLON.Vector3(0, 0, step.z));
+    if (!isCircleCollidingWithWalls(pz)) {
+        camera.position.z = pz.z;
         moved = true;
     }
 
     return moved;
 }
 
-/* INPUT */
+/* ============================================================
+   Input
+   ============================================================ */
 
 let btnForwardHeld = false,
     btnBackHeld = false,
@@ -505,98 +460,37 @@ let btnForwardHeld = false,
 
 const keys = { forward:false, back:false, left:false, right:false };
 
-function bindHoldButton(id, setter) {
-    const btn = document.getElementById(id);
-    btn.addEventListener("mousedown", () => setter(true));
-    btn.addEventListener("mouseup",   () => setter(false));
-    btn.addEventListener("mouseleave",() => setter(false));
-    btn.addEventListener("touchstart", e => { e.preventDefault(); setter(true); });
-    btn.addEventListener("touchend",   e => { e.preventDefault(); setter(false); });
+function bindHold(id, setter) {
+    const b = document.getElementById(id);
+    b.addEventListener("mousedown", ()=>setter(true));
+    b.addEventListener("mouseup",   ()=>setter(false));
+    b.addEventListener("mouseleave",()=>setter(false));
+    b.addEventListener("touchstart", e=>{ e.preventDefault(); setter(true); });
+    b.addEventListener("touchend",   e=>{ e.preventDefault(); setter(false); });
 }
 
-bindHoldButton("btn-forward", v => btnForwardHeld=v);
-bindHoldButton("btn-back",    v => btnBackHeld=v);
-bindHoldButton("btn-turn-left",  v => btnTurnLeftHeld=v);
-bindHoldButton("btn-turn-right", v => btnTurnRightHeld=v);
+bindHold("btn-forward", v => btnForwardHeld=v);
+bindHold("btn-back",    v => btnBackHeld=v);
+bindHold("btn-turn-left",  v => btnTurnLeftHeld=v);
+bindHold("btn-turn-right", v => btnTurnRightHeld=v);
 
 window.addEventListener("keydown", e => {
-    if (e.key==="w"||e.key==="ArrowUp") keys.forward=true;
-    if (e.key==="s"||e.key==="ArrowDown") keys.back=true;
-    if (e.key==="a"||e.key==="ArrowLeft") keys.left=true;
-    if (e.key==="d"||e.key==="ArrowRight") keys.right=true;
+    if (e.key==="w"||e.key==="ArrowUp")    keys.forward = true;
+    if (e.key==="s"||e.key==="ArrowDown")  keys.back    = true;
+    if (e.key==="a"||e.key==="ArrowLeft")  keys.left    = true;
+    if (e.key==="d"||e.key==="ArrowRight") keys.right   = true;
 });
+
 window.addEventListener("keyup", e => {
-    if (e.key==="w"||e.key==="ArrowUp") keys.forward=false;
-    if (e.key==="s"||e.key==="ArrowDown") keys.back=false;
-    if (e.key==="a"||e.key==="ArrowLeft") keys.left=false;
-    if (e.key==="d"||e.key==="ArrowRight") keys.right=false;
+    if (e.key==="w"||e.key==="ArrowUp")    keys.forward = false;
+    if (e.key==="s"||e.key==="ArrowDown")  keys.back    = false;
+    if (e.key==="a"||e.key==="ArrowLeft")  keys.left    = false;
+    if (e.key==="d"||e.key==="ArrowRight") keys.right   = false;
 });
 
-/* GAME LOOP */
-
-function update(dt) {
-    // rotation
-    if (btnTurnLeftHeld || keys.left)  camera.rotation.y -= TURN_SPEED*dt;
-    if (btnTurnRightHeld || keys.right)camera.rotation.y += TURN_SPEED*dt;
-
-    const forward = camera.getDirection(new BABYLON.Vector3(0,0,1));
-    const flat = new BABYLON.Vector3(forward.x,0,forward.z).normalize();
-    const step = MOVE_SPEED * dt;
-    let moved = false;
-
-    if (btnForwardHeld || keys.forward) moved |= tryMove(flat.scale(step));
-    if (btnBackHeld    || keys.back   ) moved |= tryMove(flat.scale(-step));
-
-    // FOOTSTEPS
-    wantFootsteps = moved;
-    if (footstepLoop) {
-        if (wantFootsteps && footstepLoop.paused) {
-            footstepLoop.play().catch(()=>{});
-        } else if (!wantFootsteps && !footstepLoop.paused) {
-            footstepLoop.pause();
-        }
-    }
-
-    // MONSTER AI + Animation
-    for (const m of monsters) {
-        if (!m.alive) continue;
-
-        m.animTime += dt;
-        if (m.animTime >= m.animSpeed) {
-            m.animTime = 0;
-            m.frame = (m.frame + 1) % m.frameCount;
-
-            const col = m.frame % m.framesPerRow;
-            const row = Math.floor(m.frame / m.framesPerRow);
-
-            m.mesh.material.diffuseTexture.uOffset = col / m.framesPerRow;
-            m.mesh.material.diffuseTexture.vOffset = row / m.framesPerRow;
-        }
-
-        const dx = camera.position.x - m.mesh.position.x;
-        const dz = camera.position.z - m.mesh.position.z;
-        const dist = Math.sqrt(dx*dx + dz*dz);
-
-        m.mesh.rotation.y = Math.atan2(dx, dz);
-
-        if (dist < 8 && dist > 1.5) {
-            const spd = 1.4 * dt;
-            m.mesh.position.x += (dx/dist)*spd;
-            m.mesh.position.z += (dz/dist)*spd;
-        }
-
-        if (dist < 1.5) {
-            if (m.cooldown <= 0) {
-                player.hp -= 4;
-                m.cooldown = 1.2;
-            }
-        }
-
-        if (m.cooldown > 0) m.cooldown -= dt;
-    }
-
-    playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
-}
+/* ============================================================
+   Attack
+   ============================================================ */
 
 document.getElementById("btn-attack").onclick = () => {
     for (const m of monsters) {
@@ -617,7 +511,67 @@ document.getElementById("btn-attack").onclick = () => {
 };
 
 /* ============================================================
-   ASYNC STARTUP — load JSON, build scene, spawn monsters
+   Game Loop
+   ============================================================ */
+
+function update(dt) {
+    // rotation
+    if (btnTurnLeftHeld || keys.left)  camera.rotation.y -= TURN_SPEED * dt;
+    if (btnTurnRightHeld || keys.right)camera.rotation.y += TURN_SPEED * dt;
+
+    // movement
+    const fwd = camera.getDirection(new BABYLON.Vector3(0,0,1));
+    const flat = new BABYLON.Vector3(fwd.x, 0, fwd.z).normalize();
+    const step = MOVE_SPEED * dt;
+
+    let moved = false;
+    if (btnForwardHeld || keys.forward) moved |= tryMove(flat.scale(step));
+    if (btnBackHeld    || keys.back   ) moved |= tryMove(flat.scale(-step));
+
+    // footsteps
+    wantFootsteps = moved;
+    if (footstepLoop) {
+        if (wantFootsteps && footstepLoop.paused) footstepLoop.play().catch(()=>{});
+        if (!wantFootsteps && !footstepLoop.paused) footstepLoop.pause();
+    }
+
+    // torch flicker (unchanged)
+    torchTime += dt;
+    const flicker =
+        Math.sin(torchTime * 6.3) * 0.08 +
+        Math.sin(torchTime * 11.1) * 0.05 +
+        (Math.random() - 0.5) * 0.02;
+    let intensity = BASE_TORCH_INTENSITY + flicker;
+    intensity = Math.min(1.6, Math.max(0.95, intensity));
+    playerLight.intensity = intensity;
+
+    // monster AI
+    for (const m of monsters) {
+        if (!m.alive) continue;
+
+        const dx = camera.position.x - m.mesh.position.x;
+        const dz = camera.position.z - m.mesh.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < 8 && dist > 1.5) {
+            const spd = 1.4 * dt;
+            m.mesh.position.x += (dx/dist)*spd;
+            m.mesh.position.z += (dz/dist)*spd;
+        }
+
+        if (dist < 1.5 && m.cooldown <= 0) {
+            player.hp -= 4;
+            m.cooldown = 1.2;
+        }
+
+        if (m.cooldown > 0) m.cooldown -= dt;
+    }
+
+    playerHpEl.textContent = `Player HP: ${player.hp}/${player.maxHp}`;
+}
+
+/* ============================================================
+   Start the game
    ============================================================ */
 
 (async () => {
@@ -627,13 +581,11 @@ document.getElementById("btn-attack").onclick = () => {
     spawnMonsters(scene);
 
     engine.runRenderLoop(() => {
-        const dt = engine.getDeltaTime()/1000;
+        const dt = engine.getDeltaTime() / 1000;
         update(dt);
         scene.render();
 
-        if (bgm && bgm.paused) {
-            bgm.play().catch(()=>{});
-        }
+        if (bgm && bgm.paused) bgm.play().catch(()=>{});
     });
 })();
 
@@ -641,6 +593,7 @@ window.addEventListener("resize", () => engine.resize());
 window.addEventListener("click", () => {
     if (bgm && bgm.paused) bgm.play().catch(()=>{});
 });
+
 </script>
 
 </body>
