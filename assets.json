@@ -32,8 +32,11 @@
         "attack": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764393843/skeleton_1_atk_anim_rrkgz6.png", "rows": 2, "cols": 2, "frames": 4}
       },
       "scale": 2.4,
-      "speed": 1.0,
-      "maxHp": 80
+      "speed": 0.6,
+      "runSpeed": 1.2,
+      "maxHp": 80,
+      "attackDamage": 5,
+      "radius": 0.45
     },
     "B": {
       "status": {
@@ -43,8 +46,11 @@
         "attack": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764410077/skeleton_2_atk_anim_klwm0k.png", "rows": 2, "cols": 2, "frames": 4}
       },
       "scale": 2.4,
-      "speed": 0.8,
-      "maxHp": 200
+      "speed": 0.4,
+      "runSpeed": 0.8,
+      "maxHp": 200,
+      "attackDamage": 12,
+      "radius": 0.45
     }
   }
 }
