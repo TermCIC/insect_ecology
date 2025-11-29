@@ -430,7 +430,9 @@ function isCircleCollidingWithWalls(pos) {
             const wi = g.i + di;
             const wj = g.j + dj;
             if (wi<0 || wi>=MAP_SIZE || wj<0 || wj>=MAP_SIZE) continue;
-            if (wallMap[wi][wj] !== "#") continue;
+            const tile = wallMap[wi][wj];
+            // skip if this tile is not a blocking wall
+            if (!ASSETS.walls || !(tile in ASSETS.walls)) continue;
 
             const xMin = (wj - HALF_MAP) * TILE_SIZE;
             const xMax = xMin + TILE_SIZE;
