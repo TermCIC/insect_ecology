@@ -371,16 +371,22 @@ function createScene() {
             }
 
             // WALL
-            if (wallMap[i][j] === "#") {
+            const tile = wallMap[i][j];
+            const url  = ASSETS.walls?.[tile];
+            
+            if (url) {
                 const w = BABYLON.MeshBuilder.CreateBox(`w${i}_${j}`, wallOps, scene);
-                w.position = new BABYLON.Vector3(pos.x, WALL_HEIGHT/2, pos.z);
-
-                const url = ASSETS.walls?.["#"];
-                if (url) {
-                    const m = new BABYLON.StandardMaterial(`wm${i}_${j}`, scene);
-                    m.diffuseTexture = new BABYLON.Texture(url, scene);
-                    w.material = m;
-                }
+                w.position = new BABYLON.Vector3(pos.x, WALL_HEIGHT / 2, pos.z);
+            
+                const mat = new BABYLON.StandardMaterial(`wm${i}_${j}`, scene);
+                const tex = new BABYLON.Texture(url, scene);
+            
+                // let the wall texture tile
+                tex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
+                tex.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
+            
+                mat.diffuseTexture = tex;
+                w.material = mat;
             }
 
             // CEILING
