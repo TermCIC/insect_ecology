@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.5.2</title>
+<title>KEG v0.5.3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -281,8 +281,8 @@ function setMonsterStatus(mon, newStatus) {
 
     // fallback if requested status does not exist
     if (!sDef) {
-        if (name === "run" && mon.statusDefs.walk)       name = "walk";
-        else if (name === "walk" && mon.statusDefs.idle) name = "idle";
+        if (name === "run" && mon.statusDefs.walk)        name = "walk";
+        else if (name === "walk" && mon.statusDefs.idle)  name = "idle";
         else if (name === "attack" && mon.statusDefs.run) name = "run";
 
         sDef = mon.statusDefs[name] ||
@@ -379,6 +379,10 @@ function createMonster(scene, worldPos, type) {
         walkSpeed: conf.speed ?? 1.2,
         runSpeed: conf.runSpeed ?? ((conf.speed ?? 1.2) * 1.8),
         idleRadius: conf.idleRadius ?? 3.0,
+
+        // NEW: damage and collision radius from assets.json
+        attackDamage: conf.attackDamage ?? 4,   // (1) attack damage from JSON
+        radius: conf.radius ?? 0.4,
 
         idleCenter: plane.position.clone(),
         wanderTarget: null,
@@ -568,12 +572,20 @@ function tryMove(step) {
     return moved;
 }
 
+// NEW: monster movement uses same axis separated resolution as player
 function tryMoveMonster(mon, step) {
-    const radius = 0.4; // smaller than player
-    const candidate = mon.mesh.position.add(step);
-    if (!isCircleCollidingWithWalls(candidate, radius)) {
-        mon.mesh.position.x = candidate.x;
-        mon.mesh.position.z = candidate.z;
+    const r = mon.radius ?? 0.4;
+
+    // X axis
+    const px = mon.mesh.position.add(new BABYLON.Vector3(step.x, 0, 0));
+    if (!isCircleCollidingWithWalls(px, r)) {
+        mon.mesh.position.x = px.x;
+    }
+
+    // Z axis
+    const pz = mon.mesh.position.add(new BABYLON.Vector3(0, 0, step.z));
+    if (!isCircleCollidingWithWalls(pz, r)) {
+        mon.mesh.position.z = pz.z;
     }
 }
 
@@ -695,7 +707,9 @@ function updateMonsterAI(mon, dt) {
         mon.wanderTarget = null;
 
         if (mon.cooldown <= 0) {
-            player.hp -= 4;
+            // (1) attack damage from asset.json here
+            player.hp -= mon.attackDamage;
+            if (player.hp < 0) player.hp = 0;
             mon.cooldown = 1.2;
         }
         return;
