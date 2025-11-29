@@ -177,7 +177,7 @@ const PLAYER_RADIUS = 0.75;
 let wantFootsteps = false;
 
 /* ============================================================
-   MAPS (unchanged)
+   MAPS
    ============================================================ */
 
 const groundMap = [...Array(30)].map(() => "##############################");
@@ -216,7 +216,7 @@ const wallMap = [
   "#####B########GDG####S########"
 ];
 
-/* --------- object map for monsters and player --------- */
+/* object map for monsters and player */
 const objectMap = [
   "..............................",
   "..............................",
@@ -267,34 +267,55 @@ function worldToGrid(x, z) {
 }
 
 /* ============================================================
-   Monster System (uses new monsters.status.*
+   Monster System with status (idle, walk, run, attack)
    ============================================================ */
 
 const monsters = [];
 
+/* Change monster status and switch animation sheet */
+function setMonsterStatus(mon, newStatus) {
+    if (mon.status === newStatus) return;
+
+    let name = newStatus;
+    let sDef = mon.statusDefs[name];
+
+    // fallback if requested status does not exist
+    if (!sDef) {
+        if (name === "run" && mon.statusDefs.walk)       name = "walk";
+        else if (name === "walk" && mon.statusDefs.idle) name = "idle";
+        else if (name === "attack" && mon.statusDefs.run) name = "run";
+
+        sDef = mon.statusDefs[name] ||
+               mon.statusDefs.idle ||
+               Object.values(mon.statusDefs)[0];
+    }
+
+    if (!sDef) return;
+
+    mon.status = name;
+    mon.frames = sDef.frames;
+    mon.cols = sDef.cols;
+    mon.rows = sDef.rows;
+    mon.animFrame = 0;
+    mon.animTime = 0;
+
+    const mat = mon.mesh.material;
+    mat.diffuseTexture = sDef.texture;
+
+    // animation speed per status
+    if (name === "idle")   mon.animSpeed = 3;
+    else if (name === "walk")  mon.animSpeed = 6;
+    else if (name === "run")   mon.animSpeed = 10;
+    else if (name === "attack")mon.animSpeed = 8;
+}
+
 /**
  * Create a monster from ASSETS.monsters[type]
- * Uses status.walk if available, else status.idle, else first status.
+ * Builds statusDefs for idle/walk/run/attack and sets default status = idle
  */
 function createMonster(scene, worldPos, type) {
     const conf = ASSETS.monsters?.[type];
     if (!conf) return null;
-
-    // choose which status to use for idle/walk animation
-    const statusTable = conf.status || {};
-    const baseStatus =
-        statusTable.walk ||
-        statusTable.idle ||
-        Object.values(statusTable)[0];
-
-    if (!baseStatus) {
-        console.warn("Monster has no status animations:", type);
-        return null;
-    }
-
-    const cols = baseStatus.cols || 1;
-    const rows = baseStatus.rows || 1;
-    const frames = baseStatus.frames || (cols * rows);
 
     const plane = BABYLON.MeshBuilder.CreatePlane(
         "monster_" + type,
@@ -305,20 +326,35 @@ function createMonster(scene, worldPos, type) {
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
     plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
 
-    const tex = new BABYLON.Texture(baseStatus.sprite, scene);
-    tex.hasAlpha = true;
-    tex.uScale = 1 / cols;
-    tex.vScale = 1 / rows;
-    tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
-    tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-
     const mat = new BABYLON.StandardMaterial("monsterMat_" + type, scene);
-    mat.diffuseTexture = tex;
     mat.backFaceCulling = false;
     mat.useAlphaFromDiffuseTexture = true;
     plane.material = mat;
 
-    return {
+    const statusDefs = {};
+    const statusTable = conf.status || {};
+
+    for (const [name, sConf] of Object.entries(statusTable)) {
+        const cols = sConf.cols || 1;
+        const rows = sConf.rows || 1;
+        const frames = sConf.frames || (cols * rows);
+
+        const tex = new BABYLON.Texture(sConf.sprite, scene);
+        tex.hasAlpha = true;
+        tex.uScale = 1 / cols;
+        tex.vScale = 1 / rows;
+        tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+        tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+
+        statusDefs[name] = { texture: tex, cols, rows, frames };
+    }
+
+    if (Object.keys(statusDefs).length === 0) {
+        console.warn("Monster has no status animations:", type);
+        return null;
+    }
+
+    const monster = {
         mesh: plane,
         type,
         hp: conf.maxHp ?? 50,
@@ -326,15 +362,33 @@ function createMonster(scene, worldPos, type) {
         alive: true,
         cooldown: 0,
 
-        // animation state
+        statusDefs,
+        status: null,
+
+        // animation
         animFrame: 0,
         animTime: 0,
-        animSpeed: conf.animSpeed ?? 8,  // frames per second
+        animSpeed: conf.animSpeed ?? 6,
+        frames: 1,
+        cols: 1,
+        rows: 1,
 
-        frames,
-        cols,
-        rows
+        // AI
+        detectRange: conf.detectRange ?? 8,
+        attackRange: conf.attackRange ?? 1.5,
+        walkSpeed: conf.speed ?? 1.2,
+        runSpeed: conf.runSpeed ?? ((conf.speed ?? 1.2) * 1.8),
+        idleRadius: conf.idleRadius ?? 3.0,
+
+        idleCenter: plane.position.clone(),
+        wanderTarget: null,
+        wanderCooldown: 0  // time until choose next idle/walk action
     };
+
+    // default to idle state
+    setMonsterStatus(monster, "idle");
+
+    return monster;
 }
 
 function spawnMonsters(scene) {
@@ -351,13 +405,13 @@ function spawnMonsters(scene) {
 }
 
 /* ============================================================
-   Create Scene - JSON driven walls/floors/ceilings
+   Scene - JSON driven walls/floors/ceilings
    ============================================================ */
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
 
-    /* camera */
+    // camera
     camera = new BABYLON.UniversalCamera(
         "playerCamera",
         new BABYLON.Vector3(0, CAMERA_HEIGHT, -8),
@@ -367,7 +421,7 @@ function createScene() {
     camera.checkCollisions = false;
     camera.minZ = 0.01;
 
-    /* ambient light */
+    // ambient light
     const hemi = new BABYLON.HemisphericLight(
         "hemi",
         new BABYLON.Vector3(0, 1, 0),
@@ -375,7 +429,7 @@ function createScene() {
     );
     hemi.intensity = 0.1;
 
-    /* torch */
+    // torch
     playerLight = new BABYLON.PointLight(
         "playerTorch",
         new BABYLON.Vector3(0.4, 0.4, 1.0),
@@ -388,7 +442,7 @@ function createScene() {
     playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
-    /* build map */
+    // map geo
     const wallOps = { width: TILE_SIZE, depth: TILE_SIZE, height: WALL_HEIGHT, wrap: true };
     const floorOps = { width: TILE_SIZE, depth: TILE_SIZE, height: FLOOR_THICKNESS };
     const ceilOps  = { width: TILE_SIZE, depth: TILE_SIZE, height: CEILING_THICKNESS };
@@ -412,7 +466,7 @@ function createScene() {
                 }
             }
 
-            // WALL (driven by ASSETS.walls[tile])
+            // WALL
             const tile = wallMap[i][j];
             const wallUrl = ASSETS.walls?.[tile];
 
@@ -464,7 +518,7 @@ function createScene() {
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
-function isCircleCollidingWithWalls(pos) {
+function isCircleCollidingWithWalls(pos, radius = PLAYER_RADIUS) {
     const g = worldToGrid(pos.x, pos.z);
     if (g.i < 0 || g.i >= MAP_SIZE || g.j < 0 || g.j >= MAP_SIZE) return true;
 
@@ -475,7 +529,6 @@ function isCircleCollidingWithWalls(pos) {
             if (wi < 0 || wi >= MAP_SIZE || wj < 0 || wj >= MAP_SIZE) continue;
             const tile = wallMap[wi][wj];
 
-            // skip if this tile is not a blocking wall (no entry in ASSETS.walls)
             if (!ASSETS.walls || !(tile in ASSETS.walls)) continue;
 
             const xMin = (wj - HALF_MAP) * TILE_SIZE;
@@ -489,7 +542,7 @@ function isCircleCollidingWithWalls(pos) {
             const dx = pos.x - cx;
             const dz = pos.z - cz;
 
-            if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) {
+            if (dx * dx + dz * dz < radius * radius) {
                 return true;
             }
         }
@@ -513,6 +566,15 @@ function tryMove(step) {
     }
 
     return moved;
+}
+
+function tryMoveMonster(mon, step) {
+    const radius = 0.4; // smaller than player
+    const candidate = mon.mesh.position.add(step);
+    if (!isCircleCollidingWithWalls(candidate, radius)) {
+        mon.mesh.position.x = candidate.x;
+        mon.mesh.position.z = candidate.z;
+    }
 }
 
 /* ============================================================
@@ -555,7 +617,7 @@ window.addEventListener("keyup", e => {
 });
 
 /* ============================================================
-   Attack and potion
+   Attack and potion (player controls)
    ============================================================ */
 
 document.getElementById("btn-attack").onclick = () => {
@@ -615,6 +677,77 @@ function animateMonster(mon, dt) {
 }
 
 /* ============================================================
+   Monster AI with status
+   ============================================================ */
+function updateMonsterAI(mon, dt) {
+    if (!mon.alive) return;
+
+    const dx = camera.position.x - mon.mesh.position.x;
+    const dz = camera.position.z - mon.mesh.position.z;
+    const dist = Math.hypot(dx, dz);
+
+    if (mon.cooldown > 0) mon.cooldown -= dt;
+    if (mon.wanderCooldown > 0) mon.wanderCooldown -= dt;
+
+    // Attack state
+    if (dist <= mon.attackRange) {
+        setMonsterStatus(mon, "attack");
+        mon.wanderTarget = null;
+
+        if (mon.cooldown <= 0) {
+            player.hp -= 4;
+            mon.cooldown = 1.2;
+        }
+        return;
+    }
+
+    // Detect and chase
+    if (dist <= mon.detectRange) {
+        setMonsterStatus(mon, "run");
+        mon.wanderTarget = null;
+
+        if (dist > 0.1) {
+            const stepLen = mon.runSpeed * dt;
+            const step = new BABYLON.Vector3((dx / dist) * stepLen, 0, (dz / dist) * stepLen);
+            tryMoveMonster(mon, step);
+        }
+        return;
+    }
+
+    // Idle and random walk around idleCenter
+    if (!mon.wanderTarget && mon.wanderCooldown <= 0) {
+        if (Math.random() < 0.5) {
+            // stay idle
+            setMonsterStatus(mon, "idle");
+            mon.wanderCooldown = 1.5 + Math.random() * 2.0;
+        } else {
+            // start walking to a random point
+            const angle = Math.random() * Math.PI * 2;
+            const radius = mon.idleRadius * Math.random();
+            const tx = mon.idleCenter.x + Math.cos(angle) * radius;
+            const tz = mon.idleCenter.z + Math.sin(angle) * radius;
+            mon.wanderTarget = new BABYLON.Vector3(tx, mon.mesh.position.y, tz);
+            setMonsterStatus(mon, "walk");
+            mon.wanderCooldown = 2.0 + Math.random() * 3.0;
+        }
+    }
+
+    if (mon.wanderTarget) {
+        const tx = mon.wanderTarget.x - mon.mesh.position.x;
+        const tz = mon.wanderTarget.z - mon.mesh.position.z;
+        const dTarget = Math.hypot(tx, tz);
+
+        if (dTarget < 0.1 || mon.wanderCooldown <= 0) {
+            mon.wanderTarget = null;
+        } else {
+            const stepLen = mon.walkSpeed * dt;
+            const step = new BABYLON.Vector3((tx / dTarget) * stepLen, 0, (tz / dTarget) * stepLen);
+            tryMoveMonster(mon, step);
+        }
+    }
+}
+
+/* ============================================================
    Game Loop
    ============================================================ */
 
@@ -649,30 +782,9 @@ function update(dt) {
     intensity = Math.min(1.6, Math.max(0.95, intensity));
     playerLight.intensity = intensity;
 
-    // monster AI
+    // monster AI + animation
     for (const m of monsters) {
-        if (!m.alive) continue;
-
-        const dx = camera.position.x - m.mesh.position.x;
-        const dz = camera.position.z - m.mesh.position.z;
-        const dist = Math.hypot(dx, dz);
-
-        if (dist < 8 && dist > 1.5) {
-            const spd = 1.4 * dt;
-            m.mesh.position.x += (dx / dist) * spd;
-            m.mesh.position.z += (dz / dist) * spd;
-        }
-
-        if (dist < 1.5 && m.cooldown <= 0) {
-            player.hp -= 4;
-            m.cooldown = 1.2;
-        }
-
-        if (m.cooldown > 0) m.cooldown -= dt;
-    }
-
-    // animate monsters
-    for (const m of monsters) {
+        updateMonsterAI(m, dt);
         if (m.alive) animateMonster(m, dt);
     }
 
