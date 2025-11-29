@@ -26,34 +26,25 @@
   "monsters": {
     "A": {
       "status": {
-        "idle": {
-          "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764338695/skeleton_1_amsocq.png",
-          "rows": 1,
-          "cols": 1,
-          "frames": 1
-        },
-        "walk": {
-          "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764336879/skeleton_1_anim_bea2li.png",
-          "rows": 2,
-          "cols": 2,
-          "frames": 4
-        },
-        "run": {
-          "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764408737/skeleton_1_run_anim_w8hpwx.png",
-          "rows": 2,
-          "cols": 2,
-          "frames": 4
-        },
-        "attack": {
-          "sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764393843/skeleton_1_atk_anim_rrkgz6.png",
-          "rows": 2,
-          "cols": 2,
-          "frames": 4
-        }
+        "idle": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764338695/skeleton_1_amsocq.png", "rows": 1, "cols": 1, "frames": 1},
+        "walk": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764336879/skeleton_1_anim_bea2li.png", "rows": 2, "cols": 2, "frames": 4},
+        "run": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764408737/skeleton_1_run_anim_w8hpwx.png", "rows": 2, "cols": 2, "frames": 4},
+        "attack": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764393843/skeleton_1_atk_anim_rrkgz6.png", "rows": 2, "cols": 2, "frames": 4}
+      },
+      "scale": 2.4,
+      "speed": 1.0,
+      "maxHp": 80
+    },
+    "B": {
+      "status": {
+        "idle": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764338694/skeleton_2_pcyiyc.png", "rows": 1, "cols": 1, "frames": 1},
+        "walk": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764337002/skeleton_2_anim_p9i4z7.png", "rows": 2, "cols": 2, "frames": 4},
+        "run": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764410296/skeleton_2_run_anim_zj1ieq.png", "rows": 2, "cols": 2, "frames": 4},
+        "attack": {"sprite": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764410077/skeleton_2_atk_anim_klwm0k.png", "rows": 2, "cols": 2, "frames": 4}
       },
       "scale": 2.4,
       "speed": 0.8,
-      "maxHp": 80
-    }
+      "maxHp": 200
+    },
   }
 }
