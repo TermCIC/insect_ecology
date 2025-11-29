@@ -436,14 +436,14 @@ function createScene() {
     // torch
     playerLight = new BABYLON.PointLight(
         "playerTorch",
-        new BABYLON.Vector3(0.4, 0.4, 1.0),
+        new BABYLON.Vector3(0.5, 0.5, 1.1),
         scene
     );
     playerLight.parent = camera;
-    playerLight.range = 10.5;
+    playerLight.range = 12.5;
     playerLight.intensity = BASE_TORCH_INTENSITY;
-    playerLight.diffuse  = new BABYLON.Color3(1.0, 0.82, 0.62);
-    playerLight.specular = new BABYLON.Color3(0.25, 0.18, 0.12);
+    playerLight.diffuse  = new BABYLON.Color3(1.2, 0.92, 0.72);
+    playerLight.specular = new BABYLON.Color3(0.35, 0.28, 0.22);
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
     // map geo
