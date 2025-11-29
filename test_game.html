@@ -105,11 +105,13 @@
 
 <script>
 /* ============================================================
-   Load JSON from your GitHub assets.json
+   Load JSON from your GitHub assets.json (new format)
    ============================================================ */
 let ASSETS = null;
 let bgm = null;
 let footstepLoop = null;
+let attackSound = null;
+let potionSound = null;
 
 async function loadAssets() {
     try {
@@ -127,6 +129,16 @@ async function loadAssets() {
             footstepLoop = new Audio(ASSETS.audio.footstep);
             footstepLoop.loop = true;
             footstepLoop.volume = 0.95;
+        }
+        if (ASSETS.audio?.attack) {
+            attackSound = new Audio(ASSETS.audio.attack);
+            attackSound.loop = false;
+            attackSound.volume = 0.9;
+        }
+        if (ASSETS.audio?.potion) {
+            potionSound = new Audio(ASSETS.audio.potion);
+            potionSound.loop = false;
+            potionSound.volume = 0.9;
         }
 
     } catch (err) {
@@ -204,7 +216,7 @@ const wallMap = [
   "#####B########GDG####S########"
 ];
 
-/* --------- NEW: A/B/C monsters --------- */
+/* --------- object map for monsters and player --------- */
 const objectMap = [
   "..............................",
   "..............................",
@@ -255,46 +267,73 @@ function worldToGrid(x, z) {
 }
 
 /* ============================================================
-   Monster System (billboard style)
+   Monster System (uses new monsters.status.*
    ============================================================ */
 
 const monsters = [];
 
-function createMonster(scene, worldPos, conf) {
-    const plane = BABYLON.MeshBuilder.CreatePlane("monster", { size: conf.scale }, scene);
+/**
+ * Create a monster from ASSETS.monsters[type]
+ * Uses status.walk if available, else status.idle, else first status.
+ */
+function createMonster(scene, worldPos, type) {
+    const conf = ASSETS.monsters?.[type];
+    if (!conf) return null;
+
+    // choose which status to use for idle/walk animation
+    const statusTable = conf.status || {};
+    const baseStatus =
+        statusTable.walk ||
+        statusTable.idle ||
+        Object.values(statusTable)[0];
+
+    if (!baseStatus) {
+        console.warn("Monster has no status animations:", type);
+        return null;
+    }
+
+    const cols = baseStatus.cols || 1;
+    const rows = baseStatus.rows || 1;
+    const frames = baseStatus.frames || (cols * rows);
+
+    const plane = BABYLON.MeshBuilder.CreatePlane(
+        "monster_" + type,
+        { size: conf.scale ?? 2.4 },
+        scene
+    );
 
     plane.position = new BABYLON.Vector3(worldPos.x, 1.1, worldPos.z);
-    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;   // always face camera
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
 
-    const tex = new BABYLON.Texture(conf.sprite, scene);
+    const tex = new BABYLON.Texture(baseStatus.sprite, scene);
     tex.hasAlpha = true;
-    const cols = conf.cols || 2;
-    const rows = conf.rows || 2;
-    
     tex.uScale = 1 / cols;
     tex.vScale = 1 / rows;
-
     tex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
     tex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
-    
-    const mat = new BABYLON.StandardMaterial("monsterMat", scene);
+
+    const mat = new BABYLON.StandardMaterial("monsterMat_" + type, scene);
     mat.diffuseTexture = tex;
     mat.backFaceCulling = false;
     mat.useAlphaFromDiffuseTexture = true;
-
     plane.material = mat;
 
     return {
         mesh: plane,
-        hp: conf.maxHp,
-        maxHp: conf.maxHp,
+        type,
+        hp: conf.maxHp ?? 50,
+        maxHp: conf.maxHp ?? 50,
         alive: true,
         cooldown: 0,
 
-        // === animation ===
+        // animation state
         animFrame: 0,
         animTime: 0,
         animSpeed: conf.animSpeed ?? 8,  // frames per second
+
+        frames,
+        cols,
+        rows
     };
 }
 
@@ -302,23 +341,23 @@ function spawnMonsters(scene) {
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const sym = objectMap[i][j];
-            if (ASSETS.monsters[sym]) {
-                const conf = ASSETS.monsters[sym];
-                const pos = gridToWorld(i, j);
-                monsters.push(createMonster(scene, pos, conf));
-            }
+            if (!ASSETS.monsters || !ASSETS.monsters[sym]) continue;
+
+            const pos = gridToWorld(i, j);
+            const monster = createMonster(scene, pos, sym);
+            if (monster) monsters.push(monster);
         }
     }
 }
 
 /* ============================================================
-   Create Scene — JSON-driven walls/floors/ceilings
+   Create Scene - JSON driven walls/floors/ceilings
    ============================================================ */
 
 function createScene() {
     const scene = new BABYLON.Scene(engine);
 
-    /* camera (unchanged) */
+    /* camera */
     camera = new BABYLON.UniversalCamera(
         "playerCamera",
         new BABYLON.Vector3(0, CAMERA_HEIGHT, -8),
@@ -329,11 +368,14 @@ function createScene() {
     camera.minZ = 0.01;
 
     /* ambient light */
-    const hemi = new BABYLON.HemisphericLight("hemi",
-        new BABYLON.Vector3(0, 1, 0), scene);
+    const hemi = new BABYLON.HemisphericLight(
+        "hemi",
+        new BABYLON.Vector3(0, 1, 0),
+        scene
+    );
     hemi.intensity = 0.1;
 
-    /* torch (unchanged) */
+    /* torch */
     playerLight = new BABYLON.PointLight(
         "playerTorch",
         new BABYLON.Vector3(0.4, 0.4, 1.0),
@@ -360,7 +402,7 @@ function createScene() {
             // FLOOR
             if (groundMap[i][j] === "#") {
                 const f = BABYLON.MeshBuilder.CreateBox(`f${i}_${j}`, floorOps, scene);
-                f.position = new BABYLON.Vector3(pos.x, -FLOOR_THICKNESS/2, pos.z);
+                f.position = new BABYLON.Vector3(pos.x, -FLOOR_THICKNESS / 2, pos.z);
 
                 const url = ASSETS.floors?.["#"];
                 if (url) {
@@ -370,21 +412,20 @@ function createScene() {
                 }
             }
 
-            // WALL
+            // WALL (driven by ASSETS.walls[tile])
             const tile = wallMap[i][j];
-            const url  = ASSETS.walls?.[tile];
-            
-            if (url) {
+            const wallUrl = ASSETS.walls?.[tile];
+
+            if (wallUrl) {
                 const w = BABYLON.MeshBuilder.CreateBox(`w${i}_${j}`, wallOps, scene);
                 w.position = new BABYLON.Vector3(pos.x, WALL_HEIGHT / 2, pos.z);
-            
+
                 const mat = new BABYLON.StandardMaterial(`wm${i}_${j}`, scene);
-                const tex = new BABYLON.Texture(url, scene);
-            
-                // let the wall texture tile
+                const tex = new BABYLON.Texture(wallUrl, scene);
+
                 tex.wrapU = BABYLON.Texture.WRAP_ADDRESSMODE;
                 tex.wrapV = BABYLON.Texture.WRAP_ADDRESSMODE;
-            
+
                 mat.diffuseTexture = tex;
                 w.material = mat;
             }
@@ -392,7 +433,7 @@ function createScene() {
             // CEILING
             if (ceilingMap[i][j] === "#") {
                 const c = BABYLON.MeshBuilder.CreateBox(`c${i}_${j}`, ceilOps, scene);
-                c.position = new BABYLON.Vector3(pos.x, CEILING_Y + CEILING_THICKNESS/2, pos.z);
+                c.position = new BABYLON.Vector3(pos.x, CEILING_Y + CEILING_THICKNESS / 2, pos.z);
 
                 const url = ASSETS.ceilings?.["#"];
                 if (url) {
@@ -402,14 +443,16 @@ function createScene() {
                 }
             }
 
+            // Player spawn
             if (objectMap[i][j] === "P") {
                 playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
             }
         }
     }
 
-    if (playerSpawn)
+    if (playerSpawn) {
         camera.position = playerSpawn.clone();
+    }
 
     return scene;
 }
@@ -425,13 +468,14 @@ function isCircleCollidingWithWalls(pos) {
     const g = worldToGrid(pos.x, pos.z);
     if (g.i < 0 || g.i >= MAP_SIZE || g.j < 0 || g.j >= MAP_SIZE) return true;
 
-    for (let di=-1; di<=1; di++) {
-        for (let dj=-1; dj<=1; dj++) {
+    for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
             const wi = g.i + di;
             const wj = g.j + dj;
-            if (wi<0 || wi>=MAP_SIZE || wj<0 || wj>=MAP_SIZE) continue;
+            if (wi < 0 || wi >= MAP_SIZE || wj < 0 || wj >= MAP_SIZE) continue;
             const tile = wallMap[wi][wj];
-            // skip if this tile is not a blocking wall
+
+            // skip if this tile is not a blocking wall (no entry in ASSETS.walls)
             if (!ASSETS.walls || !(tile in ASSETS.walls)) continue;
 
             const xMin = (wj - HALF_MAP) * TILE_SIZE;
@@ -445,8 +489,9 @@ function isCircleCollidingWithWalls(pos) {
             const dx = pos.x - cx;
             const dz = pos.z - cz;
 
-            if (dx*dx + dz*dz < PLAYER_RADIUS*PLAYER_RADIUS)
+            if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) {
                 return true;
+            }
         }
     }
     return false;
@@ -479,41 +524,46 @@ let btnForwardHeld = false,
     btnTurnLeftHeld = false,
     btnTurnRightHeld = false;
 
-const keys = { forward:false, back:false, left:false, right:false };
+const keys = { forward: false, back: false, left: false, right: false };
 
 function bindHold(id, setter) {
     const b = document.getElementById(id);
-    b.addEventListener("mousedown", ()=>setter(true));
-    b.addEventListener("mouseup",   ()=>setter(false));
-    b.addEventListener("mouseleave",()=>setter(false));
-    b.addEventListener("touchstart", e=>{ e.preventDefault(); setter(true); });
-    b.addEventListener("touchend",   e=>{ e.preventDefault(); setter(false); });
+    b.addEventListener("mousedown", () => setter(true));
+    b.addEventListener("mouseup",   () => setter(false));
+    b.addEventListener("mouseleave",() => setter(false));
+    b.addEventListener("touchstart", e => { e.preventDefault(); setter(true); });
+    b.addEventListener("touchend",   e => { e.preventDefault(); setter(false); });
 }
 
-bindHold("btn-forward", v => btnForwardHeld=v);
-bindHold("btn-back",    v => btnBackHeld=v);
-bindHold("btn-turn-left",  v => btnTurnLeftHeld=v);
-bindHold("btn-turn-right", v => btnTurnRightHeld=v);
+bindHold("btn-forward", v => btnForwardHeld = v);
+bindHold("btn-back",    v => btnBackHeld = v);
+bindHold("btn-turn-left",  v => btnTurnLeftHeld = v);
+bindHold("btn-turn-right", v => btnTurnRightHeld = v);
 
 window.addEventListener("keydown", e => {
-    if (e.key==="w"||e.key==="ArrowUp")    keys.forward = true;
-    if (e.key==="s"||e.key==="ArrowDown")  keys.back    = true;
-    if (e.key==="a"||e.key==="ArrowLeft")  keys.left    = true;
-    if (e.key==="d"||e.key==="ArrowRight") keys.right   = true;
+    if (e.key === "w" || e.key === "ArrowUp")    keys.forward = true;
+    if (e.key === "s" || e.key === "ArrowDown")  keys.back    = true;
+    if (e.key === "a" || e.key === "ArrowLeft")  keys.left    = true;
+    if (e.key === "d" || e.key === "ArrowRight") keys.right   = true;
 });
 
 window.addEventListener("keyup", e => {
-    if (e.key==="w"||e.key==="ArrowUp")    keys.forward = false;
-    if (e.key==="s"||e.key==="ArrowDown")  keys.back    = false;
-    if (e.key==="a"||e.key==="ArrowLeft")  keys.left    = false;
-    if (e.key==="d"||e.key==="ArrowRight") keys.right   = false;
+    if (e.key === "w" || e.key === "ArrowUp")    keys.forward = false;
+    if (e.key === "s" || e.key === "ArrowDown")  keys.back    = false;
+    if (e.key === "a" || e.key === "ArrowLeft")  keys.left    = false;
+    if (e.key === "d" || e.key === "ArrowRight") keys.right   = false;
 });
 
 /* ============================================================
-   Attack
+   Attack and potion
    ============================================================ */
 
 document.getElementById("btn-attack").onclick = () => {
+    if (attackSound) {
+        attackSound.currentTime = 0;
+        attackSound.play().catch(() => {});
+    }
+
     for (const m of monsters) {
         if (!m.alive) continue;
 
@@ -531,34 +581,39 @@ document.getElementById("btn-attack").onclick = () => {
     }
 };
 
+document.getElementById("btn-potion").onclick = () => {
+    if (player.hp <= 0) return;
+
+    player.hp = Math.min(player.maxHp, player.hp + 20);
+    if (potionSound) {
+        potionSound.currentTime = 0;
+        potionSound.play().catch(() => {});
+    }
+};
+
 /* ============================================================
-   Monster animation
+   Monster animation (generic for any cols/rows/frames)
    ============================================================ */
 function animateMonster(mon, dt) {
+    if (!mon.frames || mon.frames <= 1) return;
+
     mon.animTime += dt;
 
-    const frames = 4;        // 4x4 sheet
-    const perRow = 2;
     const frameDuration = 1 / mon.animSpeed;
 
-    // advance frame
     while (mon.animTime >= frameDuration) {
-        mon.animFrame = (mon.animFrame + 1) % frames;
+        mon.animFrame = (mon.animFrame + 1) % mon.frames;
         mon.animTime -= frameDuration;
     }
 
-    // calculate UV offsets
-    const fx = mon.animFrame % perRow;
-    const fy = Math.floor(mon.animFrame / perRow);
-
-    const u = fx * 0.5;
-    const v = fy * 0.5;
+    const fx = mon.animFrame % mon.cols;
+    const fy = Math.floor(mon.animFrame / mon.cols);
 
     const tex = mon.mesh.material.diffuseTexture;
-    tex.uOffset = u;
-    tex.vOffset = v;
+    tex.uOffset = fx / mon.cols;
+    tex.vOffset = fy / mon.rows;
 }
-    
+
 /* ============================================================
    Game Loop
    ============================================================ */
@@ -569,7 +624,7 @@ function update(dt) {
     if (btnTurnRightHeld || keys.right)camera.rotation.y += TURN_SPEED * dt;
 
     // movement
-    const fwd = camera.getDirection(new BABYLON.Vector3(0,0,1));
+    const fwd = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
     const flat = new BABYLON.Vector3(fwd.x, 0, fwd.z).normalize();
     const step = MOVE_SPEED * dt;
 
@@ -580,11 +635,11 @@ function update(dt) {
     // footsteps
     wantFootsteps = moved;
     if (footstepLoop) {
-        if (wantFootsteps && footstepLoop.paused) footstepLoop.play().catch(()=>{});
+        if (wantFootsteps && footstepLoop.paused) footstepLoop.play().catch(() => {});
         if (!wantFootsteps && !footstepLoop.paused) footstepLoop.pause();
     }
 
-    // torch flicker (unchanged)
+    // torch flicker
     torchTime += dt;
     const flicker =
         Math.sin(torchTime * 6.3) * 0.08 +
@@ -604,8 +659,8 @@ function update(dt) {
 
         if (dist < 8 && dist > 1.5) {
             const spd = 1.4 * dt;
-            m.mesh.position.x += (dx/dist)*spd;
-            m.mesh.position.z += (dz/dist)*spd;
+            m.mesh.position.x += (dx / dist) * spd;
+            m.mesh.position.z += (dz / dist) * spd;
         }
 
         if (dist < 1.5 && m.cooldown <= 0) {
@@ -615,7 +670,7 @@ function update(dt) {
 
         if (m.cooldown > 0) m.cooldown -= dt;
     }
-    
+
     // animate monsters
     for (const m of monsters) {
         if (m.alive) animateMonster(m, dt);
@@ -639,15 +694,14 @@ function update(dt) {
         update(dt);
         scene.render();
 
-        if (bgm && bgm.paused) bgm.play().catch(()=>{});
+        if (bgm && bgm.paused) bgm.play().catch(() => {});
     });
 })();
 
 window.addEventListener("resize", () => engine.resize());
 window.addEventListener("click", () => {
-    if (bgm && bgm.paused) bgm.play().catch(()=>{});
+    if (bgm && bgm.paused) bgm.play().catch(() => {});
 });
-
 </script>
 
 </body>
