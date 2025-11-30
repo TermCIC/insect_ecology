@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.6.3</title>
+<title>KEG v0.6.4</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -309,21 +309,10 @@ function teleportPlayerToSpawn(spawn) {
 
     const pos = gridToWorld(spawn.i, spawn.j);
 
-    // set position
+    // only change position, do not touch rotation
     camera.position.x = pos.x;
     camera.position.y = CAMERA_HEIGHT;
     camera.position.z = pos.z;
-
-    // set facing direction if provided
-    let yaw = camera.rotation.y; // keep previous by default
-
-    if (typeof spawn.yawRad === "number") {
-        yaw = spawn.yawRad;
-    } else if (typeof spawn.yawDeg === "number") {
-        yaw = spawn.yawDeg * Math.PI / 180;
-    }
-
-    camera.rotation.y = yaw;
 }
 
 function placePlayerAfterMapLoad(entrySpawn) {
