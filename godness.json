@@ -82,12 +82,12 @@
     "...........",
     "...........",
     "...........",
-    ".....A.....",
+    ".....S.....",
     "..........."
   ],
 
   "portals": {
-    "A": {
+    "S": {
       "url": "https://termcic.github.io/insect_ecology/rest_room.json",
       "spawn": { "i": 2, "j": 5, "yawDeg": 0 }
     }
