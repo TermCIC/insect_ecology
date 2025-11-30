@@ -612,7 +612,7 @@ function createScene() {
                     const lastSlash = fullUrl.lastIndexOf("/");
                     const rootUrl   = fullUrl.substring(0, lastSlash + 1);
                     const fileName  = fullUrl.substring(lastSlash + 1);
-    
+            
                     BABYLON.SceneLoader.ImportMesh(
                         "",
                         rootUrl,
@@ -620,21 +620,51 @@ function createScene() {
                         scene,
                         (meshes) => {
                             if (!meshes || !meshes.length) return;
-                            const root = meshes[0];
-    
-                            root.position = new BABYLON.Vector3(
+            
+                            // parent node for all parts of the structure
+                            const rootNode = new BABYLON.TransformNode(
+                                `struct_${structChar}_${i}_${j}`,
+                                scene
+                            );
+                            meshes.forEach(m => {
+                                if (m !== rootNode) m.parent = rootNode;
+                            });
+            
+                            // compute bounding box and normalize to 1 tile
+                            const { min, max } = rootNode.getHierarchyBoundingVectors();
+                            const size = max.subtract(min);
+                            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            
+                            const desired = TILE_SIZE; // fit into 1 tile
+                            const baseScale = desired / maxDim;
+            
+                            const extra = sConf.scale ?? 1;
+                            const finalScale = baseScale * extra;
+            
+                            rootNode.scaling = new BABYLON.Vector3(
+                                finalScale,
+                                finalScale,
+                                finalScale
+                            );
+            
+                            // position at tile center + offsets
+                            rootNode.position = new BABYLON.Vector3(
                                 pos.x + (sConf.offsetX || 0),
                                 (sConf.y ?? 0),
                                 pos.z + (sConf.offsetZ || 0)
                             );
-    
-                            const sc = sConf.scale || 1;
-                            root.scaling = new BABYLON.Vector3(sc, sc, sc);
-    
+            
+                            // rotate if needed
                             if (typeof sConf.rotationY === "number") {
-                                root.rotation = root.rotation || new BABYLON.Vector3(0, 0, 0);
-                                root.rotation.y = sConf.rotationY;
+                                rootNode.rotation = rootNode.rotation || new BABYLON.Vector3(0, 0, 0);
+                                rootNode.rotation.y = sConf.rotationY;
                             }
+            
+                            console.log("Structure loaded", structChar, "at", rootNode.position, "scale", finalScale);
+                        },
+                        null,
+                        (scene, message, exception) => {
+                            console.error("ImportMesh error:", message, exception);
                         }
                     );
                 }
