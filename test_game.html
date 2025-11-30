@@ -610,10 +610,6 @@ function createScene() {
 
     console.log("Map lights created:", debugLightCount, "scene lights:", scene.lights.length);
 
-    if (playerSpawn) {
-        camera.position = playerSpawn.clone();
-    }
-
     return scene;
 }
 
