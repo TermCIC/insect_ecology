@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.6.1</title>
+<title>KEG v0.6.2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -300,6 +300,29 @@ function worldToGrid(x, z) {
     const j = Math.floor(x / TILE_SIZE + HALF_MAP);
     const i = Math.floor(z / TILE_SIZE + HALF_MAP);
     return { i, j };
+}
+    
+function teleportPlayerToSpawn(spawn) {
+    if (!spawn) return;
+    if (typeof spawn.i !== "number" || typeof spawn.j !== "number") return;
+
+    const pos = gridToWorld(spawn.i, spawn.j);
+
+    // set position
+    camera.position.x = pos.x;
+    camera.position.y = CAMERA_HEIGHT;
+    camera.position.z = pos.z;
+
+    // set facing direction if provided
+    let yaw = camera.rotation.y; // keep previous by default
+
+    if (typeof spawn.yawRad === "number") {
+        yaw = spawn.yawRad;
+    } else if (typeof spawn.yawDeg === "number") {
+        yaw = spawn.yawDeg * Math.PI / 180;
+    }
+
+    camera.rotation.y = yaw;
 }
 
 /* ============================================================
@@ -820,19 +843,24 @@ function updateMonsterAI(mon, dt) {
    Portals
    ============================================================ */
 
-async function switchMap(url) {
-    console.log("Switching map to", url);
+async function switchMap(portalCfg) {
+    if (!portalCfg || !portalCfg.url) return;
+    console.log("Switching map to", portalCfg.url, "spawn:", portalCfg.spawn);
 
     if (scene) {
         scene.dispose();
     }
 
-    // monsters are cleared in spawnMonsters
-    await loadMaps(url);
+    await loadMaps(portalCfg.url);
     scene = createScene();
     spawnMonsters(scene);
 
-    portalCooldown = 0.5; // small delay so we do not instantly retrigger
+    // place player according to portal spawn, including facing direction
+    if (portalCfg.spawn) {
+        teleportPlayerToSpawn(portalCfg.spawn);
+    }
+
+    portalCooldown = 0.5;
 }
 
 function checkPortal() {
@@ -845,10 +873,10 @@ function checkPortal() {
     const ch = portalMap[g.i]?.[g.j];
     if (!ch || ch === ".") return;
 
-    const target = portals[ch];
-    if (!target || !target.url) return;
+    const portalCfg = portals[ch];
+    if (!portalCfg || !portalCfg.url) return;
 
-    switchMap(target.url);
+    switchMap(portalCfg);
 }
 
 /* ============================================================
