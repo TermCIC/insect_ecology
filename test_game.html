@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.5.8</title>
+<title>KEG v0.5.9</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -184,11 +184,41 @@ async function loadMaps() {
 }
 
 const LIGHT_TYPES = {
-    "R": { color: new BABYLON.Color3(1.0, 0.3, 0.3), intensity: 1.0, range: 7 },
-    "B": { color: new BABYLON.Color3(0.4, 0.6, 1.0), intensity: 1.0, range: 7 },
-    "G": { color: new BABYLON.Color3(0.4, 1.0, 0.4), intensity: 1.0, range: 7 },
-    "Y": { color: new BABYLON.Color3(1.0, 0.9, 0.4), intensity: 1.1, range: 8 },
-    "W": { color: new BABYLON.Color3(1.0, 1.0, 1.0), intensity: 1.2, range: 9 }
+    R: {
+        color: new BABYLON.Color3(1.0, 0.3, 0.3),
+        intensity: 1.0,
+        range: 10,
+        angle: Math.PI / 3,   // about 60°
+        exponent: 2.0
+    },
+    B: {
+        color: new BABYLON.Color3(0.4, 0.6, 1.0),
+        intensity: 1.0,
+        range: 10,
+        angle: Math.PI / 3,
+        exponent: 2.0
+    },
+    G: {
+        color: new BABYLON.Color3(0.4, 1.0, 0.4),
+        intensity: 1.0,
+        range: 10,
+        angle: Math.PI / 3,
+        exponent: 2.0
+    },
+    Y: {
+        color: new BABYLON.Color3(1.0, 0.9, 0.4),
+        intensity: 1.1,
+        range: 11,
+        angle: Math.PI / 3,
+        exponent: 2.0
+    },
+    W: {
+        color: new BABYLON.Color3(1.0, 1.0, 1.0),
+        intensity: 1.2,
+        range: 11,
+        angle: Math.PI / 3,
+        exponent: 2.0
+    }
 };
 
 /* ============================================================
@@ -229,6 +259,7 @@ let groundMap = [];
 let ceilingMap = [];
 let wallMap = [];
 let objectMap = [];
+let lightMap = [];
 
 /* ============================================================
    Helpers
@@ -482,23 +513,31 @@ function createScene() {
                     c.material = m;
                 }
             }
+            
             // LIGHTS from lightMap
-        const lightChar = lightMap[i]?.[j];
-        if (lightChar && lightChar !== ".") {
-            const cfg = LIGHT_TYPES[lightChar];
-            if (cfg) {
-                const light = new BABYLON.PointLight(
-                    `light_${i}_${j}`,
-                    new BABYLON.Vector3(pos.x, CEILING_Y - 0.3, pos.z),
-                    scene
-                );
-                light.diffuse  = cfg.color;
-                light.specular = cfg.color;
-                light.intensity = cfg.intensity;
-                light.range = cfg.range;
-                light.falloffType = BABYLON.Light.FALLOFF_STANDARD;
-            }
-        }
+const lightChar = lightMap[i]?.[j];
+if (lightChar && lightChar !== ".") {
+    const cfg = LIGHT_TYPES[lightChar];
+    if (cfg) {
+        const lightPos = new BABYLON.Vector3(pos.x, CEILING_Y - 0.1, pos.z);
+        const lightDir = new BABYLON.Vector3(0, -1, 0); // straight down
+
+        const light = new BABYLON.SpotLight(
+            `light_${i}_${j}`,
+            lightPos,
+            lightDir,
+            cfg.angle,
+            cfg.exponent,
+            scene
+        );
+
+        light.diffuse  = cfg.color;
+        light.specular = cfg.color.scale(0.4); // reduce shiny highlight
+        light.intensity = cfg.intensity;
+        light.range = cfg.range;
+        light.falloffType = BABYLON.Light.FALLOFF_STANDARD;
+    }
+}
 
             // Player spawn
             if (objectMap[i][j] === "P") {
