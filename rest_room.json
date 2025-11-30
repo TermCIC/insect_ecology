@@ -74,7 +74,7 @@
 
   "portalMap": [
     "...........",
-    ".....A.....",
+    ".....N.....",
     "...........",
     "...........",
     "...........",
@@ -82,16 +82,18 @@
     "...........",
     "...........",
     "...........",
-    ".....B.....",
+    ".....S.....",
     "..........."
   ],
 
   "portals": {
-    "A": {
-      "url": "https://termcic.github.io/insect_ecology/godness.json"
+    "N": {
+      "url": "https://termcic.github.io/insect_ecology/godness.json",
+      "spawn": { "i": 2, "j": 5, "yawDeg": 180 }
     },
-    "B": {
-      "url": "https://termcic.github.io/insect_ecology/training.json"
+    "S": {
+      "url": "https://termcic.github.io/insect_ecology/training.json",
+      "spawn": { "i": 8, "j": 5, "yawDeg": 0 }
     }
   }
 }
