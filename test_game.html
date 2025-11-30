@@ -609,20 +609,6 @@ function createScene() {
                 const sConf = structuresDefs[structChar];
                 const fullUrl = sConf.url;
 
-                
-                // DEBUG: small cube to show structure location
-                const dbg = BABYLON.MeshBuilder.CreateBox(
-                    `struct_dbg_${i}_${j}`,
-                    { size: 0.4 },
-                    scene
-                );
-                dbg.position = new BABYLON.Vector3(pos.x, 1, pos.z);
-                const dbgMat = new BABYLON.StandardMaterial(`dbgMat_${i}_${j}`, scene);
-                dbgMat.diffuseColor = new BABYLON.Color3(0, 1, 0);
-                dbg.material = dbgMat;
-
-
-                
                 if (typeof fullUrl === "string" && fullUrl.length > 0) {
                     const lastSlash = fullUrl.lastIndexOf("/");
                     const rootUrl   = fullUrl.substring(0, lastSlash + 1);
