@@ -113,6 +113,8 @@ let footstepLoop = null;
 let attackSound = null;
 let potionSound = null;
 
+const INITIAL_MAP_URL = "https://termcic.github.io/insect_ecology/maps.json";
+
 async function loadAssets() {
     try {
         const res = await fetch("https://termcic.github.io/insect_ecology/assets.json");
@@ -141,20 +143,29 @@ async function loadAssets() {
     }
 }
 
-async function loadMaps() {
+let currentMapUrl = INITIAL_MAP_URL;
+
+async function loadMaps(url = INITIAL_MAP_URL) {
     try {
-        const res = await fetch("https://termcic.github.io/insect_ecology/maps.json");
+        currentMapUrl = url;
+        const res = await fetch(url);
         const data = await res.json();
 
         // size
         MAP_SIZE = data.MAP_SIZE ?? (data.wallMap?.length || 0);
         HALF_MAP = MAP_SIZE / 2;
         
+        // stop old bgm if any
+        if (bgm) {
+            bgm.pause();
+            bgm = null;
+        }
+
         // bgm for this map
         if (data.bgm) {
             bgm = new Audio(data.bgm);
             bgm.loop = true;
-            bgm.volume = 0.03; // or data.bgmVolume if you add that later
+            bgm.volume = 0.03;
         }
         
         // light layer, fallback to all "."
@@ -165,17 +176,28 @@ async function loadMaps() {
             lightMap = Array.from({ length: MAP_SIZE }, () => row);
         }
 
+        // portal layer, fallback to all "."
+        if (data.portalMap) {
+            portalMap = data.portalMap;
+        } else {
+            const row = ".".repeat(MAP_SIZE);
+            portalMap = Array.from({ length: MAP_SIZE }, () => row);
+        }
+
+        // portals definition (label -> { url })
+        portals = data.portals || {};
+
         groundMap = data.groundMap;
-        ceilingMap = data.ceilingMap || data.groundMap; // fallback if you want
+        ceilingMap = data.ceilingMap || data.groundMap;
         wallMap = data.wallMap;
         objectMap = data.objectMap;
 
         console.log("Maps loaded:", {
+            url,
             MAP_SIZE,
-            groundMap,
-            wallMap,
-            objectMap,
             lightMapPreview: lightMap[0],
+            portalMapPreview: portalMap[0],
+            portals,
             bgm: data.bgm
         });
     } catch (err) {
@@ -188,8 +210,8 @@ const LIGHT_TYPES = {
         color: new BABYLON.Color3(1.0, 0.3, 0.3),
         intensity: 1.8,
         range: 14,
-        angle: Math.PI / 1.2,   // wider cone (~82°)
-        exponent: 1.1           // softer falloff
+        angle: Math.PI / 1.2,
+        exponent: 1.1
     },
     B: {
         color: new BABYLON.Color3(0.4, 0.6, 1.0),
@@ -260,6 +282,9 @@ let ceilingMap = [];
 let wallMap = [];
 let objectMap = [];
 let lightMap = [];
+let portalMap = [];
+let portals = {};
+let portalCooldown = 0;
 
 /* ============================================================
    Helpers
@@ -290,7 +315,6 @@ function setMonsterStatus(mon, newStatus) {
     let name = newStatus;
     let sDef = mon.statusDefs[name];
 
-    // fallback if requested status does not exist
     if (!sDef) {
         if (name === "run" && mon.statusDefs.walk)        name = "walk";
         else if (name === "walk" && mon.statusDefs.idle)  name = "idle";
@@ -313,17 +337,12 @@ function setMonsterStatus(mon, newStatus) {
     const mat = mon.mesh.material;
     mat.diffuseTexture = sDef.texture;
 
-    // animation speed per status
-    if (name === "idle")   mon.animSpeed = 3;
-    else if (name === "walk")  mon.animSpeed = 6;
-    else if (name === "run")   mon.animSpeed = 10;
-    else if (name === "attack")mon.animSpeed = 8;
+    if (name === "idle")      mon.animSpeed = 3;
+    else if (name === "walk") mon.animSpeed = 6;
+    else if (name === "run")  mon.animSpeed = 10;
+    else if (name === "attack") mon.animSpeed = 8;
 }
 
-/**
- * Create a monster from ASSETS.monsters[type]
- * Builds statusDefs for idle/walk/run/attack and sets default status = idle
- */
 function createMonster(scene, worldPos, type) {
     const conf = ASSETS.monsters?.[type];
     if (!conf) return null;
@@ -340,6 +359,7 @@ function createMonster(scene, worldPos, type) {
     const mat = new BABYLON.StandardMaterial("monsterMat_" + type, scene);
     mat.backFaceCulling = false;
     mat.useAlphaFromDiffuseTexture = true;
+    mat.maxSimultaneousLights = 8;
     plane.material = mat;
 
     const statusDefs = {};
@@ -376,7 +396,6 @@ function createMonster(scene, worldPos, type) {
         statusDefs,
         status: null,
 
-        // animation
         animFrame: 0,
         animTime: 0,
         animSpeed: conf.animSpeed ?? 6,
@@ -384,29 +403,27 @@ function createMonster(scene, worldPos, type) {
         cols: 1,
         rows: 1,
 
-        // AI
         detectRange: conf.detectRange ?? 8,
         attackRange: conf.attackRange ?? 1.5,
         walkSpeed: conf.speed ?? 1.2,
         runSpeed: conf.runSpeed ?? ((conf.speed ?? 1.2) * 1.8),
         idleRadius: conf.idleRadius ?? 3.0,
 
-        // NEW: damage and collision radius from assets.json
-        attackDamage: conf.attackDamage ?? 4,   // (1) attack damage from JSON
+        attackDamage: conf.attackDamage ?? 4,
         radius: conf.radius ?? 0.4,
 
         idleCenter: plane.position.clone(),
         wanderTarget: null,
-        wanderCooldown: 0  // time until choose next idle/walk action
+        wanderCooldown: 0
     };
 
-    // default to idle state
     setMonsterStatus(monster, "idle");
 
     return monster;
 }
 
 function spawnMonsters(scene) {
+    monsters.length = 0; // clear previous monsters
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const sym = objectMap[i][j];
@@ -457,12 +474,12 @@ function createScene() {
     playerLight.specular = new BABYLON.Color3(0.35, 0.28, 0.22);
     playerLight.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
-    // map geo
     const wallOps = { width: TILE_SIZE, depth: TILE_SIZE, height: WALL_HEIGHT, wrap: true };
     const floorOps = { width: TILE_SIZE, depth: TILE_SIZE, height: FLOOR_THICKNESS };
     const ceilOps  = { width: TILE_SIZE, depth: TILE_SIZE, height: CEILING_THICKNESS };
 
     let playerSpawn = null;
+    let debugLightCount = 0;
 
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
@@ -477,8 +494,8 @@ function createScene() {
                 if (url) {
                     const m = new BABYLON.StandardMaterial(`fm${i}_${j}`, scene);
                     m.diffuseTexture = new BABYLON.Texture(url, scene);
-                    f.material = m;
                     m.maxSimultaneousLights = 8;
+                    f.material = m;
                 }
             }
 
@@ -499,6 +516,7 @@ function createScene() {
                 mat.diffuseTexture = tex;
                 mat.specularColor = new BABYLON.Color3(0, 0, 0);
                 mat.diffuseTexture.level = 0.9;
+                mat.maxSimultaneousLights = 8;
                 w.material = mat;
             }
 
@@ -511,8 +529,8 @@ function createScene() {
                 if (url) {
                     const m = new BABYLON.StandardMaterial(`cm${i}_${j}`, scene);
                     m.diffuseTexture = new BABYLON.Texture(url, scene);
-                    c.material = m;
                     m.maxSimultaneousLights = 8;
+                    c.material = m;
                 }
             }
             
@@ -522,8 +540,8 @@ function createScene() {
                 const cfg = LIGHT_TYPES[lightChar];
                 if (cfg) {
                     const lightPos = new BABYLON.Vector3(pos.x, CEILING_Y - 0.1, pos.z);
-                    const lightDir = new BABYLON.Vector3(0, -1, 0); // straight down
-            
+                    const lightDir = new BABYLON.Vector3(0, -1, 0);
+
                     const light = new BABYLON.SpotLight(
                         `light_${i}_${j}`,
                         lightPos,
@@ -532,12 +550,14 @@ function createScene() {
                         cfg.exponent,
                         scene
                     );
-            
+
                     light.diffuse  = cfg.color;
-                    light.specular = cfg.color.scale(0.4); // reduce shiny highlight
+                    light.specular = cfg.color.scale(0.4);
                     light.intensity = cfg.intensity;
                     light.range = cfg.range;
                     light.falloffType = BABYLON.Light.FALLOFF_STANDARD;
+
+                    debugLightCount++;
                 }
             }
 
@@ -547,6 +567,8 @@ function createScene() {
             }
         }
     }
+
+    console.log("Map lights created:", debugLightCount, "scene lights:", scene.lights.length);
 
     if (playerSpawn) {
         camera.position = playerSpawn.clone();
@@ -612,17 +634,14 @@ function tryMove(step) {
     return moved;
 }
 
-// NEW: monster movement uses same axis separated resolution as player
 function tryMoveMonster(mon, step) {
     const r = mon.radius ?? 0.4;
 
-    // X axis
     const px = mon.mesh.position.add(new BABYLON.Vector3(step.x, 0, 0));
     if (!isCircleCollidingWithWalls(px, r)) {
         mon.mesh.position.x = px.x;
     }
 
-    // Z axis
     const pz = mon.mesh.position.add(new BABYLON.Vector3(0, 0, step.z));
     if (!isCircleCollidingWithWalls(pz, r)) {
         mon.mesh.position.z = pz.z;
@@ -708,6 +727,7 @@ document.getElementById("btn-potion").onclick = () => {
 /* ============================================================
    Monster animation (generic for any cols/rows/frames)
    ============================================================ */
+
 function animateMonster(mon, dt) {
     if (!mon.frames || mon.frames <= 1) return;
 
@@ -731,6 +751,7 @@ function animateMonster(mon, dt) {
 /* ============================================================
    Monster AI with status
    ============================================================ */
+
 function updateMonsterAI(mon, dt) {
     if (!mon.alive) return;
 
@@ -741,13 +762,11 @@ function updateMonsterAI(mon, dt) {
     if (mon.cooldown > 0) mon.cooldown -= dt;
     if (mon.wanderCooldown > 0) mon.wanderCooldown -= dt;
 
-    // Attack state
     if (dist <= mon.attackRange) {
         setMonsterStatus(mon, "attack");
         mon.wanderTarget = null;
 
         if (mon.cooldown <= 0) {
-            // (1) attack damage from asset.json here
             player.hp -= mon.attackDamage;
             if (player.hp < 0) player.hp = 0;
             mon.cooldown = 1.2;
@@ -755,7 +774,6 @@ function updateMonsterAI(mon, dt) {
         return;
     }
 
-    // Detect and chase
     if (dist <= mon.detectRange) {
         setMonsterStatus(mon, "run");
         mon.wanderTarget = null;
@@ -768,14 +786,11 @@ function updateMonsterAI(mon, dt) {
         return;
     }
 
-    // Idle and random walk around idleCenter
     if (!mon.wanderTarget && mon.wanderCooldown <= 0) {
         if (Math.random() < 0.5) {
-            // stay idle
             setMonsterStatus(mon, "idle");
             mon.wanderCooldown = 1.5 + Math.random() * 2.0;
         } else {
-            // start walking to a random point
             const angle = Math.random() * Math.PI * 2;
             const radius = mon.idleRadius * Math.random();
             const tx = mon.idleCenter.x + Math.cos(angle) * radius;
@@ -802,15 +817,53 @@ function updateMonsterAI(mon, dt) {
 }
 
 /* ============================================================
+   Portals
+   ============================================================ */
+
+async function switchMap(url) {
+    console.log("Switching map to", url);
+
+    if (scene) {
+        scene.dispose();
+    }
+
+    // monsters are cleared in spawnMonsters
+    await loadMaps(url);
+    scene = createScene();
+    spawnMonsters(scene);
+
+    portalCooldown = 0.5; // small delay so we do not instantly retrigger
+}
+
+function checkPortal() {
+    if (portalCooldown > 0) return;
+    if (!portalMap.length) return;
+
+    const g = worldToGrid(camera.position.x, camera.position.z);
+    if (g.i < 0 || g.i >= MAP_SIZE || g.j < 0 || g.j >= MAP_SIZE) return;
+
+    const ch = portalMap[g.i]?.[g.j];
+    if (!ch || ch === ".") return;
+
+    const target = portals[ch];
+    if (!target || !target.url) return;
+
+    switchMap(target.url);
+}
+
+/* ============================================================
    Game Loop
    ============================================================ */
 
 function update(dt) {
-    // rotation
+    if (portalCooldown > 0) {
+        portalCooldown -= dt;
+        if (portalCooldown < 0) portalCooldown = 0;
+    }
+
     if (btnTurnLeftHeld || keys.left)  camera.rotation.y -= TURN_SPEED * dt;
     if (btnTurnRightHeld || keys.right)camera.rotation.y += TURN_SPEED * dt;
 
-    // movement
     const fwd = camera.getDirection(new BABYLON.Vector3(0, 0, 1));
     const flat = new BABYLON.Vector3(fwd.x, 0, fwd.z).normalize();
     const step = MOVE_SPEED * dt;
@@ -819,12 +872,14 @@ function update(dt) {
     if (btnForwardHeld || keys.forward) moved |= tryMove(flat.scale(step));
     if (btnBackHeld    || keys.back   ) moved |= tryMove(flat.scale(-step));
 
-    // footsteps
     wantFootsteps = moved;
     if (footstepLoop) {
         if (wantFootsteps && footstepLoop.paused) footstepLoop.play().catch(() => {});
         if (!wantFootsteps && !footstepLoop.paused) footstepLoop.pause();
     }
+
+    // check portal after movement
+    checkPortal();
 
     // torch flicker
     torchTime += dt;
@@ -836,7 +891,6 @@ function update(dt) {
     intensity = Math.min(1.6, Math.max(0.95, intensity));
     playerLight.intensity = intensity;
 
-    // monster AI + animation
     for (const m of monsters) {
         updateMonsterAI(m, dt);
         if (m.alive) animateMonster(m, dt);
@@ -851,7 +905,7 @@ function update(dt) {
 
 (async () => {
     await loadAssets();
-    await loadMaps();
+    await loadMaps(INITIAL_MAP_URL);
 
     scene = createScene();
     spawnMonsters(scene);
@@ -870,6 +924,7 @@ window.addEventListener("click", () => {
     if (bgm && bgm.paused) bgm.play().catch(() => {});
 });
 </script>
+
 
 </body>
 </html>
