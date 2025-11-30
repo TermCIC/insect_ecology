@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.7.0</title>
+<title>KEG v0.7.1</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -716,6 +716,26 @@ function createScene() {
 const MOVE_SPEED = 4;
 const TURN_SPEED = Math.PI;
 
+function isObstacleTile(i, j) {
+    // walls
+    const wallTile = wallMap[i]?.[j];
+    if (ASSETS.walls && wallTile && (wallTile in ASSETS.walls)) {
+        return true;
+    }
+
+    // structures
+    const sChar = structureMap[i]?.[j];
+    if (sChar && sChar !== "." && structuresDefs && structuresDefs[sChar]) {
+        const sConf = structuresDefs[sChar];
+        // solid defaults to true if not specified
+        if (sConf.solid !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function isCircleCollidingWithWalls(pos, radius = PLAYER_RADIUS) {
     const g = worldToGrid(pos.x, pos.z);
     if (g.i < 0 || g.i >= MAP_SIZE || g.j < 0 || g.j >= MAP_SIZE) return true;
@@ -725,9 +745,9 @@ function isCircleCollidingWithWalls(pos, radius = PLAYER_RADIUS) {
             const wi = g.i + di;
             const wj = g.j + dj;
             if (wi < 0 || wi >= MAP_SIZE || wj < 0 || wj >= MAP_SIZE) continue;
-            const tile = wallMap[wi][wj];
 
-            if (!ASSETS.walls || !(tile in ASSETS.walls)) continue;
+            // skip if there is no wall and no solid structure here
+            if (!isObstacleTile(wi, wj)) continue;
 
             const xMin = (wj - HALF_MAP) * TILE_SIZE;
             const xMax = xMin + TILE_SIZE;
