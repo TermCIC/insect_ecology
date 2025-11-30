@@ -860,6 +860,8 @@ async function switchMap(portalCfg) {
     if (!portalCfg || !portalCfg.url) return;
     console.log("Switching map to", portalCfg.url, "spawn:", portalCfg.spawn);
 
+    monsters.length = 0;
+    
     if (scene) {
         scene.dispose();
     }
