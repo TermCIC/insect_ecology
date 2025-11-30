@@ -40,8 +40,8 @@
     "##.......##",
     "##.......##",
     "##.......##",
-    "###########",
-    "###########"
+    "####S.S####",
+    "#####D#####"
   ],
 
   "objectMap": [
@@ -82,13 +82,16 @@
     "...........",
     "...........",
     "...........",
-    "...........",
+    ".....B.....",
     "..........."
   ],
 
   "portals": {
     "A": {
       "url": "https://termcic.github.io/insect_ecology/godness.json"
+    },
+    "B": {
+      "url": "https://termcic.github.io/insect_ecology/training.json"
     }
   }
 }
