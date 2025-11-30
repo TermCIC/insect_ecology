@@ -74,7 +74,7 @@
 
   "portalMap": [
     "...........",
-    ".....A.....",
+    ".....N.....",
     "...........",
     "...........",
     "...........",
@@ -87,8 +87,9 @@
   ],
 
   "portals": {
-    "A": {
-      "url": "https://termcic.github.io/insect_ecology/rest_room.json"
+    "N": {
+      "url": "https://termcic.github.io/insect_ecology/rest_room.json",
+      "spawn": { "i": 8, "j": 5, "yawDeg": 180 }
     }
   }
 }
