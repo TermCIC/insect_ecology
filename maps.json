@@ -1,5 +1,6 @@
 {
   "MAP_SIZE": 30,
+  "bgm": "https://res.cloudinary.com/dmdpjf8up/video/upload/v1764384182/into_the_graveyard_qwovim.mp3",
   "groundMap": [
     "##############################",
     "##############################",
