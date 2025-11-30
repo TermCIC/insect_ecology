@@ -86,10 +86,33 @@
     "..........."
   ],
 
+  "structureMap": [
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    ".....A.....",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "..........."
+  ],
+
   "portals": {
     "S": {
       "url": "https://termcic.github.io/insect_ecology/rest_room.json",
-      "spawn": { "i": 2, "j": 5}
+      "spawn": { "i": 2, "j": 5 }
+    }
+  },
+
+  "structures": {
+    "A": {
+      "url": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764148914/7931623c-4ef3-4e2f-8545-ee10d2ead6c9_sj2w6k.glb",
+      "scale": 2.4,
+      "y": 0,
+      "rotationY": 0
     }
   }
 }
