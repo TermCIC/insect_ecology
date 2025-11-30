@@ -481,6 +481,8 @@ function spawnMonsters(scene) {
 function spawnStructures(scene) {
     if (!structureMap || !structureMap.length) return;
 
+    console.log("Spawning structures...");
+
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             const ch = structureMap[i]?.[j];
@@ -497,48 +499,55 @@ function spawnStructures(scene) {
             const rootUrl   = fullUrl.substring(0, lastSlash + 1);
             const fileName  = fullUrl.substring(lastSlash + 1);
 
-            BABYLON.SceneLoader.ImportMesh(
-                "",
-                rootUrl,
-                fileName,
-                scene,
-                (meshes) => {
-                    if (!meshes || !meshes.length) {
-                        console.warn("No meshes loaded for structure", ch, "at", i, j);
-                        return;
+            try {
+                BABYLON.SceneLoader.ImportMesh(
+                    "",
+                    rootUrl,
+                    fileName,
+                    scene,
+                    (meshes) => {
+                        if (!meshes || !meshes.length) {
+                            console.warn("No meshes loaded for structure", ch, "at", i, j);
+                            return;
+                        }
+
+                        const rootNode = new BABYLON.TransformNode(
+                            `struct_${ch}_${i}_${j}`,
+                            scene
+                        );
+
+                        meshes.forEach(m => {
+                            m.parent = rootNode;
+                        });
+
+                        const sc = sConf.scale ?? 1;
+                        rootNode.scaling = new BABYLON.Vector3(sc, sc, sc);
+
+                        rootNode.position = new BABYLON.Vector3(
+                            pos.x + (sConf.offsetX || 0),
+                            (sConf.y ?? 0),
+                            pos.z + (sConf.offsetZ || 0)
+                        );
+
+                        if (typeof sConf.rotationY === "number") {
+                            rootNode.rotation = new BABYLON.Vector3(0, sConf.rotationY, 0);
+                        }
+
+                        console.log("Structure loaded", ch, "at", rootNode.position, "scale", sc);
+                    },
+                    null,
+                    (scene, message, exception) => {
+                        console.error("ImportMesh error (async):", message, exception);
                     }
-
-                    const rootNode = new BABYLON.TransformNode(
-                        `struct_${ch}_${i}_${j}`,
-                        scene
-                    );
-
-                    meshes.forEach(m => {
-                        m.parent = rootNode;
-                    });
-
-                    const sc = sConf.scale ?? 1;
-                    rootNode.scaling = new BABYLON.Vector3(sc, sc, sc);
-
-                    rootNode.position = new BABYLON.Vector3(
-                        pos.x + (sConf.offsetX || 0),
-                        (sConf.y ?? 0),
-                        pos.z + (sConf.offsetZ || 0)
-                    );
-
-                    if (typeof sConf.rotationY === "number") {
-                        rootNode.rotation = new BABYLON.Vector3(0, sConf.rotationY, 0);
-                    }
-
-                    console.log("Structure loaded", ch, "at", rootNode.position, "scale", sc);
-                },
-                null,
-                (scene, message, exception) => {
-                    console.error("ImportMesh error:", message, exception);
-                }
-            );
+                );
+            } catch (e) {
+                console.error("ImportMesh error (sync):", e);
+                // swallow the error so the scene continues to work
+            }
         }
     }
+
+    console.log("spawnStructures finished");
 }
 
 /* ============================================================
