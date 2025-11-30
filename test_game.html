@@ -184,9 +184,18 @@ async function loadMaps(url = INITIAL_MAP_URL) {
             portalMap = Array.from({ length: MAP_SIZE }, () => row);
         }
 
+        if (data.structureMap) {
+            structureMap = data.structureMap;
+        } else {
+            const row = ".".repeat(MAP_SIZE);
+            structureMap = Array.from({ length: MAP_SIZE }, () => row);
+        }
+
         // portals definition (label -> { url })
         portals = data.portals || {};
 
+        structuresDefs = data.structures || {};
+        
         groundMap = data.groundMap;
         ceilingMap = data.ceilingMap || data.groundMap;
         wallMap = data.wallMap;
@@ -197,7 +206,9 @@ async function loadMaps(url = INITIAL_MAP_URL) {
             MAP_SIZE,
             lightMapPreview: lightMap[0],
             portalMapPreview: portalMap[0],
+            structureMapPreview: structureMap[0],
             portals,
+            structuresDefs,
             bgm: data.bgm
         });
     } catch (err) {
@@ -283,7 +294,9 @@ let wallMap = [];
 let objectMap = [];
 let lightMap = [];
 let portalMap = [];
+let structureMap = [];
 let portals = {};
+let structuresDefs = {};
 let portalCooldown = 0;
 let mapDefaultSpawn = null;
 
@@ -589,7 +602,44 @@ function createScene() {
                     debugLightCount++;
                 }
             }
-
+            
+            // STRUCTURES
+            const structChar = structureMap[i]?.[j];
+            if (structChar && structChar !== "." && structuresDefs[structChar]) {
+                const sConf = structuresDefs[structChar];
+                const fullUrl = sConf.url;
+                if (typeof fullUrl === "string" && fullUrl.length > 0) {
+                    const lastSlash = fullUrl.lastIndexOf("/");
+                    const rootUrl   = fullUrl.substring(0, lastSlash + 1);
+                    const fileName  = fullUrl.substring(lastSlash + 1);
+    
+                    BABYLON.SceneLoader.ImportMesh(
+                        "",
+                        rootUrl,
+                        fileName,
+                        scene,
+                        (meshes) => {
+                            if (!meshes || !meshes.length) return;
+                            const root = meshes[0];
+    
+                            root.position = new BABYLON.Vector3(
+                                pos.x + (sConf.offsetX || 0),
+                                (sConf.y ?? 0),
+                                pos.z + (sConf.offsetZ || 0)
+                            );
+    
+                            const sc = sConf.scale || 1;
+                            root.scaling = new BABYLON.Vector3(sc, sc, sc);
+    
+                            if (typeof sConf.rotationY === "number") {
+                                root.rotation = root.rotation || new BABYLON.Vector3(0, 0, 0);
+                                root.rotation.y = sConf.rotationY;
+                            }
+                        }
+                    );
+                }
+            }
+            
             // Player spawn
             if (objectMap[i][j] === "P") {
                 mapDefaultSpawn = { i, j };
