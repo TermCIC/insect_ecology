@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.6.4</title>
+<title>KEG v0.6.5</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -849,6 +849,8 @@ async function switchMap(portalCfg) {
     if (!portalCfg || !portalCfg.url) return;
     console.log("Switching map to", portalCfg.url, "spawn:", portalCfg.spawn);
 
+    let preservedYaw = camera ? camera.rotation.y : 0;
+    
     monsters.length = 0;
     
     if (scene) {
@@ -857,6 +859,9 @@ async function switchMap(portalCfg) {
 
     await loadMaps(portalCfg.url);
     scene = createScene();
+
+    camera.rotation.y = preservedYaw;
+    
     spawnMonsters(scene);
 
     // portal spawn has priority over 'P'
