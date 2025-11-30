@@ -89,11 +89,11 @@
   "portals": {
     "N": {
       "url": "https://termcic.github.io/insect_ecology/godness.json",
-      "spawn": { "i": 2, "j": 5, "yawDeg": 180 }
+      "spawn": { "i": 8, "j": 5, "yawDeg": 180 }
     },
     "S": {
       "url": "https://termcic.github.io/insect_ecology/training.json",
-      "spawn": { "i": 8, "j": 5, "yawDeg": 0 }
+      "spawn": { "i": 2, "j": 5, "yawDeg": 0 }
     }
   }
 }
