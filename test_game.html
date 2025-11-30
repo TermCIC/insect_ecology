@@ -478,6 +478,69 @@ function spawnMonsters(scene) {
     }
 }
 
+function spawnStructures(scene) {
+    if (!structureMap || !structureMap.length) return;
+
+    for (let i = 0; i < MAP_SIZE; i++) {
+        for (let j = 0; j < MAP_SIZE; j++) {
+            const ch = structureMap[i]?.[j];
+            if (!ch || ch === ".") continue;
+
+            const sConf = structuresDefs[ch];
+            if (!sConf || !sConf.url) continue;
+
+            const pos = gridToWorld(i, j);
+            const fullUrl = sConf.url;
+            if (typeof fullUrl !== "string" || !fullUrl.length) continue;
+
+            const lastSlash = fullUrl.lastIndexOf("/");
+            const rootUrl   = fullUrl.substring(0, lastSlash + 1);
+            const fileName  = fullUrl.substring(lastSlash + 1);
+
+            BABYLON.SceneLoader.ImportMesh(
+                "",
+                rootUrl,
+                fileName,
+                scene,
+                (meshes) => {
+                    if (!meshes || !meshes.length) {
+                        console.warn("No meshes loaded for structure", ch, "at", i, j);
+                        return;
+                    }
+
+                    const rootNode = new BABYLON.TransformNode(
+                        `struct_${ch}_${i}_${j}`,
+                        scene
+                    );
+
+                    meshes.forEach(m => {
+                        m.parent = rootNode;
+                    });
+
+                    const sc = sConf.scale ?? 1;
+                    rootNode.scaling = new BABYLON.Vector3(sc, sc, sc);
+
+                    rootNode.position = new BABYLON.Vector3(
+                        pos.x + (sConf.offsetX || 0),
+                        (sConf.y ?? 0),
+                        pos.z + (sConf.offsetZ || 0)
+                    );
+
+                    if (typeof sConf.rotationY === "number") {
+                        rootNode.rotation = new BABYLON.Vector3(0, sConf.rotationY, 0);
+                    }
+
+                    console.log("Structure loaded", ch, "at", rootNode.position, "scale", sc);
+                },
+                null,
+                (scene, message, exception) => {
+                    console.error("ImportMesh error:", message, exception);
+                }
+            );
+        }
+    }
+}
+
 /* ============================================================
    Scene - JSON driven walls/floors/ceilings
    ============================================================ */
@@ -600,74 +663,6 @@ function createScene() {
                     light.falloffType = BABYLON.Light.FALLOFF_STANDARD;
 
                     debugLightCount++;
-                }
-            }
-            
-            // STRUCTURES
-            const structChar = structureMap[i]?.[j];
-            if (structChar && structChar !== "." && structuresDefs[structChar]) {
-                const sConf = structuresDefs[structChar];
-                const fullUrl = sConf.url;
-
-                if (typeof fullUrl === "string" && fullUrl.length > 0) {
-                    const lastSlash = fullUrl.lastIndexOf("/");
-                    const rootUrl   = fullUrl.substring(0, lastSlash + 1);
-                    const fileName  = fullUrl.substring(lastSlash + 1);
-            
-                    BABYLON.SceneLoader.ImportMesh(
-                        "",
-                        rootUrl,
-                        fileName,
-                        scene,
-                        (meshes) => {
-                            if (!meshes || !meshes.length) return;
-            
-                            // parent node for all parts of the structure
-                            const rootNode = new BABYLON.TransformNode(
-                                `struct_${structChar}_${i}_${j}`,
-                                scene
-                            );
-                            meshes.forEach(m => {
-                                if (m !== rootNode) m.parent = rootNode;
-                            });
-            
-                            // compute bounding box and normalize to 1 tile
-                            const { min, max } = rootNode.getHierarchyBoundingVectors();
-                            const size = max.subtract(min);
-                            const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            
-                            const desired = TILE_SIZE; // fit into 1 tile
-                            const baseScale = desired / maxDim;
-            
-                            const extra = sConf.scale ?? 1;
-                            const finalScale = baseScale * extra;
-            
-                            rootNode.scaling = new BABYLON.Vector3(
-                                finalScale,
-                                finalScale,
-                                finalScale
-                            );
-            
-                            // position at tile center + offsets
-                            rootNode.position = new BABYLON.Vector3(
-                                pos.x + (sConf.offsetX || 0),
-                                (sConf.y ?? 0),
-                                pos.z + (sConf.offsetZ || 0)
-                            );
-            
-                            // rotate if needed
-                            if (typeof sConf.rotationY === "number") {
-                                rootNode.rotation = rootNode.rotation || new BABYLON.Vector3(0, 0, 0);
-                                rootNode.rotation.y = sConf.rotationY;
-                            }
-            
-                            console.log("Structure loaded", structChar, "at", rootNode.position, "scale", finalScale);
-                        },
-                        null,
-                        (scene, message, exception) => {
-                            console.error("ImportMesh error:", message, exception);
-                        }
-                    );
                 }
             }
             
@@ -944,7 +939,8 @@ async function switchMap(portalCfg) {
     camera.rotation.y = preservedYaw;
     
     spawnMonsters(scene);
-
+    spawnStructures(scene);
+    
     // portal spawn has priority over 'P'
     placePlayerAfterMapLoad(portalCfg.spawn);
 
@@ -1025,6 +1021,7 @@ function update(dt) {
 
     scene = createScene();
     spawnMonsters(scene);
+    spawnStructures(scene);
 
     placePlayerAfterMapLoad(null);
 
