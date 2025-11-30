@@ -156,17 +156,40 @@ async function loadMaps() {
             bgm.loop = true;
             bgm.volume = 0.03; // or data.bgmVolume if you add that later
         }
+        
+        // light layer, fallback to all "."
+        if (data.lightMap) {
+            lightMap = data.lightMap;
+        } else {
+            const row = ".".repeat(MAP_SIZE);
+            lightMap = Array.from({ length: MAP_SIZE }, () => row);
+        }
 
         groundMap = data.groundMap;
         ceilingMap = data.ceilingMap || data.groundMap; // fallback if you want
         wallMap = data.wallMap;
         objectMap = data.objectMap;
 
-        console.log("Maps loaded:", { MAP_SIZE, groundMap, wallMap, objectMap });
+        console.log("Maps loaded:", {
+            MAP_SIZE,
+            groundMap,
+            wallMap,
+            objectMap,
+            lightMapPreview: lightMap[0],
+            bgm: data.bgm
+        });
     } catch (err) {
         console.error("Failed to load maps.json", err);
     }
 }
+
+const LIGHT_TYPES = {
+    "R": { color: new BABYLON.Color3(1.0, 0.3, 0.3), intensity: 1.0, range: 7 },
+    "B": { color: new BABYLON.Color3(0.4, 0.6, 1.0), intensity: 1.0, range: 7 },
+    "G": { color: new BABYLON.Color3(0.4, 1.0, 0.4), intensity: 1.0, range: 7 },
+    "Y": { color: new BABYLON.Color3(1.0, 0.9, 0.4), intensity: 1.1, range: 8 },
+    "W": { color: new BABYLON.Color3(1.0, 1.0, 1.0), intensity: 1.2, range: 9 }
+};
 
 /* ============================================================
    Base variables and DOM
@@ -459,6 +482,23 @@ function createScene() {
                     c.material = m;
                 }
             }
+            // LIGHTS from lightMap
+        const lightChar = lightMap[i]?.[j];
+        if (lightChar && lightChar !== ".") {
+            const cfg = LIGHT_TYPES[lightChar];
+            if (cfg) {
+                const light = new BABYLON.PointLight(
+                    `light_${i}_${j}`,
+                    new BABYLON.Vector3(pos.x, CEILING_Y - 0.3, pos.z),
+                    scene
+                );
+                light.diffuse  = cfg.color;
+                light.specular = cfg.color;
+                light.intensity = cfg.intensity;
+                light.range = cfg.range;
+                light.falloffType = BABYLON.Light.FALLOFF_STANDARD;
+            }
+        }
 
             // Player spawn
             if (objectMap[i][j] === "P") {
