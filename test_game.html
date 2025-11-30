@@ -120,11 +120,6 @@ async function loadAssets() {
         console.log("Assets loaded:", ASSETS);
 
         // audio
-        if (ASSETS.audio?.bgm) {
-            bgm = new Audio(ASSETS.audio.bgm);
-            bgm.loop = true;
-            bgm.volume = 0.03;
-        }
         if (ASSETS.audio?.footstep) {
             footstepLoop = new Audio(ASSETS.audio.footstep);
             footstepLoop.loop = true;
@@ -154,6 +149,13 @@ async function loadMaps() {
         // size
         MAP_SIZE = data.MAP_SIZE ?? (data.wallMap?.length || 0);
         HALF_MAP = MAP_SIZE / 2;
+        
+        // bgm for this map
+        if (data.bgm) {
+            bgm = new Audio(data.bgm);
+            bgm.loop = true;
+            bgm.volume = 0.03; // or data.bgmVolume if you add that later
+        }
 
         groundMap = data.groundMap;
         ceilingMap = data.ceilingMap || data.groundMap; // fallback if you want
