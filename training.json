@@ -89,7 +89,7 @@
   "portals": {
     "N": {
       "url": "https://termcic.github.io/insect_ecology/rest_room.json",
-      "spawn": { "i": 8, "j": 5, "yawDeg": 180 }
+      "spawn": { "i": 8, "j": 5}
     }
   }
 }
