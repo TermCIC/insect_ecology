@@ -478,6 +478,7 @@ function createScene() {
                     const m = new BABYLON.StandardMaterial(`fm${i}_${j}`, scene);
                     m.diffuseTexture = new BABYLON.Texture(url, scene);
                     f.material = m;
+                    m.maxSimultaneousLights = 8;
                 }
             }
 
@@ -511,6 +512,7 @@ function createScene() {
                     const m = new BABYLON.StandardMaterial(`cm${i}_${j}`, scene);
                     m.diffuseTexture = new BABYLON.Texture(url, scene);
                     c.material = m;
+                    m.maxSimultaneousLights = 8;
                 }
             }
             
