@@ -542,7 +542,35 @@ function spawnStructures(scene) {
                         // Ground the model using its bounding box,
                         // exactly like in v0.1.8
                         const bbox = root.getHierarchyBoundingVectors();
+                        const lowestY = bbox.min.y;
+                        root.position.y -= lowestY;
 
+                        // Optional additional vertical offset
+                        if (typeof sConf.y === "number") {
+                            root.position.y += sConf.y;
+                        }
+
+                        // Y-rotation if requested
+                        if (typeof sConf.rotationY === "number") {
+                            root.rotation = new BABYLON.Vector3(0, sConf.rotationY, 0);
+                        }
+
+                        console.log("Structure loaded", ch, "at", root.position, "scale", sc);
+                    },
+                    null,
+                    (scene, message, exception) => {
+                        console.error("ImportMesh error (async):", message, exception);
+                    }
+                );
+            } catch (e) {
+                console.error("ImportMesh error (sync):", e);
+                // swallow so the map and game keep working
+            }
+        }
+    }
+
+    console.log("spawnStructures finished");
+}
 
 /* ============================================================
    Scene - JSON driven walls/floors/ceilings
