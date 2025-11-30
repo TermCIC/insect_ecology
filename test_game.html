@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.6.2</title>
+<title>KEG v0.6.3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -285,6 +285,7 @@ let lightMap = [];
 let portalMap = [];
 let portals = {};
 let portalCooldown = 0;
+let mapDefaultSpawn = null;
 
 /* ============================================================
    Helpers
@@ -323,6 +324,22 @@ function teleportPlayerToSpawn(spawn) {
     }
 
     camera.rotation.y = yaw;
+}
+
+function placePlayerAfterMapLoad(entrySpawn) {
+    // portal spawn wins
+    if (entrySpawn) {
+        teleportPlayerToSpawn(entrySpawn);
+        return;
+    }
+
+    // else use P from objectMap if it exists
+    if (mapDefaultSpawn) {
+        teleportPlayerToSpawn(mapDefaultSpawn);
+        return;
+    }
+
+    // else keep current camera position
 }
 
 /* ============================================================
@@ -501,7 +518,7 @@ function createScene() {
     const floorOps = { width: TILE_SIZE, depth: TILE_SIZE, height: FLOOR_THICKNESS };
     const ceilOps  = { width: TILE_SIZE, depth: TILE_SIZE, height: CEILING_THICKNESS };
 
-    let playerSpawn = null;
+    mapDefaultSpawn = null;
     let debugLightCount = 0;
 
     for (let i = 0; i < MAP_SIZE; i++) {
@@ -586,7 +603,7 @@ function createScene() {
 
             // Player spawn
             if (objectMap[i][j] === "P") {
-                playerSpawn = new BABYLON.Vector3(pos.x, CAMERA_HEIGHT, pos.z);
+                mapDefaultSpawn = { i, j };
             }
         }
     }
@@ -855,10 +872,8 @@ async function switchMap(portalCfg) {
     scene = createScene();
     spawnMonsters(scene);
 
-    // place player according to portal spawn, including facing direction
-    if (portalCfg.spawn) {
-        teleportPlayerToSpawn(portalCfg.spawn);
-    }
+    // portal spawn has priority over 'P'
+    placePlayerAfterMapLoad(portalCfg.spawn);
 
     portalCooldown = 0.5;
 }
@@ -937,6 +952,8 @@ function update(dt) {
 
     scene = createScene();
     spawnMonsters(scene);
+
+    placePlayerAfterMapLoad(null);
 
     engine.runRenderLoop(() => {
         const dt = engine.getDeltaTime() / 1000;
