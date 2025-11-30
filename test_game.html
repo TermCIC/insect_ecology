@@ -479,7 +479,12 @@ function spawnMonsters(scene) {
 }
 
 function spawnStructures(scene) {
+    // If the map has no structure info at all, do nothing
     if (!structureMap || !structureMap.length) return;
+    if (!structuresDefs || Object.keys(structuresDefs).length === 0) {
+        console.log("No structures defined for this map.");
+        return;
+    }
 
     console.log("Spawning structures...");
 
@@ -489,7 +494,10 @@ function spawnStructures(scene) {
             if (!ch || ch === ".") continue;
 
             const sConf = structuresDefs[ch];
-            if (!sConf || !sConf.url) continue;
+            if (!sConf || !sConf.url) {
+                console.warn("Structure char", ch, "has no config/url");
+                continue;
+            }
 
             const pos = gridToWorld(i, j);
             const fullUrl = sConf.url;
@@ -511,44 +519,30 @@ function spawnStructures(scene) {
                             return;
                         }
 
-                        const rootNode = new BABYLON.TransformNode(
+                        // Same pattern as your old working code
+                        const root = new BABYLON.TransformNode(
                             `struct_${ch}_${i}_${j}`,
                             scene
                         );
-
                         meshes.forEach(m => {
-                            m.parent = rootNode;
+                            m.parent = root;
                         });
 
-                        const sc = sConf.scale ?? 1;
-                        rootNode.scaling = new BABYLON.Vector3(sc, sc, sc);
-
-                        rootNode.position = new BABYLON.Vector3(
+                        // Base position at tile center
+                        root.position = new BABYLON.Vector3(
                             pos.x + (sConf.offsetX || 0),
-                            (sConf.y ?? 0),
+                            0,
                             pos.z + (sConf.offsetZ || 0)
                         );
 
-                        if (typeof sConf.rotationY === "number") {
-                            rootNode.rotation = new BABYLON.Vector3(0, sConf.rotationY, 0);
-                        }
+                        // Simple scale control (no TILE_SIZE magic)
+                        const sc = sConf.scale ?? 1;
+                        root.scaling = new BABYLON.Vector3(sc, sc, sc);
 
-                        console.log("Structure loaded", ch, "at", rootNode.position, "scale", sc);
-                    },
-                    null,
-                    (scene, message, exception) => {
-                        console.error("ImportMesh error (async):", message, exception);
-                    }
-                );
-            } catch (e) {
-                console.error("ImportMesh error (sync):", e);
-                // swallow the error so the scene continues to work
-            }
-        }
-    }
+                        // Ground the model using its bounding box,
+                        // exactly like in v0.1.8
+                        const bbox = root.getHierarchyBoundingVectors();
 
-    console.log("spawnStructures finished");
-}
 
 /* ============================================================
    Scene - JSON driven walls/floors/ceilings
