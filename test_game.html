@@ -109,6 +109,7 @@
    ============================================================ */
 let ASSETS = null;
 let bgm = null;
+let currentBgmUrl = null;
 let footstepLoop = null;
 let attackSound = null;
 let potionSound = null;
@@ -155,17 +156,30 @@ async function loadMaps(url = INITIAL_MAP_URL) {
         MAP_SIZE = data.MAP_SIZE ?? (data.wallMap?.length || 0);
         HALF_MAP = MAP_SIZE / 2;
         
-        // stop old bgm if any
-        if (bgm) {
-            bgm.pause();
-            bgm = null;
-        }
-
-        // bgm for this map
+        // BGM handling
         if (data.bgm) {
-            bgm = new Audio(data.bgm);
-            bgm.loop = true;
-            bgm.volume = 0.03;
+            // If the new map uses the same BGM URL, keep the old audio playing
+            if (bgm && currentBgmUrl === data.bgm) {
+                // ensure settings are correct, but do NOT reset currentTime
+                bgm.loop = true;
+                bgm.volume = 0.03;
+            } else {
+                // Different BGM or none was playing: stop old and create new
+                if (bgm) {
+                    bgm.pause();
+                }
+                bgm = new Audio(data.bgm);
+                bgm.loop = true;
+                bgm.volume = 0.03;
+                currentBgmUrl = data.bgm;
+            }
+        } else {
+            // This map has no BGM, stop any existing one
+            if (bgm) {
+                bgm.pause();
+                bgm = null;
+            }
+            currentBgmUrl = null;
         }
         
         // light layer, fallback to all "."
