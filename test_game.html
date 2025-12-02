@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>KEG v0.7.2</title>
+<title>KEG v0.7.3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
 <style>
@@ -113,6 +113,9 @@ let currentBgmUrl = null;
 let footstepLoop = null;
 let attackSound = null;
 let potionSound = null;
+let wallAssets = {};
+let floorAssets = {};
+let ceilingAssets = {};
 
 const INITIAL_MAP_URL = "https://termcic.github.io/insect_ecology/godness.json";
 
@@ -207,13 +210,18 @@ async function loadMaps(url = INITIAL_MAP_URL) {
 
         // portals definition (label -> { url })
         portals = data.portals || {};
-
+        
         structuresDefs = data.structures || {};
         
         groundMap = data.groundMap;
         ceilingMap = data.ceilingMap || data.groundMap;
         wallMap = data.wallMap;
         objectMap = data.objectMap;
+
+        // NEW: per map assets, fall back to global ASSETS if not provided
+        wallAssets   = data.walls    || (ASSETS?.walls    || {});
+        floorAssets  = data.floors   || (ASSETS?.floors   || {});
+        ceilingAssets = data.ceilings || (ASSETS?.ceilings || {});
 
         console.log("Maps loaded:", {
             url,
@@ -223,7 +231,10 @@ async function loadMaps(url = INITIAL_MAP_URL) {
             structureMapPreview: structureMap[0],
             portals,
             structuresDefs,
-            bgm: data.bgm
+            bgm: data.bgm,
+            wallAssets,
+            floorAssets,
+            ceilingAssets
         });
     } catch (err) {
         console.error("Failed to load maps.json", err);
