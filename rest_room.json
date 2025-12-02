@@ -86,6 +86,23 @@
     "..........."
   ],
 
+  "walls": {
+    "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764389337/dark_stone_wall_high_bkmszb.png",
+    "G": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764389353/dark_stone_wall_with_godness_hyoapz.png",
+    "D": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764599821/D12F9943-98E5-45E6-9A10-F2455A589073_v5gldg.png",
+    "S": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764392739/dark_stone_wall_with_skeleton_g0ibtd.png",
+    "B": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764392924/dark_stone_wall_with_dragon_zabbnn.png",
+    "T": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764393208/dark_stone_wall_with_beer_jq7qfz.png"
+  },
+
+  "floors": {
+    "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764202147/dark_stone_floor_2_km9hfy.png"
+  },
+
+  "ceilings": {
+    "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764147143/dark_stone_ceil_wepupg.png"
+  },
+
   "portals": {
     "N": {
       "url": "https://termcic.github.io/insect_ecology/godness.json",
