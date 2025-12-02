@@ -86,6 +86,20 @@
     "..........."
   ],
 
+  "structureMap": [
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "...........",
+    "..........."
+  ],
+
   "walls": {
     "#": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764389337/dark_stone_wall_high_bkmszb.png",
     "G": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764389353/dark_stone_wall_with_godness_hyoapz.png",
@@ -107,6 +121,15 @@
     "N": {
       "url": "https://termcic.github.io/insect_ecology/rest_room.json",
       "spawn": { "i": 8, "j": 5}
+    }
+  },
+
+  "structures": {
+    "A": {
+      "url": "https://res.cloudinary.com/dmdpjf8up/image/upload/v1764534707/goddess_statue_3d_model_compressed_vjcwwn.glb",
+      "scale": 3,
+      "y": 0.0,
+      "rotationY": 90
     }
   }
 }
