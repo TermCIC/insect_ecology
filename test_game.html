@@ -218,7 +218,7 @@ async function loadMaps(url = INITIAL_MAP_URL) {
         wallMap = data.wallMap;
         objectMap = data.objectMap;
 
-        // NEW: per map assets, fall back to global ASSETS if not provided
+        // per map assets, fall back to global ASSETS if not provided
         wallAssets   = data.walls    || (ASSETS?.walls    || {});
         floorAssets  = data.floors   || (ASSETS?.floors   || {});
         ceilingAssets = data.ceilings || (ASSETS?.ceilings || {});
@@ -646,23 +646,24 @@ function createScene() {
         for (let j = 0; j < MAP_SIZE; j++) {
             const pos = gridToWorld(i, j);
 
-            // FLOOR
-            if (groundMap[i][j] === "#") {
+             // FLOOR from groundMap symbol and floorAssets
+            const floorChar = groundMap[i][j];
+            const floorUrl  = floorAssets?.[floorChar];
+
+            if (floorUrl) {
                 const f = BABYLON.MeshBuilder.CreateBox(`f${i}_${j}`, floorOps, scene);
                 f.position = new BABYLON.Vector3(pos.x, -FLOOR_THICKNESS / 2, pos.z);
 
-                const url = ASSETS.floors?.["#"];
-                if (url) {
-                    const m = new BABYLON.StandardMaterial(`fm${i}_${j}`, scene);
-                    m.diffuseTexture = new BABYLON.Texture(url, scene);
-                    m.maxSimultaneousLights = 8;
-                    f.material = m;
-                }
+                const m = new BABYLON.StandardMaterial(`fm${i}_${j}`, scene);
+                m.diffuseTexture = new BABYLON.Texture(floorUrl, scene);
+                m.maxSimultaneousLights = 8;
+                f.material = m;
             }
+
 
             // WALL
             const tile = wallMap[i][j];
-            const wallUrl = ASSETS.walls?.[tile];
+            const wallUrl = wallAssets?.[tile];
 
             if (wallUrl) {
                 const w = BABYLON.MeshBuilder.CreateBox(`w${i}_${j}`, wallOps, scene);
@@ -681,19 +682,20 @@ function createScene() {
                 w.material = mat;
             }
 
-            // CEILING
-            if (ceilingMap[i][j] === "#") {
+            // CEILING from ceilingMap symbol and ceilingAssets
+            const ceilChar = ceilingMap[i][j];
+            const ceilUrl  = ceilingAssets?.[ceilChar];
+
+            if (ceilUrl) {
                 const c = BABYLON.MeshBuilder.CreateBox(`c${i}_${j}`, ceilOps, scene);
                 c.position = new BABYLON.Vector3(pos.x, CEILING_Y + CEILING_THICKNESS / 2, pos.z);
 
-                const url = ASSETS.ceilings?.["#"];
-                if (url) {
-                    const m = new BABYLON.StandardMaterial(`cm${i}_${j}`, scene);
-                    m.diffuseTexture = new BABYLON.Texture(url, scene);
-                    m.maxSimultaneousLights = 8;
-                    c.material = m;
-                }
+                const m = new BABYLON.StandardMaterial(`cm${i}_${j}`, scene);
+                m.diffuseTexture = new BABYLON.Texture(ceilUrl, scene);
+                m.maxSimultaneousLights = 8;
+                c.material = m;
             }
+
             
             // LIGHTS from lightMap
             const lightChar = lightMap[i]?.[j];
@@ -744,7 +746,7 @@ const TURN_SPEED = Math.PI;
 function isObstacleTile(i, j) {
     // walls
     const wallTile = wallMap[i]?.[j];
-    if (ASSETS.walls && wallTile && (wallTile in ASSETS.walls)) {
+    if (wallAssets && wallTile && (wallTile in wallAssets)) {
         return true;
     }
 
@@ -752,7 +754,6 @@ function isObstacleTile(i, j) {
     const sChar = structureMap[i]?.[j];
     if (sChar && sChar !== "." && structuresDefs && structuresDefs[sChar]) {
         const sConf = structuresDefs[sChar];
-        // solid defaults to true if not specified
         if (sConf.solid !== false) {
             return true;
         }
@@ -760,6 +761,7 @@ function isObstacleTile(i, j) {
 
     return false;
 }
+
 
 function isCircleCollidingWithWalls(pos, radius = PLAYER_RADIUS) {
     const g = worldToGrid(pos.x, pos.z);
