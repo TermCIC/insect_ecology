@@ -96,7 +96,7 @@
 <script>
 /* Add species */
 function addSpecies() {
-    const name = prompt("Enter new termite species name:");
+    const name = prompt("Enter new insect species name:");
     if (!name) return;
     const select = document.getElementById("species");
     const option = document.createElement("option");
@@ -151,7 +151,6 @@ function addRecord() {
     }
 
     const time = new Date().toLocaleString();
-
     const record = { species, count, habitat, gps, time };
     records.push(record);
     updateTable();
@@ -176,6 +175,21 @@ function updateTable() {
     });
 }
 
+/* Create unique timestamp for filenames */
+function getTimestamp() {
+    const d = new Date();
+    const pad = n => n.toString().padStart(2, "0");
+    return (
+        d.getFullYear().toString() +
+        pad(d.getMonth() + 1) +
+        pad(d.getDate()) +
+        "_" +
+        pad(d.getHours()) +
+        pad(d.getMinutes()) +
+        pad(d.getSeconds())
+    );
+}
+
 /* Export CSV */
 function exportCSV() {
     if (records.length === 0) {
@@ -184,17 +198,18 @@ function exportCSV() {
     }
 
     let csv = "No.,Species,Count,Habitat,GPS,Time\n";
-
     records.forEach((r, i) => {
         csv += `${i + 1},${r.species},${r.count},${r.habitat},${r.gps},${r.time}\n`;
     });
+
+    const filename = "insect_sampling_" + getTimestamp() + ".csv";
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "insect_sampling.csv";
+    a.download = filename;
     a.click();
 
     URL.revokeObjectURL(url);
@@ -210,7 +225,7 @@ function exportKML() {
     let kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>
-    <name>Termite Sampling</name>
+    <name>Insect Sampling</name>
 `;
 
     records.forEach((r, i) => {
@@ -218,11 +233,11 @@ function exportKML() {
         kml += `
     <Placemark>
         <name>${r.species} (${r.count})</name>
-        <description>
+        <description><![CDATA[
 Habitat: ${r.habitat}
 Count: ${r.count}
 Recorded: ${r.time}
-        </description>
+        ]]></description>
         <Point>
             <coordinates>${lon},${lat},0</coordinates>
         </Point>
@@ -235,12 +250,14 @@ Recorded: ${r.time}
 </kml>
 `;
 
+    const filename = "insect_sampling_" + getTimestamp() + ".kml";
+
     const blob = new Blob([kml], { type: "application/vnd.google-earth.kml+xml" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "insect_sampling.kml";
+    a.download = filename;
     a.click();
 
     URL.revokeObjectURL(url);
