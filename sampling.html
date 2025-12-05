@@ -49,7 +49,6 @@
 
 <h2>Termite Sampling Record</h2>
 
-<!-- Species selection -->
 <label>Termite species</label>
 <select id="species">
     <option value="No termites">No termites</option>
@@ -59,14 +58,12 @@
     <option value="Globitermes">Globitermes</option>
 </select>
 
-<!-- GPS input -->
 <label>GPS coordinates (lat, lon)</label>
 <input id="gpsInput" type="text" placeholder="Example: 18.796, 98.952">
 
 <button onclick="getGPS()">Get GPS</button>
 <button onclick="addRecord()">Record Sample</button>
 
-<!-- Table output -->
 <table id="recordTable">
     <thead>
         <tr>
@@ -80,9 +77,9 @@
 </table>
 
 <button onclick="exportCSV()">Export CSV</button>
+<button onclick="exportKML()">Export KML for Google Earth</button>
 
 <script>
-// Get GPS using browser geolocation
 function getGPS() {
     if (!navigator.geolocation) {
         alert("GPS is not supported by this device");
@@ -102,7 +99,6 @@ function getGPS() {
 
 let records = [];
 
-// Add record to table
 function addRecord() {
     const species = document.getElementById("species").value;
     const gps = document.getElementById("gpsInput").value.trim();
@@ -135,7 +131,6 @@ function updateTable() {
     });
 }
 
-// Export CSV
 function exportCSV() {
     if (records.length === 0) {
         alert("No data to export");
@@ -154,6 +149,48 @@ function exportCSV() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "termite_sampling.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+// KML EXPORT
+function exportKML() {
+    if (records.length === 0) {
+        alert("No data to export");
+        return;
+    }
+
+    let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>Termite Sampling</name>
+`;
+
+    records.forEach((r, i) => {
+        const [lat, lon] = r.gps.split(",").map(v => v.trim());
+        kml += `
+    <Placemark>
+        <name>${r.species}</name>
+        <description>Recorded at ${r.time}</description>
+        <Point>
+            <coordinates>${lon},${lat},0</coordinates>
+        </Point>
+    </Placemark>
+`;
+    });
+
+    kml += `
+</Document>
+</kml>
+`;
+
+    const blob = new Blob([kml], { type: "application/vnd.google-earth.kml+xml" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "termite_sampling.kml";
     a.click();
 
     URL.revokeObjectURL(url);
