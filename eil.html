@@ -14,9 +14,7 @@
         margin: auto;
         line-height: 1.5;
     }
-    h1 {
-        text-align: center;
-    }
+    h1 { text-align: center; }
     label {
         font-weight: bold;
         margin-top: 12px;
@@ -38,7 +36,7 @@
         font-size: 18px;
         border-radius: 4px;
     }
-    #result, #meaning, #etresult, #etmeaning {
+    #result, #meaning, #etresult, #etmeaning, #exampleBox {
         margin-top: 20px;
         padding: 15px;
         background: white;
@@ -66,16 +64,16 @@ Below this level, control is not economically justified. Above this level, actio
 <label>Cost of control (C) — THB per unit area</label>
 <input type="number" id="C" placeholder="e.g., 600">
 
-<label>Market value of crop (V) — THB per kg (or per unit)</label>
+<label>Market value of crop (V) — THB per kg</label>
 <input type="number" id="V" placeholder="e.g., 7">
 
 <label>Damage per unit injury (D) — proportion yield loss per injury</label>
 <input type="number" id="D" placeholder="e.g., 0.02" step="0.0001">
 
-<label>Injury per pest (I) — amount of injury per 1 insect (optional)</label>
+<label>Injury per pest (I) — injury caused by 1 insect (optional)</label>
 <input type="number" id="I" placeholder="leave blank if unknown" step="0.0001">
 
-<label>Control effectiveness (K) — proportion of pests reduced (0 to 1)</label>
+<label>Control effectiveness (K) — proportion (0 to 1)</label>
 <input type="number" id="K" placeholder="e.g., 0.8" step="0.01">
 
 <button onclick="calcEIL()">Calculate EIL</button>
@@ -87,7 +85,7 @@ Below this level, control is not economically justified. Above this level, actio
 
 <p>The Economic Threshold (ET) is the pest density at which action must be taken 
 <b>before</b> the population reaches the EIL.  
-ET is always lower than EIL because pests grow, disperse and cause damage during the time needed to take action.</p>
+ET is always lower than EIL because pests grow and cause damage during the time required to take action.</p>
 
 <label>ET proportion relative to EIL (default 0.7 = 70 percent)</label>
 <input type="number" id="ETp" value="0.7" step="0.01">
@@ -99,15 +97,81 @@ ET is always lower than EIL because pests grow, disperse and cause damage during
 
 <div class="section-title">Formula Explanation</div>
 
-<p>The EIL formula can be written in two equivalent forms:</p>
+<p>EIL formula (simplified):<br>
+<b>EIL = C / (V × D × K)</b></p>
 
-<p><b>1. Simplified formula (no injury component included):</b><br>
-EIL = C / (V × D × K)</p>
+<p>EIL formula (full Pedigo model):<br>
+<b>EIL = C / (V × D × I × K)</b></p>
 
-<p><b>2. Full Pedigo formula (injury and damage separated):</b><br>
-EIL = C / (V × D × I × K)</p>
+<p>D × I together represent the total impact per pest.</p>
 
-<p>D × I together represent the total impact per pest, so both versions are correct depending on available data.</p>
+<!-- REAL CASE EXAMPLE BOX -->
+<div class="section-title">Real Case Example</div>
+
+<details>
+<summary style="font-size:18px; font-weight:bold; cursor:pointer;">Click to open example (Fall armyworm in maize)</summary>
+
+<div id="exampleBox">
+
+<h3>Example: Spodoptera frugiperda (FAW) in maize</h3>
+
+<p><b>Scenario:</b><br>
+A maize farmer wants to know when FAW larvae are causing enough damage to justify insecticide spraying.</p>
+
+<h4>Given values:</h4>
+<ul>
+<li>Cost of control C = <b>600 THB per rai</b></li>
+<li>Market value V = <b>7 THB per kg</b></li>
+<li>Damage per injury D = <b>0.02</b> (2 percent yield loss per unit injury)</li>
+<li>Injury per pest I = <b>(unknown)</b> — leave blank</li>
+<li>Control effectiveness K = <b>0.8</b> (80 percent kill)</li>
+<li>ET proportion = <b>0.7</b> (act at 70 percent of EIL)</li>
+</ul>
+
+<h4>Step 1: Calculate EIL</h4>
+
+<p>Simplified formula (I not used):<br>
+<b>EIL = C / (V × D × K)</b></p>
+
+<p>Plug in the values:<br>
+EIL = 600 / (7 × 0.02 × 0.8)</p>
+
+<p>7 × 0.02 = 0.14<br>
+0.14 × 0.8 = 0.112</p>
+
+<p>EIL = 600 / 0.112 = <b>5357 larvae per rai</b></p>
+
+<p>If there are 5000 maize plants per rai:<br>
+EIL per plant ≈ <b>1.07 larvae per plant</b></p>
+
+<h4>Meaning:</h4>
+<p>Economic injury begins when each maize plant has <b>about one FAW larva</b>.  
+Above this density, the value of lost yield is greater than the cost of spraying.</p>
+
+<h4>Step 2: Calculate ET</h4>
+
+<p>ET = EIL × 0.7</p>
+
+<p>ET = 1.07 × 0.7 = <b>0.75 larvae per plant</b></p>
+
+<h4>Meaning of ET:</h4>
+
+<p>Control must begin when there are <b>0.7 to 0.8 larvae per plant</b>.  
+If the farmer waits until 1 larva per plant (the EIL), the population may already be causing economic loss.</p>
+
+<h3>Final interpretation for students:</h3>
+
+<p><b>EIL tells you when damage equals control cost.</b><br>
+<b>ET tells you when to act so you never reach the EIL.</b></p>
+
+<p>In this example:<br>
+ET ≈ <b>0.75 larvae per plant</b>  
+EIL ≈ <b>1.07 larvae per plant</b></p>
+
+<p>So action should be taken earlier, not at the last moment.</p>
+
+</div>
+</details>
 
 </body>
 
@@ -138,8 +202,7 @@ function calcEIL() {
         EIL = C / (V * D * K);
         formulaUsed = "EIL = C / (V × D × K)";
         biologicalMeaning =
-            "This EIL value represents the number of insects per sampling unit " +
-            "at which the expected yield loss equals the cost of control.";
+            "This EIL value represents the pest density where yield loss equals the cost of control.";
     } else {
         const Ival = parseFloat(I);
         if (isNaN(Ival)) {
@@ -150,8 +213,7 @@ function calcEIL() {
         EIL = C / (V * D * Ival * K);
         formulaUsed = "EIL = C / (V × D × I × K)";
         biologicalMeaning =
-            "This EIL represents the pest density at which injury per insect multiplied " +
-            "by its damage effect equals the cost of control.";
+            "This EIL value shows the density at which injury per insect multiplied by damage effect equals the cost of control.";
     }
 
     lastEIL = EIL;
@@ -162,9 +224,7 @@ function calcEIL() {
 
     meaning.innerHTML =
         `<b>Meaning of this EIL value:</b><br>${biologicalMeaning}<br><br>
-         If the pest density rises above <b>${EIL.toFixed(4)}</b>, 
-         economic loss will exceed the cost of control. 
-         Below this point, treatment is not economically justified.`;
+         If pest density rises above <b>${EIL.toFixed(4)}</b>, economic loss will exceed the cost of control.`;
 }
 
 function calcET() {
@@ -192,12 +252,8 @@ function calcET() {
 
     etMeaning.innerHTML =
         `<b>Meaning of ET:</b><br>
-         The Economic Threshold (ET) is the density at which action should begin 
-         <b>before</b> the pest reaches the EIL.  
-         This ET of <b>${ET.toFixed(4)}</b> means control should be applied 
-         when pest density reaches this level, so that the population does not have time 
-         to reach the EIL and cause economic loss.  
-         ET is always set <b>below EIL</b> to allow for pest growth, decision time, and control delay.`;
+         ET indicates the pest density at which management must begin <b>before</b> reaching the EIL.  
+         This ET of <b>${ET.toFixed(4)}</b> means the farmer should act at this point so pests do not reach the EIL and cause economic damage.`;
 }
 </script>
 
