@@ -10,8 +10,9 @@
         font-family: system-ui, sans-serif;
         background: #f5f5f5;
         padding: 20px;
-        max-width: 600px;
+        max-width: 700px;
         margin: auto;
+        line-height: 1.5;
     }
     h1 {
         text-align: center;
@@ -37,13 +38,18 @@
         font-size: 18px;
         border-radius: 4px;
     }
-    #result {
+    #result, #meaning {
         margin-top: 20px;
         padding: 15px;
         background: white;
         border-radius: 4px;
-        font-size: 18px;
+        font-size: 17px;
         box-shadow: 0 0 4px rgba(0,0,0,0.15);
+    }
+    .section-title {
+        font-weight: bold;
+        margin-top: 25px;
+        font-size: 18px;
     }
 </style>
 </head>
@@ -52,24 +58,43 @@
 
 <h1>EIL Calculator (IPM)</h1>
 
-<label>Cost of control (C):</label>
+<p>The Economic Injury Level (EIL) is the pest density at which the cost of damage equals the cost of control. 
+Below this level, control is not economically justified. Above this level, action is required.</p>
+
+<div class="section-title">Input Parameters</div>
+
+<label>Cost of control (C)  — THB per unit area</label>
 <input type="number" id="C" placeholder="e.g., 600">
 
-<label>Market value of crop (V):</label>
+<label>Market value of crop (V) — THB per kg (or per unit)</label>
 <input type="number" id="V" placeholder="e.g., 7">
 
-<label>Damage per unit injury (D):</label>
+<label>Damage per unit injury (D) — proportion yield loss per injury</label>
 <input type="number" id="D" placeholder="e.g., 0.02" step="0.0001">
 
-<label>Injury per pest (I)  optional:</label>
-<input type="number" id="I" placeholder="leave blank to ignore" step="0.0001">
+<label>Injury per pest (I) — amount of injury per 1 insect (optional)</label>
+<input type="number" id="I" placeholder="leave blank if unknown" step="0.0001">
 
-<label>Control effectiveness (K):</label>
+<label>Control effectiveness (K) — proportion of pests reduced (0 to 1)</label>
 <input type="number" id="K" placeholder="e.g., 0.8" step="0.01">
 
 <button onclick="calcEIL()">Calculate EIL</button>
 
-<div id="result">Enter values and press Calculate.</div>
+<div id="result">Enter values to calculate EIL.</div>
+<div id="meaning"></div>
+
+<div class="section-title">Formula Explanation</div>
+<p>The EIL formula can be written in two equivalent forms:</p>
+
+<p><b>1. Simplified formula (no injury component included):</b><br>
+EIL = C / (V × D × K)</p>
+
+<p><b>2. Full Pedigo formula (injury and damage separated):</b><br>
+EIL = C / (V × D × I × K)</p>
+
+<p>D × I together represent the total impact per pest, so both versions are correct depending on available data.</p>
+
+</body>
 
 <script>
 function calcEIL() {
@@ -79,31 +104,52 @@ function calcEIL() {
     const I = document.getElementById("I").value;
     const K = parseFloat(document.getElementById("K").value);
 
+    const result = document.getElementById("result");
+    const meaning = document.getElementById("meaning");
+
     if (isNaN(C) || isNaN(V) || isNaN(D) || isNaN(K)) {
-        document.getElementById("result").innerHTML = "Please fill C, V, D, and K.";
+        result.innerHTML = "Please fill C, V, D, and K.";
+        meaning.innerHTML = "";
         return;
     }
 
     let EIL;
+    let formulaUsed = "";
+    let biologicalMeaning = "";
 
-    // If I is empty, use simplified formula: C / (VDK)
+    // If I is empty, use simplified formula: C / (V × D × K)
     if (I.trim() === "") {
         EIL = C / (V * D * K);
-        document.getElementById("result").innerHTML =
-            `<b>EIL = ${EIL.toFixed(4)}</b><br>Formula used: C / (V × D × K)`;
+        formulaUsed = "EIL = C / (V × D × K)";
+        biologicalMeaning =
+            "This EIL value represents the number of insects per sampling unit " +
+            "at which the expected yield loss equals the cost of control. " +
+            "Below this pest density, control is not economically justified.";
     } else {
         const Ival = parseFloat(I);
         if (isNaN(Ival)) {
-            document.getElementById("result").innerHTML = "Invalid I value.";
+            result.innerHTML = "Invalid I value.";
+            meaning.innerHTML = "";
             return;
         }
-        // Full formula: C / (V D I K)
+        // Full formula: C / (V × D × I × K)
         EIL = C / (V * D * Ival * K);
-        document.getElementById("result").innerHTML =
-            `<b>EIL = ${EIL.toFixed(4)}</b><br>Formula used: C / (V × D × I × K)`;
+        formulaUsed = "EIL = C / (V × D × I × K)";
+        biologicalMeaning =
+            "This EIL represents the pest density at which injury per insect multiplied " +
+            "by its damage effect reaches the point where economic loss equals cost of control.";
     }
+
+    result.innerHTML =
+        `<b>Calculated EIL: ${EIL.toFixed(4)}</b><br><br>
+         Formula used: ${formulaUsed}`;
+
+    meaning.innerHTML =
+        `<b>Meaning of this EIL value:</b><br>${biologicalMeaning}<br><br>
+         If the pest density in the field rises above <b>${EIL.toFixed(4)}</b>, 
+         economic damage will exceed the cost of control, so action is justified. 
+         If pest density remains below this level, treatment is not economically recommended.`;
 }
 </script>
 
-</body>
 </html>
