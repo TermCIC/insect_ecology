@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Insect Sampling Record</title>
+<title>Termite Sampling Record</title>
 
 <style>
     body {
@@ -47,15 +47,37 @@
 </head>
 <body>
 
-<h2>Insect Sampling Record</h2>
+<h2>Termite Sampling Record</h2>
 
-<label>Insect species</label>
+<!-- Species -->
+<label>Termite species</label>
 <select id="species">
-    <option value="No insects">No insects</option>
+    <option value="No termites">No termites</option>
+    <option value="Odontotermes">Odontotermes</option>
+    <option value="Microcerotermes">Microcerotermes</option>
+    <option value="Microtermes">Microtermes</option>
+    <option value="Globitermes">Globitermes</option>
 </select>
 
 <button onclick="addSpecies()">Add new species</button>
 
+<!-- Number of insects -->
+<label>Number of insects</label>
+<input id="insectCount" type="number" min="0" placeholder="Example: 20">
+
+<!-- Habitat or host plant -->
+<label>Host plant or habitat</label>
+<select id="habitat">
+    <option value="Tree">Tree</option>
+    <option value="Soil mound">Soil mound</option>
+    <option value="Dead wood">Dead wood</option>
+    <option value="Under bark">Under bark</option>
+    <option value="Unknown">Unknown</option>
+</select>
+
+<button onclick="addHabitat()">Add new host plant or habitat</button>
+
+<!-- GPS -->
 <label>GPS coordinates (lat, lon)</label>
 <input id="gpsInput" type="text" placeholder="Example: 18.796, 98.952">
 
@@ -67,6 +89,8 @@
         <tr>
             <th>No.</th>
             <th>Species</th>
+            <th>Count</th>
+            <th>Habitat</th>
             <th>GPS</th>
             <th>Time</th>
         </tr>
@@ -78,19 +102,31 @@
 <button onclick="exportKML()">Export KML for Google Earth</button>
 
 <script>
+/* Add species */
 function addSpecies() {
     const name = prompt("Enter new termite species name:");
     if (!name) return;
-
-    const speciesSelect = document.getElementById("species");
+    const select = document.getElementById("species");
     const option = document.createElement("option");
     option.value = name;
     option.textContent = name;
-
-    speciesSelect.appendChild(option);
-    speciesSelect.value = name; // auto select the new species
+    select.appendChild(option);
+    select.value = name;
 }
 
+/* Add habitat */
+function addHabitat() {
+    const name = prompt("Enter new host plant or habitat:");
+    if (!name) return;
+    const select = document.getElementById("habitat");
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+    select.value = name;
+}
+
+/* GPS function */
 function getGPS() {
     if (!navigator.geolocation) {
         alert("GPS is not supported by this device");
@@ -110,8 +146,11 @@ function getGPS() {
 
 let records = [];
 
+/* Add record */
 function addRecord() {
     const species = document.getElementById("species").value;
+    const count = document.getElementById("insectCount").value || "0";
+    const habitat = document.getElementById("habitat").value;
     const gps = document.getElementById("gpsInput").value.trim();
 
     if (gps === "") {
@@ -121,11 +160,12 @@ function addRecord() {
 
     const time = new Date().toLocaleString();
 
-    const record = { species, gps, time };
+    const record = { species, count, habitat, gps, time };
     records.push(record);
     updateTable();
 }
 
+/* Update table */
 function updateTable() {
     const tbody = document.getElementById("recordTable").querySelector("tbody");
     tbody.innerHTML = "";
@@ -135,6 +175,8 @@ function updateTable() {
         row.innerHTML = `
             <td>${i + 1}</td>
             <td>${r.species}</td>
+            <td>${r.count}</td>
+            <td>${r.habitat}</td>
             <td>${r.gps}</td>
             <td>${r.time}</td>
         `;
@@ -142,16 +184,17 @@ function updateTable() {
     });
 }
 
+/* Export CSV */
 function exportCSV() {
     if (records.length === 0) {
         alert("No data to export");
         return;
     }
 
-    let csv = "No.,Species,GPS,Time\n";
+    let csv = "No.,Species,Count,Habitat,GPS,Time\n";
 
     records.forEach((r, i) => {
-        csv += `${i + 1},${r.species},${r.gps},${r.time}\n`;
+        csv += `${i + 1},${r.species},${r.count},${r.habitat},${r.gps},${r.time}\n`;
     });
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -165,6 +208,7 @@ function exportCSV() {
     URL.revokeObjectURL(url);
 }
 
+/* Export KML */
 function exportKML() {
     if (records.length === 0) {
         alert("No data to export");
@@ -181,8 +225,12 @@ function exportKML() {
         const [lat, lon] = r.gps.split(",").map(v => v.trim());
         kml += `
     <Placemark>
-        <name>${r.species}</name>
-        <description>Recorded at ${r.time}</description>
+        <name>${r.species} (${r.count})</name>
+        <description>
+Habitat: ${r.habitat}
+Count: ${r.count}
+Recorded: ${r.time}
+        </description>
         <Point>
             <coordinates>${lon},${lat},0</coordinates>
         </Point>
