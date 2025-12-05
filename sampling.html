@@ -42,6 +42,13 @@
     th {
         background: #e0e0e0;
     }
+    .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 16px;
+    background: white;
+    border: 1px solid #ccc;
+}
 </style>
 
 </head>
@@ -76,6 +83,7 @@
 <button onclick="getGPS()">Get GPS</button>
 <button onclick="addRecord()">Record Sample</button>
 
+<div class="table-wrapper">
 <table id="recordTable">
     <thead>
         <tr>
@@ -89,6 +97,7 @@
     </thead>
     <tbody></tbody>
 </table>
+</div>
 
 <button onclick="exportCSV()">Export CSV</button>
 <button onclick="exportKML()">Export KML for Google Earth</button>
