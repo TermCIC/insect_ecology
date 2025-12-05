@@ -58,6 +58,8 @@
     <option value="Globitermes">Globitermes</option>
 </select>
 
+<button onclick="addSpecies()">Add new species</button>
+
 <label>GPS coordinates (lat, lon)</label>
 <input id="gpsInput" type="text" placeholder="Example: 18.796, 98.952">
 
@@ -80,6 +82,19 @@
 <button onclick="exportKML()">Export KML for Google Earth</button>
 
 <script>
+function addSpecies() {
+    const name = prompt("Enter new termite species name:");
+    if (!name) return;
+
+    const speciesSelect = document.getElementById("species");
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+
+    speciesSelect.appendChild(option);
+    speciesSelect.value = name; // auto select the new species
+}
+
 function getGPS() {
     if (!navigator.geolocation) {
         alert("GPS is not supported by this device");
@@ -154,7 +169,6 @@ function exportCSV() {
     URL.revokeObjectURL(url);
 }
 
-// KML EXPORT
 function exportKML() {
     if (records.length === 0) {
         alert("No data to export");
