@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Termite Sampling Record</title>
+
+<style>
+    body {
+        font-family: system-ui, sans-serif;
+        padding: 16px;
+        background: #f5f5f5;
+    }
+    label { font-weight: bold; }
+    select, input {
+        width: 100%;
+        padding: 8px;
+        margin: 6px 0 12px 0;
+        font-size: 16px;
+    }
+    button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        font-size: 16px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 4px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        background: white;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background: #e0e0e0;
+    }
+</style>
+
+</head>
+<body>
+
+<h2>Termite Sampling Record</h2>
+
+<!-- Species selection -->
+<label>Termite species</label>
+<select id="species">
+    <option value="No termites">No termites</option>
+    <option value="Odontotermes">Odontotermes</option>
+    <option value="Microcerotermes">Microcerotermes</option>
+    <option value="Microtermes">Microtermes</option>
+    <option value="Globitermes">Globitermes</option>
+</select>
+
+<!-- GPS input -->
+<label>GPS coordinates (lat, lon)</label>
+<input id="gpsInput" type="text" placeholder="Example: 18.796, 98.952">
+
+<button onclick="getGPS()">Get GPS</button>
+<button onclick="addRecord()">Record Sample</button>
+
+<!-- Table output -->
+<table id="recordTable">
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Species</th>
+            <th>GPS</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<button onclick="exportCSV()">Export CSV</button>
+
+<script>
+// Get GPS using browser geolocation
+function getGPS() {
+    if (!navigator.geolocation) {
+        alert("GPS is not supported by this device");
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lon = pos.coords.longitude.toFixed(6);
+            document.getElementById("gpsInput").value = lat + ", " + lon;
+        },
+        err => {
+            alert("Failed to get GPS");
+        }
+    );
+}
+
+let records = [];
+
+// Add record to table
+function addRecord() {
+    const species = document.getElementById("species").value;
+    const gps = document.getElementById("gpsInput").value.trim();
+
+    if (gps === "") {
+        alert("Please enter GPS");
+        return;
+    }
+
+    const time = new Date().toLocaleString();
+
+    const record = { species, gps, time };
+    records.push(record);
+    updateTable();
+}
+
+function updateTable() {
+    const tbody = document.getElementById("recordTable").querySelector("tbody");
+    tbody.innerHTML = "";
+
+    records.forEach((r, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${r.species}</td>
+            <td>${r.gps}</td>
+            <td>${r.time}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Export CSV
+function exportCSV() {
+    if (records.length === 0) {
+        alert("No data to export");
+        return;
+    }
+
+    let csv = "No.,Species,GPS,Time\n";
+
+    records.forEach((r, i) => {
+        csv += `${i + 1},${r.species},${r.gps},${r.time}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "termite_sampling.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
