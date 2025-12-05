@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EIL Calculator for IPM</title>
+<title>EIL & ET Calculator for IPM</title>
 
 <style>
     body {
@@ -38,7 +38,7 @@
         font-size: 18px;
         border-radius: 4px;
     }
-    #result, #meaning {
+    #result, #meaning, #etresult, #etmeaning {
         margin-top: 20px;
         padding: 15px;
         background: white;
@@ -48,22 +48,22 @@
     }
     .section-title {
         font-weight: bold;
-        margin-top: 25px;
-        font-size: 18px;
+        margin-top: 30px;
+        font-size: 20px;
     }
 </style>
 </head>
 
 <body>
 
-<h1>EIL Calculator (IPM)</h1>
+<h1>EIL & ET Calculator (IPM)</h1>
 
 <p>The Economic Injury Level (EIL) is the pest density at which the cost of damage equals the cost of control. 
 Below this level, control is not economically justified. Above this level, action is required.</p>
 
-<div class="section-title">Input Parameters</div>
+<div class="section-title">Input Parameters for EIL</div>
 
-<label>Cost of control (C)  — THB per unit area</label>
+<label>Cost of control (C) — THB per unit area</label>
 <input type="number" id="C" placeholder="e.g., 600">
 
 <label>Market value of crop (V) — THB per kg (or per unit)</label>
@@ -83,7 +83,22 @@ Below this level, control is not economically justified. Above this level, actio
 <div id="result">Enter values to calculate EIL.</div>
 <div id="meaning"></div>
 
+<div class="section-title">Economic Threshold (ET)</div>
+
+<p>The Economic Threshold (ET) is the pest density at which action must be taken 
+<b>before</b> the population reaches the EIL.  
+ET is always lower than EIL because pests grow, disperse and cause damage during the time needed to take action.</p>
+
+<label>ET proportion relative to EIL (default 0.7 = 70 percent)</label>
+<input type="number" id="ETp" value="0.7" step="0.01">
+
+<button onclick="calcET()">Calculate ET</button>
+
+<div id="etresult">Enter ET proportion after calculating EIL.</div>
+<div id="etmeaning"></div>
+
 <div class="section-title">Formula Explanation</div>
+
 <p>The EIL formula can be written in two equivalent forms:</p>
 
 <p><b>1. Simplified formula (no injury component included):</b><br>
@@ -97,6 +112,8 @@ EIL = C / (V × D × I × K)</p>
 </body>
 
 <script>
+let lastEIL = null;
+
 function calcEIL() {
     const C = parseFloat(document.getElementById("C").value);
     const V = parseFloat(document.getElementById("V").value);
@@ -117,14 +134,12 @@ function calcEIL() {
     let formulaUsed = "";
     let biologicalMeaning = "";
 
-    // If I is empty, use simplified formula: C / (V × D × K)
     if (I.trim() === "") {
         EIL = C / (V * D * K);
         formulaUsed = "EIL = C / (V × D × K)";
         biologicalMeaning =
             "This EIL value represents the number of insects per sampling unit " +
-            "at which the expected yield loss equals the cost of control. " +
-            "Below this pest density, control is not economically justified.";
+            "at which the expected yield loss equals the cost of control.";
     } else {
         const Ival = parseFloat(I);
         if (isNaN(Ival)) {
@@ -132,13 +147,14 @@ function calcEIL() {
             meaning.innerHTML = "";
             return;
         }
-        // Full formula: C / (V × D × I × K)
         EIL = C / (V * D * Ival * K);
         formulaUsed = "EIL = C / (V × D × I × K)";
         biologicalMeaning =
             "This EIL represents the pest density at which injury per insect multiplied " +
-            "by its damage effect reaches the point where economic loss equals cost of control.";
+            "by its damage effect equals the cost of control.";
     }
+
+    lastEIL = EIL;
 
     result.innerHTML =
         `<b>Calculated EIL: ${EIL.toFixed(4)}</b><br><br>
@@ -146,9 +162,42 @@ function calcEIL() {
 
     meaning.innerHTML =
         `<b>Meaning of this EIL value:</b><br>${biologicalMeaning}<br><br>
-         If the pest density in the field rises above <b>${EIL.toFixed(4)}</b>, 
-         economic damage will exceed the cost of control, so action is justified. 
-         If pest density remains below this level, treatment is not economically recommended.`;
+         If the pest density rises above <b>${EIL.toFixed(4)}</b>, 
+         economic loss will exceed the cost of control. 
+         Below this point, treatment is not economically justified.`;
+}
+
+function calcET() {
+    const etDiv = document.getElementById("etresult");
+    const etMeaning = document.getElementById("etmeaning");
+    const ETp = parseFloat(document.getElementById("ETp").value);
+
+    if (lastEIL === null) {
+        etDiv.innerHTML = "Please calculate EIL first.";
+        etMeaning.innerHTML = "";
+        return;
+    }
+
+    if (isNaN(ETp) || ETp <= 0 || ETp >= 1) {
+        etDiv.innerHTML = "ET proportion must be between 0 and 1 (e.g., 0.7).";
+        etMeaning.innerHTML = "";
+        return;
+    }
+
+    const ET = lastEIL * ETp;
+
+    etDiv.innerHTML =
+        `<b>Calculated ET: ${ET.toFixed(4)}</b><br><br>
+         ET proportion used: ${ETp}`;
+
+    etMeaning.innerHTML =
+        `<b>Meaning of ET:</b><br>
+         The Economic Threshold (ET) is the density at which action should begin 
+         <b>before</b> the pest reaches the EIL.  
+         This ET of <b>${ET.toFixed(4)}</b> means control should be applied 
+         when pest density reaches this level, so that the population does not have time 
+         to reach the EIL and cause economic loss.  
+         ET is always set <b>below EIL</b> to allow for pest growth, decision time, and control delay.`;
 }
 </script>
 
