@@ -1,131 +1,339 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Insect Distribution Indices Calculator</title>
 
 <style>
-:root {
-    --bg: #f3f6fb;
-    --card: #ffffff;
-    --primary: #3b5ccc;
-    --secondary: #e9ecf8;
-    --text: #1f2933;
-    --muted: #5f6c7b;
-    --border: #d8dee9;
+:root{
+  --bg:#0b1020;
+  --card:rgba(255,255,255,.08);
+  --card2:rgba(255,255,255,.06);
+  --text:#eaf0ff;
+  --muted:rgba(234,240,255,.72);
+  --border:rgba(255,255,255,.14);
+  --accent:#7aa2ff;
+  --accent2:#34d399;
+  --warn:#fbbf24;
+  --bad:#fb7185;
+  --shadow: 0 18px 45px rgba(0,0,0,.35);
 }
 
-body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    margin: 0;
-    padding: 24px;
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f4f7ff;
+    --card:#ffffff;
+    --card2:#f6f8ff;
+    --text:#0f172a;
+    --muted:rgba(15,23,42,.72);
+    --border:rgba(15,23,42,.12);
+    --accent:#3b5ccc;
+    --accent2:#10b981;
+    --warn:#d97706;
+    --bad:#e11d48;
+    --shadow: 0 14px 35px rgba(15,23,42,.12);
+  }
 }
 
-.container {
-    max-width: 900px;
-    margin: auto;
+*{ box-sizing:border-box; }
+body{
+  margin:0;
+  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(1200px 500px at 20% 0%, rgba(122,162,255,.22), transparent 55%),
+    radial-gradient(900px 450px at 90% 10%, rgba(52,211,153,.18), transparent 50%),
+    var(--bg);
+  color:var(--text);
+  padding: 28px 16px 48px;
 }
 
-header {
-    margin-bottom: 24px;
+.container{
+  max-width: 1060px;
+  margin: 0 auto;
 }
 
-header h1 {
-    font-size: 28px;
-    margin-bottom: 6px;
+header{
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  margin-bottom: 18px;
 }
 
-header p {
-    color: var(--muted);
-    margin-top: 0;
+.title{
+  margin:0;
+  font-size: 28px;
+  letter-spacing:.2px;
 }
 
-.card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+.subtitle{
+  margin:6px 0 0;
+  color:var(--muted);
+  line-height:1.45;
 }
 
-.card h2 {
-    margin-top: 0;
-    font-size: 22px;
+.badge-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-top: 10px;
 }
 
-.card h3 {
-    margin-bottom: 6px;
-    margin-top: 20px;
-    color: var(--primary);
+.badge{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
+.grid{
+  display:grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 16px;
+}
+@media (max-width: 980px){
+  .grid{ grid-template-columns: 1fr; }
 }
 
-th {
-    background: var(--secondary);
-    text-align: center;
-    padding: 10px;
-    font-weight: 600;
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
 }
 
-td {
-    padding: 8px;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
+.card .hd{
+  padding: 16px 18px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), transparent);
 }
 
-input[type="number"] {
-    width: 90px;
-    padding: 6px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    text-align: center;
-    font-size: 14px;
+.card .hd h2{
+  margin:0;
+  font-size: 18px;
+  letter-spacing:.2px;
+}
+.card .hd p{
+  margin:8px 0 0;
+  color: var(--muted);
+  line-height:1.45;
+  font-size: 13px;
 }
 
-.controls {
-    margin-top: 14px;
+.card .bd{
+  padding: 16px 18px 18px;
 }
 
-button {
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 14px;
-    cursor: pointer;
-    margin-right: 8px;
+.tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  padding: 12px 18px 0;
+}
+.tabbtn{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 999px;
+  cursor:pointer;
+  font-weight:600;
+  font-size: 13px;
+}
+.tabbtn[aria-selected="true"]{
+  background: rgba(122,162,255,.18);
+  border-color: rgba(122,162,255,.35);
 }
 
-button:hover {
-    opacity: 0.9;
+hr.sep{
+  border:0;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
 }
 
-.formula {
-    background: var(--secondary);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-family: ui-monospace, monospace;
-    display: inline-block;
-    margin-bottom: 6px;
+.tablewrap{
+  width:100%;
+  overflow:auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card2);
 }
 
-ul {
-    margin-top: 6px;
+table{
+  width:100%;
+  border-collapse: collapse;
+  min-width: 460px;
 }
 
-.result-highlight {
-    font-size: 18px;
-    color: var(--primary);
-    font-weight: 600;
+th,td{
+  padding: 10px 10px;
+  text-align:center;
+  border-bottom: 1px solid var(--border);
+  white-space:nowrap;
 }
+
+th{
+  font-size: 12px;
+  letter-spacing:.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(255,255,255,.04);
+}
+
+td:first-child, th:first-child{
+  text-align:left;
+  padding-left: 14px;
+}
+
+input[type="number"]{
+  width: 110px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.08);
+  color: var(--text);
+  outline: none;
+  text-align:center;
+}
+
+@media (prefers-color-scheme: light){
+  input[type="number"]{ background: #fff; }
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top: 12px;
+}
+
+button{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.08);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor:pointer;
+  font-weight:700;
+  font-size: 13px;
+}
+button.primary{
+  background: rgba(122,162,255,.22);
+  border-color: rgba(122,162,255,.45);
+}
+button.good{
+  background: rgba(52,211,153,.18);
+  border-color: rgba(52,211,153,.38);
+}
+button.danger{
+  background: rgba(251,113,133,.16);
+  border-color: rgba(251,113,133,.36);
+}
+button:active{ transform: translateY(1px); }
+
+.note{
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height:1.45;
+}
+
+.kpi{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 720px){
+  .kpi{ grid-template-columns: 1fr; }
+}
+.kpi .box{
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  border-radius: 14px;
+  padding: 12px 12px;
+}
+.kpi .box .label{
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.kpi .box .value{
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing:.2px;
+}
+.small{
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height:1.35;
+}
+
+.section-title{
+  margin: 14px 0 8px;
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing:.2px;
+}
+
+.formula{
+  display:inline-block;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size: 12.5px;
+  margin: 4px 0 8px;
+}
+
+.callout{
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.06);
+  border-radius: 14px;
+  padding: 12px 12px;
+  margin-top: 12px;
+}
+
+.callout .headline{
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.status{
+  font-weight: 900;
+  font-size: 14px;
+}
+.status.good{ color: var(--accent2); }
+.status.warn{ color: var(--warn); }
+.status.bad{ color: var(--bad); }
+
+textarea{
+  width:100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.08);
+  color: var(--text);
+  outline:none;
+  font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  font-size: 12.5px;
+  line-height:1.45;
+}
+
+@media (prefers-color-scheme: light){
+  textarea{ background:#fff; }
+}
+
+.hidden{ display:none; }
 </style>
 </head>
 
@@ -133,136 +341,561 @@ ul {
 <div class="container">
 
 <header>
-<h1>Insect Distribution Indices Calculator</h1>
-<p>Explore spatial distribution patterns using Iwao, Morisita, and Taylor indices.</p>
+  <div>
+    <h1 class="title">Insect Distribution Indices Calculator</h1>
+    <p class="subtitle">
+      Enter insect counts per plant, then calculate mean crowding, patchiness, Morisita, and (optionally) regressions for Taylor’s Power Law and Iwao’s Patchiness Regression.
+    </p>
+    <div class="badge-row">
+      <span class="badge">Offline friendly</span>
+      <span class="badge">No external libraries</span>
+      <span class="badge">Copy and paste ready</span>
+    </div>
+  </div>
 </header>
 
-<div class="card">
-<h2>Input Data</h2>
-<p>Enter the number of insects found on each plant.</p>
+<div class="grid">
 
-<table id="dataTable">
-<thead>
-<tr>
-<th>Plant</th>
-<th>Number of insects</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td><input type="number" min="0" step="1" value="0"></td>
-</tr>
-</tbody>
-</table>
+  <!-- LEFT: INPUT + RESULTS -->
+  <section class="card">
+    <div class="hd">
+      <h2>1) Single Sample (one field sampling)</h2>
+      <p>
+        Each row is one plant. This computes indices from a single set of plant counts.
+      </p>
+    </div>
 
-<div class="controls">
-<button onclick="addRow()">Add Plant</button>
-<button onclick="calculate()">Calculate Indices</button>
+    <div class="bd">
+      <div class="tablewrap">
+        <table id="dataTable" aria-label="Plant insect counts table">
+          <thead>
+            <tr>
+              <th style="width: 55%">Plant</th>
+              <th style="width: 45%">Insects</th>
+            </tr>
+          </thead>
+          <tbody id="plantBody">
+            <tr>
+              <td>Plant 1</td>
+              <td><input type="number" min="0" step="1" value="0" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="good" id="btnAdd">Add Plant</button>
+        <button type="button" class="danger" id="btnRemove">Remove Last</button>
+        <button type="button" class="primary" id="btnCalc">Calculate</button>
+      </div>
+
+      <div class="note">
+        Tip: You can paste numbers into the table quickly by clicking into a cell and using copy and paste. Use nonnegative integers.
+      </div>
+
+      <hr class="sep" />
+
+      <div id="singleKPIs" class="kpi">
+        <div class="box">
+          <div class="label">Mean density (x̄)</div>
+          <div class="value" id="kpiMean">-</div>
+          <div class="small">Average insects per plant</div>
+        </div>
+        <div class="box">
+          <div class="label">Mean crowding (x*)</div>
+          <div class="value" id="kpiCrowd">-</div>
+          <div class="small">Insect perspective of crowding</div>
+        </div>
+        <div class="box">
+          <div class="label">Patchiness (P)</div>
+          <div class="value" id="kpiPatch">-</div>
+          <div class="small">P &gt; 1 indicates aggregation</div>
+        </div>
+      </div>
+
+      <div class="callout" id="singleSummary">
+        <div class="headline">Result</div>
+        <div id="singleText" class="status">Enter data and click Calculate.</div>
+      </div>
+
+      <div class="callout">
+        <div class="headline">Single Sample Outputs</div>
+        <div id="singleDetails" style="color:var(--muted); line-height:1.5; font-size:13px;">
+          This section will also show variance (s²) and Morisita’s Index (Iδ).
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RIGHT: EXPLANATIONS + REGRESSIONS -->
+  <section class="card">
+    <div class="tabs" role="tablist" aria-label="Modes">
+      <button class="tabbtn" id="tabExplain" role="tab" aria-selected="true" aria-controls="panelExplain" type="button">Explanations</button>
+      <button class="tabbtn" id="tabReg" role="tab" aria-selected="false" aria-controls="panelReg" type="button">Regressions</button>
+    </div>
+
+    <div class="bd">
+
+      <!-- EXPLANATIONS -->
+      <div id="panelExplain" role="tabpanel" aria-labelledby="tabExplain">
+        <div class="section-title">Core definitions</div>
+
+        <div class="formula">x̄ = Σx / n</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Mean density, average number of insects per plant.
+        </div>
+
+        <div class="formula">s² = Σ(x − x̄)² / (n − 1)</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Sample variance, how unevenly insects are distributed among plants.
+        </div>
+
+        <hr class="sep" />
+
+        <div class="section-title">Iwao indices (single sample)</div>
+
+        <div class="formula">x* = x̄ + (s² / x̄) − 1</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Mean crowding. Interpretable as the number of neighbors experienced by an average insect.
+        </div>
+
+        <div class="formula">P = x* / x̄</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Patchiness index (P).
+          <ul style="margin-top:6px;">
+            <li>P = 1: random</li>
+            <li>P &lt; 1: uniform</li>
+            <li>P &gt; 1: aggregated (clumped)</li>
+          </ul>
+        </div>
+
+        <hr class="sep" />
+
+        <div class="section-title">Morisita’s Index (single sample)</div>
+
+        <div class="formula">Iδ = n · Σ[x(x − 1)] / [Σx (Σx − 1)]</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Probability that two randomly chosen insects occur on the same plant.
+          <ul style="margin-top:6px;">
+            <li>Iδ = 1: random</li>
+            <li>Iδ &lt; 1: uniform</li>
+            <li>Iδ &gt; 1: clumped</li>
+          </ul>
+        </div>
+
+        <hr class="sep" />
+
+        <div class="section-title">Taylor’s Power Law (requires multiple samples)</div>
+
+        <div class="formula">log(s²) = log(a) + b · log(x̄)</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Taylor’s Power Law relates variance to mean across multiple independent samples (for example, different plots, dates, or fields).
+          Parameter <b>b</b> is the aggregation index:
+          <ul style="margin-top:6px;">
+            <li>b &lt; 1: uniform</li>
+            <li>b ≈ 1: random</li>
+            <li>b &gt; 1: aggregated</li>
+          </ul>
+          Parameter <b>a</b> depends on sampling scale.
+        </div>
+
+        <div class="section-title">Iwao’s Patchiness Regression (requires multiple samples)</div>
+        <div class="formula">x* = α + β x̄</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5;">
+          Regression of mean crowding on mean density across multiple samples.
+          <div style="margin-top:6px;">
+            <b>α</b> (basic contagion) suggests whether the fundamental unit is an individual or a cohesive group.
+            <br/>
+            <b>β</b> (density-contingent) shows how crowding changes as density increases.
+          </div>
+        </div>
+      </div>
+
+      <!-- REGRESSIONS -->
+      <div id="panelReg" class="hidden" role="tabpanel" aria-labelledby="tabReg">
+        <div class="section-title">Multiple samples input</div>
+        <div style="color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:10px;">
+          Taylor’s Power Law and Iwao’s regression need <b>multiple samples</b>. Put one sample per line.
+          Each line is a list of insect counts for plants in that sample (comma, space, or tab separated).
+          <br/><br/>
+          Example:
+          <br/>
+          <span class="formula" style="display:block; margin-top:8px;">
+            0,1,0,2,3<br/>
+            1,0,0,1,0<br/>
+            5,4,2,0,1
+          </span>
+        </div>
+
+        <textarea id="multiInput" placeholder="Paste samples here, one line per sample..."></textarea>
+
+        <div class="controls">
+          <button type="button" class="primary" id="btnRegCalc">Calculate Regressions</button>
+          <button type="button" id="btnLoadFromTable">Use current table as 1 sample</button>
+          <button type="button" class="danger" id="btnClearMulti">Clear</button>
+        </div>
+
+        <div class="callout" id="regOut">
+          <div class="headline">Regression Results</div>
+          <div id="regText" style="color:var(--muted); line-height:1.5; font-size:13px;">
+            Paste multiple samples and click Calculate Regressions.
+          </div>
+        </div>
+
+        <div class="note">
+          Notes:
+          <ul>
+            <li>Lines with mean = 0 or variance = 0 are excluded from Taylor’s log regression (because log(0) is undefined).</li>
+            <li>Iwao regression (x* vs x̄) can still use samples with mean = 0, but samples with mean = 0 and x* = 0 add little information.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
 </div>
-</div>
-
-<div class="card">
-<h2>Indices of Distribution Explained</h2>
-
-<h3>Mean Density (x̄)</h3>
-<div class="formula">x̄ = Σx / n</div>
-<p>Average number of insects per plant.</p>
-
-<h3>Variance (s²)</h3>
-<div class="formula">s² = Σ(x − x̄)² / (n − 1)</div>
-<p>Describes how unevenly insects are distributed among plants.</p>
-
-<h3>Mean Crowding (x*)</h3>
-<div class="formula">x* = x̄ + (s² / x̄) − 1</div>
-<p>Represents the number of neighbors experienced by an average insect.</p>
-
-<h3>Iwao’s Patchiness Index (P)</h3>
-<div class="formula">P = x* / x̄</div>
-<ul>
-<li>P = 1: Random distribution</li>
-<li>P &lt; 1: Uniform distribution</li>
-<li>P &gt; 1: Aggregated distribution</li>
-</ul>
-
-<h3>Morisita’s Index (Iδ)</h3>
-<div class="formula">Iδ = n · Σ[x(x − 1)] / [Σx (Σx − 1)]</div>
-<ul>
-<li>Iδ = 1: Random</li>
-<li>Iδ &lt; 1: Uniform</li>
-<li>Iδ &gt; 1: Clumped</li>
-</ul>
-
-<h3>Taylor’s Power Law</h3>
-<div class="formula">log(s²) = log(a) + b · log(x̄)</div>
-<ul>
-<li>b &lt; 1: Uniform</li>
-<li>b ≈ 1: Random</li>
-<li>b &gt; 1: Aggregated</li>
-</ul>
-
-<p>
-Taylor’s model predicts variance for sampling design.  
-Iwao’s indices explain biological aggregation mechanisms.
-</p>
-</div>
-
-<div class="card" id="results">
-<h2>Results</h2>
-<p>Enter data and click Calculate Indices.</p>
 </div>
 
 <script>
-function addRow() {
-    const tbody = document.querySelector("#dataTable tbody");
-    const rowCount = tbody.rows.length + 1;
-    const row = tbody.insertRow();
-    row.insertCell(0).textContent = rowCount;
-    row.insertCell(1).innerHTML =
-        '<input type="number" min="0" step="1" value="0">';
+/* ---------- helpers ---------- */
+function fmt(x, d=3){
+  if (!Number.isFinite(x)) return "NA";
+  return Number(x).toFixed(d);
 }
 
-function calculate() {
-    const inputs = document.querySelectorAll("#dataTable tbody input");
-    const counts = Array.from(inputs).map(i => Number(i.value));
-    const n = counts.length;
+function safeNumber(v){
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
 
-    if (n < 2) {
-        alert("At least two plants are required.");
-        return;
+function mean(arr){
+  if (!arr.length) return 0;
+  return arr.reduce((a,b)=>a+b,0)/arr.length;
+}
+
+function varianceSample(arr){
+  const n = arr.length;
+  if (n < 2) return 0;
+  const m = mean(arr);
+  let ss = 0;
+  for (const x of arr) ss += (x - m) * (x - m);
+  return ss / (n - 1);
+}
+
+function meanCrowdingFromMeanVar(m, s2){
+  if (m <= 0) return 0;
+  return m + (s2 / m) - 1;
+}
+
+function morisitaIndex(counts){
+  const n = counts.length;
+  const sum = counts.reduce((a,b)=>a+b,0);
+  if (sum <= 1) return 0;
+  let num = 0;
+  for (const x of counts) num += x * (x - 1);
+  return (n * num) / (sum * (sum - 1));
+}
+
+function distributionLabel(p, id){
+  // Use both P and Iδ when possible
+  if (p > 1 && id > 1) return {text:"Aggregated (clumped) distribution", cls:"good"};
+  if (p < 1 && id < 1) return {text:"Uniform distribution", cls:"warn"};
+  return {text:"Random or mixed pattern (check indices)", cls:"status"};
+}
+
+/* Simple linear regression y = c + m x */
+function linReg(x, y){
+  const n = Math.min(x.length, y.length);
+  if (n < 2) return null;
+
+  const mx = x.reduce((a,b)=>a+b,0)/n;
+  const my = y.reduce((a,b)=>a+b,0)/n;
+
+  let sxx = 0, sxy = 0, syy = 0;
+  for (let i=0;i<n;i++){
+    const dx = x[i] - mx;
+    const dy = y[i] - my;
+    sxx += dx*dx;
+    sxy += dx*dy;
+    syy += dy*dy;
+  }
+  if (sxx === 0) return null;
+
+  const m = sxy / sxx;
+  const c = my - m*mx;
+
+  // R^2
+  let r2 = 0;
+  if (syy > 0){
+    const sse = y.reduce((acc, yi, i)=>{
+      const yhat = c + m*x[i];
+      const e = yi - yhat;
+      return acc + e*e;
+    }, 0);
+    r2 = Math.max(0, 1 - (sse / syy));
+  }
+
+  return {slope:m, intercept:c, r2:r2, n:n};
+}
+
+/* parse one line into counts */
+function parseCountsLine(line){
+  const clean = line.trim();
+  if (!clean) return null;
+  const parts = clean.split(/[\s,;]+/).filter(Boolean);
+  const nums = parts.map(p => Math.max(0, Math.floor(safeNumber(p))));
+  if (!nums.length) return null;
+  return nums;
+}
+
+/* ---------- Single-sample table actions ---------- */
+const plantBody = document.getElementById("plantBody");
+const btnAdd = document.getElementById("btnAdd");
+const btnRemove = document.getElementById("btnRemove");
+const btnCalc = document.getElementById("btnCalc");
+
+btnAdd.addEventListener("click", () => {
+  const rowCount = plantBody.rows.length + 1;
+  const tr = plantBody.insertRow();
+  const td1 = tr.insertCell(0);
+  const td2 = tr.insertCell(1);
+  td1.textContent = "Plant " + rowCount;
+  td2.innerHTML = '<input type="number" min="0" step="1" value="0" />';
+});
+
+btnRemove.addEventListener("click", () => {
+  const n = plantBody.rows.length;
+  if (n <= 1) return;
+  plantBody.deleteRow(n - 1);
+});
+
+btnCalc.addEventListener("click", () => calculateSingle());
+
+function calculateSingle(){
+  const inputs = plantBody.querySelectorAll('input[type="number"]');
+  const counts = Array.from(inputs).map(inp => Math.max(0, Math.floor(safeNumber(inp.value))));
+  const n = counts.length;
+
+  if (n < 2){
+    alert("At least two plants are required.");
+    return;
+  }
+
+  const sum = counts.reduce((a,b)=>a+b,0);
+  const m = mean(counts);
+  const s2 = varianceSample(counts);
+  const xstar = meanCrowdingFromMeanVar(m, s2);
+  const P = (m > 0) ? (xstar / m) : 0;
+  const Id = morisitaIndex(counts);
+
+  document.getElementById("kpiMean").textContent = fmt(m);
+  document.getElementById("kpiCrowd").textContent = fmt(xstar);
+  document.getElementById("kpiPatch").textContent = fmt(P);
+
+  const label = distributionLabel(P, Id);
+  const singleText = document.getElementById("singleText");
+  singleText.className = "status " + (label.cls || "");
+  singleText.textContent = label.text;
+
+  document.getElementById("singleDetails").innerHTML = `
+    <div><b>Plants (n):</b> ${n}</div>
+    <div><b>Total insects (Σx):</b> ${sum}</div>
+    <div><b>Variance (s²):</b> ${fmt(s2)}</div>
+    <div><b>Morisita (Iδ):</b> ${fmt(Id)}</div>
+    <div style="margin-top:8px; color:var(--muted); font-size:12.5px;">
+      Interpretation quick check: P &gt; 1 and Iδ &gt; 1 typically indicate aggregation.
+    </div>
+  `;
+}
+
+/* ---------- Tabs ---------- */
+const tabExplain = document.getElementById("tabExplain");
+const tabReg = document.getElementById("tabReg");
+const panelExplain = document.getElementById("panelExplain");
+const panelReg = document.getElementById("panelReg");
+
+function setTab(which){
+  const explain = (which === "explain");
+  tabExplain.setAttribute("aria-selected", explain ? "true" : "false");
+  tabReg.setAttribute("aria-selected", explain ? "false" : "true");
+  panelExplain.classList.toggle("hidden", !explain);
+  panelReg.classList.toggle("hidden", explain);
+}
+tabExplain.addEventListener("click", ()=>setTab("explain"));
+tabReg.addEventListener("click", ()=>setTab("reg"));
+
+/* ---------- Regressions ---------- */
+const multiInput = document.getElementById("multiInput");
+const btnRegCalc = document.getElementById("btnRegCalc");
+const btnLoadFromTable = document.getElementById("btnLoadFromTable");
+const btnClearMulti = document.getElementById("btnClearMulti");
+const regText = document.getElementById("regText");
+
+btnClearMulti.addEventListener("click", ()=> { multiInput.value = ""; });
+
+btnLoadFromTable.addEventListener("click", ()=> {
+  const inputs = plantBody.querySelectorAll('input[type="number"]');
+  const counts = Array.from(inputs).map(inp => Math.max(0, Math.floor(safeNumber(inp.value))));
+  multiInput.value = counts.join(", ");
+  setTab("reg");
+});
+
+btnRegCalc.addEventListener("click", ()=> calculateRegressions());
+
+function calculateRegressions(){
+  const lines = multiInput.value.split("\n");
+  const samples = [];
+  for (const line of lines){
+    const arr = parseCountsLine(line);
+    if (arr) samples.push(arr);
+  }
+
+  if (samples.length < 2){
+    regText.innerHTML = `<span class="status warn">Need at least 2 samples (2 lines) for regression.</span>`;
+    return;
+  }
+
+  // compute per-sample stats
+  const means = [];
+  const vars = [];
+  const crowds = [];
+  const usedText = [];
+
+  for (let i=0;i<samples.length;i++){
+    const c = samples[i];
+    const m = mean(c);
+    const s2 = varianceSample(c);
+    const xstar = meanCrowdingFromMeanVar(m, s2);
+    means.push(m);
+    vars.push(s2);
+    crowds.push(xstar);
+    usedText.push({i:i+1, n:c.length, mean:m, var:s2, crowd:xstar});
+  }
+
+  // Taylor: log10(s2) = log10(a) + b log10(mean)
+  const tx = [];
+  const ty = [];
+  for (let i=0;i<samples.length;i++){
+    const m = means[i];
+    const s2 = vars[i];
+    if (m > 0 && s2 > 0){
+      tx.push(Math.log10(m));
+      ty.push(Math.log10(s2));
     }
+  }
+  const tFit = linReg(tx, ty);
 
-    const sum = counts.reduce((a,b) => a + b, 0);
-    const mean = sum / n;
-    const variance = counts.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1);
+  // Iwao: x* = alpha + beta * mean
+  const iFit = linReg(means, crowds);
 
-    const meanCrowding = mean === 0 ? 0 : mean + (variance / mean) - 1;
-    const patchiness = mean === 0 ? 0 : meanCrowding / mean;
+  // Build output
+  let html = "";
 
-    let morisitaNumerator = 0;
-    counts.forEach(x => morisitaNumerator += x * (x - 1));
-    const morisita = sum <= 1 ? 0 : (n * morisitaNumerator) / (sum * (sum - 1));
+  html += `<div style="margin-bottom:10px; color:var(--muted);">
+    <b>Samples detected:</b> ${samples.length}
+  </div>`;
 
-    let interpretation = "Random distribution";
-    if (patchiness > 1 && morisita > 1) interpretation = "Aggregated (clumped) distribution";
-    if (patchiness < 1 && morisita < 1) interpretation = "Uniform distribution";
+  html += `<div class="tablewrap" style="margin:10px 0 12px;">
+    <table>
+      <thead>
+        <tr>
+          <th>Sample</th>
+          <th>Plants</th>
+          <th>x̄</th>
+          <th>s²</th>
+          <th>x*</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${usedText.map(r=>`
+          <tr>
+            <td>Line ${r.i}</td>
+            <td>${r.n}</td>
+            <td>${fmt(r.mean)}</td>
+            <td>${fmt(r.var)}</td>
+            <td>${fmt(r.crowd)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  </div>`;
 
-    document.getElementById("results").innerHTML = `
-        <h2>Results</h2>
-        <p><b>Plants:</b> ${n}</p>
-        <p><b>Total insects:</b> ${sum}</p>
+  html += `<div class="section-title">Taylor’s Power Law</div>
+    <div class="formula">log(s²) = log(a) + b · log(x̄)</div>`;
 
-        <p><b>Mean density (x̄):</b> ${mean.toFixed(3)}</p>
-        <p><b>Variance (s²):</b> ${variance.toFixed(3)}</p>
-        <p><b>Mean crowding (x*):</b> ${meanCrowding.toFixed(3)}</p>
-        <p><b>Iwao Patchiness Index (P):</b> ${patchiness.toFixed(3)}</p>
-        <p><b>Morisita Index (Iδ):</b> ${morisita.toFixed(3)}</p>
-
-        <p class="result-highlight">${interpretation}</p>
+  if (!tFit){
+    html += `<div class="status warn">Not enough valid samples for Taylor’s log regression. Need at least 2 samples with mean &gt; 0 and variance &gt; 0.</div>`;
+  } else {
+    const b = tFit.slope;
+    const loga = tFit.intercept;
+    const a = Math.pow(10, loga);
+    const bClass = (b > 1) ? "good" : (Math.abs(b - 1) < 0.05 ? "" : "warn");
+    const bLabel = (b > 1) ? "Aggregated" : (Math.abs(b - 1) < 0.05 ? "Random-like" : "Uniform-like");
+    html += `
+      <div class="kpi" style="margin-top:10px;">
+        <div class="box">
+          <div class="label">a</div>
+          <div class="value">${fmt(a)}</div>
+          <div class="small">Scale dependent</div>
+        </div>
+        <div class="box">
+          <div class="label">b (aggregation index)</div>
+          <div class="value" style="color:var(--accent);">${fmt(b)}</div>
+          <div class="small"><span class="status ${bClass}">${bLabel}</span></div>
+        </div>
+        <div class="box">
+          <div class="label">R²</div>
+          <div class="value">${fmt(tFit.r2, 3)}</div>
+          <div class="small">n = ${tFit.n} samples used</div>
+        </div>
+      </div>
     `;
+  }
+
+  html += `<hr class="sep" />`;
+
+  html += `<div class="section-title">Iwao’s Patchiness Regression</div>
+    <div class="formula">x* = α + β x̄</div>`;
+
+  if (!iFit){
+    html += `<div class="status warn">Not enough variation for Iwao regression.</div>`;
+  } else {
+    const beta = iFit.slope;
+    const alpha = iFit.intercept;
+
+    const betaLabel = (beta > 1) ? "Crowding increases faster than density (aggregative tendency)" :
+                      (Math.abs(beta - 1) < 0.05) ? "Crowding scales about linearly with density" :
+                      "Crowding increases slower than density (tends toward uniformity)";
+
+    html += `
+      <div class="kpi" style="margin-top:10px;">
+        <div class="box">
+          <div class="label">α (basic contagion)</div>
+          <div class="value">${fmt(alpha)}</div>
+          <div class="small">Intercept of x* vs x̄</div>
+        </div>
+        <div class="box">
+          <div class="label">β (density-contingent)</div>
+          <div class="value" style="color:var(--accent);">${fmt(beta)}</div>
+          <div class="small">${betaLabel}</div>
+        </div>
+        <div class="box">
+          <div class="label">R²</div>
+          <div class="value">${fmt(iFit.r2, 3)}</div>
+          <div class="small">n = ${iFit.n} samples used</div>
+        </div>
+      </div>
+    `;
+  }
+
+  regText.innerHTML = html;
 }
+
+/* Compute once on load for instant feedback */
+calculateSingle();
 </script>
 
-</div>
 </body>
 </html>
