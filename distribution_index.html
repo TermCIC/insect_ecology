@@ -3,89 +3,227 @@
 <head>
 <meta charset="UTF-8">
 <title>Insect Distribution Indices Calculator</title>
+
 <style>
-body {
-    font-family: system-ui, sans-serif;
-    background: #f7f7f7;
-    margin: 0;
-    padding: 20px;
+:root {
+    --bg: #f3f6fb;
+    --card: #ffffff;
+    --primary: #3b5ccc;
+    --secondary: #e9ecf8;
+    --text: #1f2933;
+    --muted: #5f6c7b;
+    --border: #d8dee9;
 }
 
-h1, h2 {
-    margin-bottom: 0.3em;
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+header {
+    margin-bottom: 24px;
+}
+
+header h1 {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+header p {
+    color: var(--muted);
+    margin-top: 0;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.card h2 {
+    margin-top: 0;
+    font-size: 22px;
+}
+
+.card h3 {
+    margin-bottom: 6px;
+    margin-top: 20px;
+    color: var(--primary);
 }
 
 table {
-    border-collapse: collapse;
-    margin-top: 10px;
     width: 100%;
-    max-width: 600px;
+    border-collapse: collapse;
+    margin-top: 12px;
 }
 
-th, td {
-    border: 1px solid #ccc;
-    padding: 6px;
+th {
+    background: var(--secondary);
     text-align: center;
+    padding: 10px;
+    font-weight: 600;
 }
 
-button {
-    margin-top: 10px;
-    padding: 6px 12px;
-    font-size: 14px;
+td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
 }
 
 input[type="number"] {
-    width: 80px;
+    width: 90px;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    text-align: center;
+    font-size: 14px;
 }
 
-.result-box {
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 12px;
-    margin-top: 20px;
-    max-width: 700px;
+.controls {
+    margin-top: 14px;
+}
+
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.formula {
+    background: var(--secondary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: ui-monospace, monospace;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+ul {
+    margin-top: 6px;
+}
+
+.result-highlight {
+    font-size: 18px;
+    color: var(--primary);
+    font-weight: 600;
 }
 </style>
 </head>
 
 <body>
+<div class="container">
 
-<h1>Insect Distribution Indices</h1>
+<header>
+<h1>Insect Distribution Indices Calculator</h1>
+<p>Explore spatial distribution patterns using Iwao, Morisita, and Taylor indices.</p>
+</header>
+
+<div class="card">
+<h2>Input Data</h2>
 <p>Enter the number of insects found on each plant.</p>
 
 <table id="dataTable">
 <thead>
 <tr>
 <th>Plant</th>
-<th>Insects</th>
+<th>Number of insects</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>1</td>
-<td><input type="number" min="0" value="0"></td>
+<td><input type="number" min="0" step="1" value="0"></td>
 </tr>
 </tbody>
 </table>
 
+<div class="controls">
 <button onclick="addRow()">Add Plant</button>
 <button onclick="calculate()">Calculate Indices</button>
+</div>
+</div>
 
-<div class="result-box" id="results"></div>
+<div class="card">
+<h2>Indices of Distribution Explained</h2>
+
+<h3>Mean Density (x̄)</h3>
+<div class="formula">x̄ = Σx / n</div>
+<p>Average number of insects per plant.</p>
+
+<h3>Variance (s²)</h3>
+<div class="formula">s² = Σ(x − x̄)² / (n − 1)</div>
+<p>Describes how unevenly insects are distributed among plants.</p>
+
+<h3>Mean Crowding (x*)</h3>
+<div class="formula">x* = x̄ + (s² / x̄) − 1</div>
+<p>Represents the number of neighbors experienced by an average insect.</p>
+
+<h3>Iwao’s Patchiness Index (P)</h3>
+<div class="formula">P = x* / x̄</div>
+<ul>
+<li>P = 1: Random distribution</li>
+<li>P &lt; 1: Uniform distribution</li>
+<li>P &gt; 1: Aggregated distribution</li>
+</ul>
+
+<h3>Morisita’s Index (Iδ)</h3>
+<div class="formula">Iδ = n · Σ[x(x − 1)] / [Σx (Σx − 1)]</div>
+<ul>
+<li>Iδ = 1: Random</li>
+<li>Iδ &lt; 1: Uniform</li>
+<li>Iδ &gt; 1: Clumped</li>
+</ul>
+
+<h3>Taylor’s Power Law</h3>
+<div class="formula">log(s²) = log(a) + b · log(x̄)</div>
+<ul>
+<li>b &lt; 1: Uniform</li>
+<li>b ≈ 1: Random</li>
+<li>b &gt; 1: Aggregated</li>
+</ul>
+
+<p>
+Taylor’s model predicts variance for sampling design.  
+Iwao’s indices explain biological aggregation mechanisms.
+</p>
+</div>
+
+<div class="card" id="results">
+<h2>Results</h2>
+<p>Enter data and click Calculate Indices.</p>
+</div>
 
 <script>
 function addRow() {
     const tbody = document.querySelector("#dataTable tbody");
     const rowCount = tbody.rows.length + 1;
     const row = tbody.insertRow();
-
     row.insertCell(0).textContent = rowCount;
     row.insertCell(1).innerHTML =
-        '<input type="number" min="0" value="0">';
+        '<input type="number" min="0" step="1" value="0">';
 }
 
 function calculate() {
-    const inputs = document.querySelectorAll("tbody input");
+    const inputs = document.querySelectorAll("#dataTable tbody input");
     const counts = Array.from(inputs).map(i => Number(i.value));
     const n = counts.length;
 
@@ -96,69 +234,35 @@ function calculate() {
 
     const sum = counts.reduce((a,b) => a + b, 0);
     const mean = sum / n;
-
     const variance = counts.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1);
 
     const meanCrowding = mean === 0 ? 0 : mean + (variance / mean) - 1;
     const patchiness = mean === 0 ? 0 : meanCrowding / mean;
 
     let morisitaNumerator = 0;
-    counts.forEach(x => {
-        morisitaNumerator += x * (x - 1);
-    });
+    counts.forEach(x => morisitaNumerator += x * (x - 1));
     const morisita = sum <= 1 ? 0 : (n * morisitaNumerator) / (sum * (sum - 1));
 
-    const logX = [];
-    const logS2 = [];
-
-    counts.forEach(x => {
-        if (x > 0 && variance > 0) {
-            logX.push(Math.log10(mean));
-            logS2.push(Math.log10(variance));
-        }
-    });
-
-    let a = "NA";
-    let b = "NA";
-
-    if (logX.length > 1) {
-        const xMean = logX.reduce((a,b) => a + b, 0) / logX.length;
-        const yMean = logS2.reduce((a,b) => a + b, 0) / logS2.length;
-
-        let num = 0;
-        let den = 0;
-        for (let i = 0; i < logX.length; i++) {
-            num += (logX[i] - xMean) * (logS2[i] - yMean);
-            den += Math.pow(logX[i] - xMean, 2);
-        }
-
-        b = num / den;
-        a = Math.pow(10, yMean - b * xMean);
-    }
+    let interpretation = "Random distribution";
+    if (patchiness > 1 && morisita > 1) interpretation = "Aggregated (clumped) distribution";
+    if (patchiness < 1 && morisita < 1) interpretation = "Uniform distribution";
 
     document.getElementById("results").innerHTML = `
-    <h2>Results</h2>
+        <h2>Results</h2>
+        <p><b>Plants:</b> ${n}</p>
+        <p><b>Total insects:</b> ${sum}</p>
 
-    <p><b>Mean density (x̄):</b> ${mean.toFixed(3)}</p>
-    <p><b>Variance (s²):</b> ${variance.toFixed(3)}</p>
+        <p><b>Mean density (x̄):</b> ${mean.toFixed(3)}</p>
+        <p><b>Variance (s²):</b> ${variance.toFixed(3)}</p>
+        <p><b>Mean crowding (x*):</b> ${meanCrowding.toFixed(3)}</p>
+        <p><b>Iwao Patchiness Index (P):</b> ${patchiness.toFixed(3)}</p>
+        <p><b>Morisita Index (Iδ):</b> ${morisita.toFixed(3)}</p>
 
-    <p><b>Mean crowding (x*):</b> ${meanCrowding.toFixed(3)}</p>
-    <p><b>Iwao Patchiness Index (P):</b> ${patchiness.toFixed(3)}</p>
-    <p><b>Morisita Index (Iδ):</b> ${morisita.toFixed(3)}</p>
-
-    <h3>Taylor’s Power Law</h3>
-    <p><b>a:</b> ${typeof a === "number" ? a.toFixed(3) : a}</p>
-    <p><b>b:</b> ${typeof b === "number" ? b.toFixed(3) : b}</p>
-
-    <h3>Interpretation</h3>
-    <ul>
-        <li>P > 1 indicates aggregation</li>
-        <li>Iδ > 1 indicates clumped distribution</li>
-        <li>b > 1 indicates aggregated population</li>
-    </ul>
+        <p class="result-highlight">${interpretation}</p>
     `;
 }
 </script>
 
+</div>
 </body>
 </html>
