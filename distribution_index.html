@@ -75,13 +75,13 @@ input[type="number"] {
 
 <script>
 function addRow() {
-    const table = document.getElementById("dataTable").tbody;
-    const rowCount = table.rows.length + 1;
-    const row = table.insertRow();
+    const tbody = document.querySelector("#dataTable tbody");
+    const rowCount = tbody.rows.length + 1;
+    const row = tbody.insertRow();
 
-    row.insertCell(0).innerText = rowCount;
-    const cell = row.insertCell(1);
-    cell.innerHTML = '<input type="number" min="0" value="0">';
+    row.insertCell(0).textContent = rowCount;
+    row.insertCell(1).innerHTML =
+        '<input type="number" min="0" value="0">';
 }
 
 function calculate() {
