@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Insect Distribution Indices Calculator</title>
+<style>
+body {
+    font-family: system-ui, sans-serif;
+    background: #f7f7f7;
+    margin: 0;
+    padding: 20px;
+}
+
+h1, h2 {
+    margin-bottom: 0.3em;
+}
+
+table {
+    border-collapse: collapse;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 600px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: center;
+}
+
+button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+input[type="number"] {
+    width: 80px;
+}
+
+.result-box {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 12px;
+    margin-top: 20px;
+    max-width: 700px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Insect Distribution Indices</h1>
+<p>Enter the number of insects found on each plant.</p>
+
+<table id="dataTable">
+<thead>
+<tr>
+<th>Plant</th>
+<th>Insects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><input type="number" min="0" value="0"></td>
+</tr>
+</tbody>
+</table>
+
+<button onclick="addRow()">Add Plant</button>
+<button onclick="calculate()">Calculate Indices</button>
+
+<div class="result-box" id="results"></div>
+
+<script>
+function addRow() {
+    const table = document.getElementById("dataTable").tbody;
+    const rowCount = table.rows.length + 1;
+    const row = table.insertRow();
+
+    row.insertCell(0).innerText = rowCount;
+    const cell = row.insertCell(1);
+    cell.innerHTML = '<input type="number" min="0" value="0">';
+}
+
+function calculate() {
+    const inputs = document.querySelectorAll("tbody input");
+    const counts = Array.from(inputs).map(i => Number(i.value));
+    const n = counts.length;
+
+    if (n < 2) {
+        alert("At least two plants are required.");
+        return;
+    }
+
+    const sum = counts.reduce((a,b) => a + b, 0);
+    const mean = sum / n;
+
+    const variance = counts.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1);
+
+    const meanCrowding = mean === 0 ? 0 : mean + (variance / mean) - 1;
+    const patchiness = mean === 0 ? 0 : meanCrowding / mean;
+
+    let morisitaNumerator = 0;
+    counts.forEach(x => {
+        morisitaNumerator += x * (x - 1);
+    });
+    const morisita = sum <= 1 ? 0 : (n * morisitaNumerator) / (sum * (sum - 1));
+
+    const logX = [];
+    const logS2 = [];
+
+    counts.forEach(x => {
+        if (x > 0 && variance > 0) {
+            logX.push(Math.log10(mean));
+            logS2.push(Math.log10(variance));
+        }
+    });
+
+    let a = "NA";
+    let b = "NA";
+
+    if (logX.length > 1) {
+        const xMean = logX.reduce((a,b) => a + b, 0) / logX.length;
+        const yMean = logS2.reduce((a,b) => a + b, 0) / logS2.length;
+
+        let num = 0;
+        let den = 0;
+        for (let i = 0; i < logX.length; i++) {
+            num += (logX[i] - xMean) * (logS2[i] - yMean);
+            den += Math.pow(logX[i] - xMean, 2);
+        }
+
+        b = num / den;
+        a = Math.pow(10, yMean - b * xMean);
+    }
+
+    document.getElementById("results").innerHTML = `
+    <h2>Results</h2>
+
+    <p><b>Mean density (x̄):</b> ${mean.toFixed(3)}</p>
+    <p><b>Variance (s²):</b> ${variance.toFixed(3)}</p>
+
+    <p><b>Mean crowding (x*):</b> ${meanCrowding.toFixed(3)}</p>
+    <p><b>Iwao Patchiness Index (P):</b> ${patchiness.toFixed(3)}</p>
+    <p><b>Morisita Index (Iδ):</b> ${morisita.toFixed(3)}</p>
+
+    <h3>Taylor’s Power Law</h3>
+    <p><b>a:</b> ${typeof a === "number" ? a.toFixed(3) : a}</p>
+    <p><b>b:</b> ${typeof b === "number" ? b.toFixed(3) : b}</p>
+
+    <h3>Interpretation</h3>
+    <ul>
+        <li>P > 1 indicates aggregation</li>
+        <li>Iδ > 1 indicates clumped distribution</li>
+        <li>b > 1 indicates aggregated population</li>
+    </ul>
+    `;
+}
+</script>
+
+</body>
+</html>
