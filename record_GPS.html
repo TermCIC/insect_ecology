@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GPS Location Recorder</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen p-6">
+
+<div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-8">
+
+  <h1 class="text-3xl font-bold mb-4 text-green-700">GPS Location Recorder</h1>
+  <p class="mb-6 text-gray-600">
+    Click the button below to record your current GPS coordinates.
+  </p>
+
+  <!-- GPS Button -->
+  <button onclick="getGPS()" 
+    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg shadow">
+    Get GPS of Current Location
+  </button>
+
+  <!-- Status -->
+  <div id="status" class="mt-4 text-blue-600 font-semibold hidden">
+    Getting location...
+  </div>
+
+  <!-- Data Table -->
+  <div class="mt-8 overflow-x-auto">
+    <table id="gpsTable" class="min-w-full border-collapse border border-gray-300">
+      <thead>
+        <tr class="bg-green-100">
+          <th class="border px-4 py-2">#</th>
+          <th class="border px-4 py-2">Timestamp</th>
+          <th class="border px-4 py-2">Latitude</th>
+          <th class="border px-4 py-2">Longitude</th>
+          <th class="border px-4 py-2">Accuracy (m)</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Export Button -->
+  <div class="mt-6">
+    <button onclick="exportCSV()" 
+      class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow">
+      Export Data as CSV
+    </button>
+  </div>
+
+  <p class="text-sm text-gray-500 mt-8">
+    by Assistant Professor Dr. Chun-I Chiu
+  </p>
+
+</div>
+
+<script>
+
+let gpsData = [];
+let counter = 0;
+
+function getGPS() {
+
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by this browser.");
+    return;
+  }
+
+  const status = document.getElementById("status");
+  status.classList.remove("hidden");
+
+  navigator.geolocation.getCurrentPosition(
+    position => {
+
+      status.classList.add("hidden");
+
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const acc = position.coords.accuracy;
+      const time = new Date().toISOString();
+
+      counter++;
+
+      const record = {
+        id: counter,
+        timestamp: time,
+        latitude: lat,
+        longitude: lon,
+        accuracy: acc
+      };
+
+      gpsData.push(record);
+
+      addRow(record);
+    },
+    error => {
+      status.classList.add("hidden");
+      alert("Error getting location: " + error.message);
+    },
+    {
+      enableHighAccuracy: true
+    }
+  );
+}
+
+function addRow(record) {
+  const table = document.getElementById("gpsTable").getElementsByTagName("tbody")[0];
+
+  const row = table.insertRow();
+
+  row.insertCell(0).innerText = record.id;
+  row.insertCell(1).innerText = record.timestamp;
+  row.insertCell(2).innerText = record.latitude.toFixed(6);
+  row.insertCell(3).innerText = record.longitude.toFixed(6);
+  row.insertCell(4).innerText = record.accuracy.toFixed(2);
+}
+
+function exportCSV() {
+
+  if (gpsData.length === 0) {
+    alert("No GPS data recorded yet.");
+    return;
+  }
+
+  let csv = "id,timestamp,latitude,longitude,accuracy_m\n";
+
+  gpsData.forEach(r => {
+    csv += `${r.id},${r.timestamp},${r.latitude},${r.longitude},${r.accuracy}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+
+  a.href = URL.createObjectURL(blob);
+  a.download = "gps_locations.csv";
+  a.click();
+}
+
+</script>
+
+</body>
+</html>
