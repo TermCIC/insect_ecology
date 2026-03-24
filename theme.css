@@ -341,6 +341,33 @@ body.eco-themed::after {
     box-shadow: 0 12px 24px rgba(47, 53, 37, 0.14);
 }
 
+.eco-page .options label,
+.eco-page .answers label,
+.eco-page .question > label,
+.eco-page .quiz-question > label {
+    display: grid !important;
+    grid-template-columns: 1.15rem minmax(0, 1fr);
+    align-items: start;
+    column-gap: 0.85rem;
+    margin: 0.7rem 0 !important;
+    cursor: pointer;
+}
+
+.eco-page .options br,
+.eco-page .answers br {
+    display: none;
+}
+
+.eco-page input[type="radio"],
+.eco-page input[type="checkbox"] {
+    width: 1.15rem;
+    height: 1.15rem;
+    margin: 0.16rem 0 0 !important;
+    padding: 0 !important;
+    accent-color: var(--eco-accent);
+    box-shadow: none !important;
+}
+
 .eco-page .table-container,
 .eco-page #grid-container,
 .eco-page .network {

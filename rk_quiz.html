@@ -71,51 +71,9 @@
             margin: 5px 0;
         }
 
-        #results,
-        #submission-status {
+        #results {
             margin-top: 20px;
             font-weight: bold;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus {
-            border-color: #007bff;
-            outline: none;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-        }
-
-        button[type="submit"] {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0056b3;
         }
     </style>
     <link rel="stylesheet" href="theme.css">
@@ -210,28 +168,7 @@
         </form>
 
         <div id="results" style="margin-top: 20px; font-weight: bold;"></div>
-
-        <h2>Submit Your Score</h2>
-        <form id="submission-form" method="POST">
-            <div class="form-group">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-
-            <div class="form-group">
-                <label for="student_id">Student ID:</label>
-                <input type="text" id="student_id" name="student_id" required>
-            </div>
-
-            <div class="form-group">
-                <label for="score">Score:</label>
-                <input type="number" id="score" name="score" readonly>
-            </div>
-
-            <button type="submit">Submit</button>
-        </form>
     </div>
-    <div id="submission-status"></div>
     <script>
         function submitQuiz() {
             const correctAnswers = ['r', 'k', 'r', 'r', 'k', 'k', 'k', 'r', 'r', 'k'];
@@ -243,47 +180,8 @@
                     score++;
                 }
             });
-
-
-            document.getElementById("score").value = score; // Set the score in the form
+            document.getElementById("results").textContent = `You scored ${score}/10.`;
         }
-
-        document.getElementById("submission-form").addEventListener("submit", async function (event) {
-            event.preventDefault();
-
-            const formData = {
-                name: document.getElementById("name").value.trim(),
-                student_id: document.getElementById("student_id").value.trim(),
-                course: "Insect Ecology",
-                quiz_name: "r-K Selection",
-                score: parseInt(document.getElementById("score").value, 10)
-            };
-
-            try {
-                const response = await fetch('https://termcic-storage.onrender.com/add_quiz_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData),
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    document.getElementById("submission-status").textContent = 'Quiz data submitted successfully!';
-                    document.getElementById("submission-status").style.color = 'green';
-                } else {
-                    const errorMessage = result.error || 'Failed to submit data.';
-                    document.getElementById("submission-status").textContent = `Error: ${errorMessage}`;
-                    document.getElementById("submission-status").style.color = 'red';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById("submission-status").textContent = 'An error occurred. Please try again.';
-                document.getElementById("submission-status").style.color = 'red';
-            }
-        });
     </script>
 </body>
 

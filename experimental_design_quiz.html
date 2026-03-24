@@ -56,49 +56,6 @@
       font-weight: bold;
       text-align: center;
     }
-    /* Submission form styles */
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      box-sizing: border-box;
-    }
-    .form-group input:focus {
-      border-color: #007bff;
-      outline: none;
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    }
-    button[type="submit"] {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button[type="submit"]:hover {
-      background-color: #0056b3;
-    }
-    #submission-status {
-      margin-top: 20px;
-      padding: 10px;
-      border-radius: 5px;
-      text-align: center;
-      font-weight: bold;
-    }
   </style>
   <script>
     // Answer key for the Experimental Design Quiz
@@ -129,60 +86,10 @@
           score++;
         }
       }
-      // Update the result display and fill the submission score field
+      // Update the result display
       document.getElementById("result").innerText = "Your score is " + score + " out of " + totalQuestions + ".";
-      document.getElementById("score").value = score;
       document.getElementById("result").style.display = "block";
     }
-
-    // Function to handle quiz score submission
-    async function submitScore(event) {
-      event.preventDefault();
-
-      // Disable the submit button to prevent duplicate submissions
-      const submitBtn = document.getElementById("submitScoreBtn");
-      submitBtn.disabled = true;
-
-      const formData = {
-        name: document.getElementById("name").value.trim(),
-        student_id: document.getElementById("student_id").value.trim(),
-        course: "Experimental Design",
-        quiz_name: "Experimental Design Quiz",
-        score: parseInt(document.getElementById("score").value, 10)
-      };
-
-      try {
-        const response = await fetch('https://termcic-storage.onrender.com/add_quiz_data', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          document.getElementById("submission-status").innerText = 'Quiz data submitted successfully!';
-          document.getElementById("submission-status").style.color = 'green';
-        } else {
-          const errorMessage = result.error || 'Failed to submit data.';
-          document.getElementById("submission-status").innerText = `Error: ${errorMessage}`;
-          document.getElementById("submission-status").style.color = 'red';
-          submitBtn.disabled = false;
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById("submission-status").innerText = 'An error occurred. Please try again.';
-        document.getElementById("submission-status").style.color = 'red';
-        submitBtn.disabled = false;
-      }
-    }
-
-    // Add event listener to the submission form
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById("submission-form").addEventListener("submit", submitScore);
-    });
   </script>
     <link rel="stylesheet" href="theme.css">
     <script src="theme.js" defer></script>
@@ -289,28 +196,6 @@
       </div>
     </form>
     <div class="result" id="result" style="display:none;"></div>
-
-    <h2>Submit Your Score</h2>
-    <form id="submission-form">
-      <div class="form-group">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
-      </div>
-
-      <div class="form-group">
-        <label for="student_id">Student ID:</label>
-        <input type="text" id="student_id" name="student_id" required>
-      </div>
-
-      <div class="form-group">
-        <label for="score">Score:</label>
-        <input type="number" id="score" name="score" readonly>
-      </div>
-
-      <button type="submit" id="submitScoreBtn">Submit</button>
-    </form>
-
-    <div id="submission-status"></div>
   </div>
 
   <script>
@@ -328,60 +213,10 @@
           score++;
         }
       }
-      // Update the result display and fill the submission score field
+      // Update the result display
       document.getElementById("result").innerText = "Your score is " + score + " out of " + totalQuestions + ".";
-      document.getElementById("score").value = score;
       document.getElementById("result").style.display = "block";
     }
-
-    // Function to handle quiz score submission
-    async function submitScore(event) {
-      event.preventDefault();
-
-      // Disable the submit button to prevent duplicate submissions
-      const submitBtn = document.getElementById("submitScoreBtn");
-      submitBtn.disabled = true;
-
-      const formData = {
-        name: document.getElementById("name").value.trim(),
-        student_id: document.getElementById("student_id").value.trim(),
-        course: "Insect Ecology",
-        quiz_name: "Experimental Design Quiz",
-        score: parseInt(document.getElementById("score").value, 10)
-      };
-
-      try {
-        const response = await fetch('https://termcic-storage.onrender.com/add_quiz_data', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          document.getElementById("submission-status").innerText = 'Quiz data submitted successfully!';
-          document.getElementById("submission-status").style.color = 'green';
-        } else {
-          const errorMessage = result.error || 'Failed to submit data.';
-          document.getElementById("submission-status").innerText = `Error: ${errorMessage}`;
-          document.getElementById("submission-status").style.color = 'red';
-          submitBtn.disabled = false;
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById("submission-status").innerText = 'An error occurred. Please try again.';
-        document.getElementById("submission-status").style.color = 'red';
-        submitBtn.disabled = false;
-      }
-    }
-
-    // Add event listener to the submission form
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById("submission-form").addEventListener("submit", submitScore);
-    });
   </script>
 </body>
 </html>
