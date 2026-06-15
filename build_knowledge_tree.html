@@ -1,592 +1,599 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Build Your Knowledge Tree</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Your Knowledge Tree</title>
 
-<style>
-body{
-    margin:0;
-    overflow:hidden;
-    font-family:Arial,sans-serif;
-}
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
 
-#ui{
-    position:absolute;
-    top:20px;
-    right:20px;
-    width:320px;
-    background:rgba(255,255,255,0.95);
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 0 15px rgba(0,0,0,.25);
-    z-index:100;
-}
+        #ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, .25);
+            z-index: 100;
+        }
 
-h2{
-    margin-top:0;
-    color:#245b4f;
-}
+        h2 {
+            margin-top: 0;
+            color: #245b4f;
+        }
 
-button{
-    width:100%;
-    margin:4px 0;
-    padding:10px;
-    border:none;
-    border-radius:6px;
-    background:#245b4f;
-    color:white;
-    cursor:pointer;
-    font-size:14px;
-}
+        button {
+            width: 100%;
+            margin: 4px 0;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: #245b4f;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
 
-button:hover{
-    background:#173d35;
-}
+        button:hover {
+            background: #173d35;
+        }
 
-#xp{
-    font-weight:bold;
-    margin-bottom:10px;
-}
+        #xp {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
 
-#message{
-    margin-top:10px;
-    min-height:80px;
-}
-</style>
+        #message {
+            margin-top: 10px;
+            min-height: 80px;
+        }
+    </style>
 </head>
 
 <body>
 
-<div id="ui">
+    <div id="ui">
 
-<h2>🌳 Build Your Knowledge Tree</h2>
+        <h2>🌳 Build Your Knowledge Tree</h2>
 
-<div id="xp">XP: 0</div>
+        <div id="xp">XP: 0</div>
 
-<p>
-Build your scientific knowledge tree.
-Avoid unrelated branches.
-</p>
+        <p>
+            Build your scientific knowledge tree.
+            Avoid unrelated branches.
+        </p>
 
-<div id="choices"></div>
+        <div id="choices"></div>
 
-<div id="message">
-Start with Observation.
-</div>
+        <div id="message">
+            Start with Observation.
+        </div>
 
-</div>
+    </div>
 
-<script type="module">
+    <script type="module">
 
-import * as THREE from "https://unpkg.com/three@0.167.1/build/three.module.js";
+        import * as THREE from "https://unpkg.com/three@0.167.1/build/three.module.js";
 
-/* ==========================
-   Scene
-========================== */
+        /* ==========================
+           Scene
+        ========================== */
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xcfe8cf);
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xcfe8cf);
 
-const camera = new THREE.PerspectiveCamera(
-60,
-window.innerWidth/window.innerHeight,
-0.1,
-1000
-);
+        const camera = new THREE.PerspectiveCamera(
+            60,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
 
-camera.position.set(0,6,12);
+        camera.position.set(0, 6, 12);
 
-const renderer = new THREE.WebGLRenderer({
-antialias:true
-});
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
 
-renderer.setSize(
-window.innerWidth,
-window.innerHeight
-);
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
 
-document.body.appendChild(
-renderer.domElement
-);
+        document.body.appendChild(
+            renderer.domElement
+        );
 
-/* ==========================
-   Lights
-========================== */
+        /* ==========================
+           Lights
+        ========================== */
 
-scene.add(
-new THREE.AmbientLight(
-0xffffff,
-1.8
-)
-);
+        scene.add(
+            new THREE.AmbientLight(
+                0xffffff,
+                1.8
+            )
+        );
 
-const sun =
-new THREE.DirectionalLight(
-0xffffff,
-2
-);
+        const sun =
+            new THREE.DirectionalLight(
+                0xffffff,
+                2
+            );
 
-sun.position.set(
-10,
-20,
-10
-);
+        sun.position.set(
+            10,
+            20,
+            10
+        );
 
-scene.add(sun);
+        scene.add(sun);
 
-/* ==========================
-   Ground
-========================== */
+        /* ==========================
+           Ground
+        ========================== */
 
-const ground =
-new THREE.Mesh(
+        const ground =
+            new THREE.Mesh(
 
-new THREE.CircleGeometry(
-10,
-64
-),
+                new THREE.CircleGeometry(
+                    10,
+                    64
+                ),
 
-new THREE.MeshStandardMaterial({
-color:0x68a868
-})
+                new THREE.MeshStandardMaterial({
+                    color: 0x68a868
+                })
 
-);
+            );
 
-ground.rotation.x =
--Math.PI/2;
+        ground.rotation.x =
+            -Math.PI / 2;
 
-scene.add(ground);
+        scene.add(ground);
 
-/* ==========================
-   Seed
-========================== */
+        /* ==========================
+           Seed
+        ========================== */
 
-const seed =
-new THREE.Mesh(
+        const seed =
+            new THREE.Mesh(
 
-new THREE.SphereGeometry(
-0.15,
-16,
-16
-),
+                new THREE.SphereGeometry(
+                    0.15,
+                    16,
+                    16
+                ),
 
-new THREE.MeshStandardMaterial({
-color:0x5a3925
-})
+                new THREE.MeshStandardMaterial({
+                    color: 0x5a3925
+                })
 
-);
+            );
 
-scene.add(seed);
+        scene.add(seed);
 
-/* ==========================
-   Tree Trunk
-========================== */
+        /* ==========================
+           Tree Trunk
+        ========================== */
 
-const trunk =
-new THREE.Mesh(
+        const trunk =
+            new THREE.Mesh(
 
-new THREE.CylinderGeometry(
-0.25,
-0.35,
-4,
-12
-),
+                new THREE.CylinderGeometry(
+                    0.25,
+                    0.35,
+                    4,
+                    12
+                ),
 
-new THREE.MeshStandardMaterial({
-color:0x8b5a2b
-})
+                new THREE.MeshStandardMaterial({
+                    color: 0x8b5a2b
+                })
 
-);
+            );
 
-trunk.position.y = 2;
-trunk.scale.y = 0.05;
+        trunk.position.y = 2;
+        trunk.scale.y = 0.05;
 
-scene.add(trunk);
+        scene.add(trunk);
 
-/* ==========================
-   Canopy
-========================== */
+        /* ==========================
+           Canopy
+        ========================== */
 
-const canopy =
-new THREE.Mesh(
+        const canopy =
+            new THREE.Mesh(
 
-new THREE.SphereGeometry(
-2,
-32,
-32
-),
+                new THREE.SphereGeometry(
+                    2,
+                    32,
+                    32
+                ),
 
-new THREE.MeshStandardMaterial({
-color:0x2d8a43
-})
+                new THREE.MeshStandardMaterial({
+                    color: 0x2d8a43
+                })
 
-);
+            );
 
-canopy.position.y = 5;
+        canopy.position.y = 0.5;
 
-canopy.scale.set(
-0.05,
-0.05,
-0.05
-);
+        canopy.scale.set(
+            0.05,
+            0.05,
+            0.05
+        );
 
-scene.add(canopy);
+        scene.add(canopy);
 
-/* ==========================
-   Game Data
-========================== */
+        /* ==========================
+           Game Data
+        ========================== */
 
-const correctStages = [
+        const correctStages = [
 
-"Observation",
-"Hypothesis",
-"Experiment",
-"Analysis",
-"Discussion",
-"Publication"
+            "Observation",
+            "Hypothesis",
+            "Experiment",
+            "Analysis",
+            "Discussion",
+            "Publication"
 
-];
+        ];
 
-const wrongStages = [
+        const wrongStages = [
 
-"Fake Data",
-"Trust Me Bro",
-"No Statistics",
-"Plagiarism",
-"ChatGPT Everything"
+            "Fake Data",
+            "Trust Me Bro",
+            "No Statistics",
+            "Plagiarism",
+            "ChatGPT Everything"
 
-];
+        ];
 
-let currentStep = 0;
-let xp = 0;
+        let currentStep = 0;
+        let xp = 0;
 
-/* ==========================
-   UI
-========================== */
+        /* ==========================
+           UI
+        ========================== */
 
-const choices =
-document.getElementById(
-"choices"
-);
+        const choices =
+            document.getElementById(
+                "choices"
+            );
 
-const xpDiv =
-document.getElementById(
-"xp"
-);
+        const xpDiv =
+            document.getElementById(
+                "xp"
+            );
 
-const message =
-document.getElementById(
-"message"
-);
+        const message =
+            document.getElementById(
+                "message"
+            );
 
-function refreshButtons(){
+        function refreshButtons() {
 
-choices.innerHTML = "";
+            choices.innerHTML = "";
 
-const options = [
+            const options = [
 
-correctStages[currentStep],
-...wrongStages
+                correctStages[currentStep],
+                ...wrongStages
 
-];
+            ];
 
-options.sort(
-()=>Math.random()-0.5
-);
+            options.sort(
+                () => Math.random() - 0.5
+            );
 
-options.forEach(text=>{
+            options.forEach(text => {
 
-const btn =
-document.createElement(
-"button"
-);
+                const btn =
+                    document.createElement(
+                        "button"
+                    );
 
-btn.innerText = text;
+                btn.innerText = text;
 
-btn.onclick =
-()=>choose(text);
+                btn.onclick =
+                    () => choose(text);
 
-choices.appendChild(btn);
+                choices.appendChild(btn);
 
-});
+            });
 
-}
+        }
 
-refreshButtons();
+        refreshButtons();
 
-/* ==========================
-   Tree Growth
-========================== */
+        /* ==========================
+           Tree Growth
+        ========================== */
 
-function growTree(){
+        function growTree() {
 
-const p =
-(currentStep+1) /
-correctStages.length;
+            const p =
+                currentStep /
+                correctStages.length;
 
-trunk.scale.y =
-0.05 + p;
+            trunk.scale.y =
+                0.05 + p;
 
-canopy.scale.set(
-0.05+p,
-0.05+p,
-0.05+p
-);
+            const canopyScale =
+                0.05 + p;
 
-}
+            canopy.scale.set(
+                canopyScale,
+                canopyScale,
+                canopyScale
+            );
 
-/* ==========================
-   Professor Prune
-========================== */
+            canopy.position.y =
+                trunk.scale.y * 4 + 0.5;
+        }
 
-function professorPrune(){
+        /* ==========================
+           Professor Prune
+        ========================== */
 
-let count = 0;
+        function professorPrune() {
 
-const shake =
-setInterval(()=>{
+            let count = 0;
 
-trunk.rotation.z =
-(Math.random()-0.5)*0.25;
+            const shake =
+                setInterval(() => {
 
-count++;
+                    trunk.rotation.z =
+                        (Math.random() - 0.5) * 0.25;
 
-if(count>15){
+                    count++;
 
-clearInterval(shake);
+                    if (count > 15) {
 
-trunk.rotation.z = 0;
+                        clearInterval(shake);
 
-}
+                        trunk.rotation.z = 0;
 
-},30);
+                    }
 
-}
+                }, 30);
 
-/* ==========================
-   Publication Fruits
-========================== */
+        }
 
-function createPublicationFruit(){
+        /* ==========================
+           Publication Fruits
+        ========================== */
 
-for(let i=0;i<15;i++){
+        function createPublicationFruit() {
 
-const fruit =
-new THREE.Mesh(
+            for (let i = 0; i < 15; i++) {
 
-new THREE.BoxGeometry(
-0.25,
-0.35,
-0.03
-),
+                const fruit =
+                    new THREE.Mesh(
 
-new THREE.MeshStandardMaterial({
-color:0xffffff
-})
+                        new THREE.BoxGeometry(
+                            0.25,
+                            0.35,
+                            0.03
+                        ),
 
-);
+                        new THREE.MeshStandardMaterial({
+                            color: 0xffffff
+                        })
 
-fruit.position.set(
+                    );
 
-(Math.random()-0.5)*3,
+                fruit.position.set(
 
-4+Math.random()*2,
+                    (Math.random() - 0.5) * 3,
 
-(Math.random()-0.5)*3
+                    4 + Math.random() * 2,
 
-);
+                    (Math.random() - 0.5) * 3
 
-scene.add(fruit);
+                );
 
-}
+                scene.add(fruit);
 
-}
+            }
 
-/* ==========================
-   Graduation Hat
-========================== */
+        }
 
-function createGraduationHat(){
+        /* ==========================
+           Graduation Hat
+        ========================== */
 
-const hat =
-new THREE.Group();
+        function createGraduationHat() {
 
-const top =
-new THREE.Mesh(
+            const hat =
+                new THREE.Group();
 
-new THREE.BoxGeometry(
-1.5,
-0.1,
-1.5
-),
+            const top =
+                new THREE.Mesh(
 
-new THREE.MeshStandardMaterial({
-color:0x111111
-})
+                    new THREE.BoxGeometry(
+                        1.5,
+                        0.1,
+                        1.5
+                    ),
 
-);
+                    new THREE.MeshStandardMaterial({
+                        color: 0x111111
+                    })
 
-const base =
-new THREE.Mesh(
+                );
 
-new THREE.BoxGeometry(
-0.6,
-0.3,
-0.6
-),
+            const base =
+                new THREE.Mesh(
 
-new THREE.MeshStandardMaterial({
-color:0x111111
-})
+                    new THREE.BoxGeometry(
+                        0.6,
+                        0.3,
+                        0.6
+                    ),
 
-);
+                    new THREE.MeshStandardMaterial({
+                        color: 0x111111
+                    })
 
-base.position.y =
--0.15;
+                );
 
-hat.add(top);
-hat.add(base);
+            base.position.y =
+                -0.15;
 
-hat.position.y = 8;
+            hat.add(top);
+            hat.add(base);
 
-scene.add(hat);
+            hat.position.y = 8;
 
-}
+            scene.add(hat);
 
-/* ==========================
-   Victory
-========================== */
+        }
 
-function winGame(){
+        /* ==========================
+           Victory
+        ========================== */
 
-choices.innerHTML="";
+        function winGame() {
 
-message.innerHTML =
+            choices.innerHTML = "";
 
-"🎓 Congratulations!<br><br>" +
+            message.innerHTML =
 
-"You have built your Knowledge Tree.<br><br>" +
+                "🎓 Congratulations!<br><br>" +
 
-"Observation → Hypothesis → Experiment → Analysis → Discussion → Publication<br><br>" +
+                "You have built your Knowledge Tree.<br><br>" +
 
-"The job of professor is to cut unrelated branches.";
+                "Observation → Hypothesis → Experiment → Analysis → Discussion → Publication<br><br>" +
 
-createPublicationFruit();
+                "The job of professor is to cut unrelated branches.";
 
-createGraduationHat();
+            createPublicationFruit();
 
-}
+            createGraduationHat();
 
-/* ==========================
-   Choice Logic
-========================== */
+        }
 
-function choose(text){
+        /* ==========================
+           Choice Logic
+        ========================== */
 
-if(text===correctStages[currentStep]){
+        function choose(text) {
 
-xp += 20;
+            if (text === correctStages[currentStep]) {
 
-xpDiv.innerHTML =
-"XP: " + xp;
+                xp += 20;
 
-growTree();
+                xpDiv.innerHTML =
+                    "XP: " + xp;
 
-message.innerHTML =
+                growTree();
 
-"✅ Correct!<br>" +
+                message.innerHTML =
 
-text +
+                    "✅ Correct!<br>" +
 
-"<br><br>Your knowledge tree grows.";
+                    text +
 
-currentStep++;
+                    "<br><br>Your knowledge tree grows.";
 
-if(
-currentStep <
-correctStages.length
-){
+                currentStep++;
 
-refreshButtons();
+                if (
+                    currentStep <
+                    correctStages.length
+                ) {
 
-}else{
+                    refreshButtons();
 
-winGame();
+                } else {
 
-}
+                    winGame();
 
-}else{
+                }
 
-xp =
-Math.max(
-0,
-xp-10
-);
+            } else {
 
-xpDiv.innerHTML =
-"XP: " + xp;
+                xp =
+                    Math.max(
+                        0,
+                        xp - 10
+                    );
 
-message.innerHTML =
+                xpDiv.innerHTML =
+                    "XP: " + xp;
 
-"✂ Professor removed an unrelated branch:<br><b>" +
+                message.innerHTML =
 
-text +
+                    "✂ Professor removed an unrelated branch:<br><b>" +
 
-"</b>";
+                    text +
 
-professorPrune();
+                    "</b>";
 
-}
+                professorPrune();
 
-}
+            }
 
-/* ==========================
-   Animation
-========================== */
+        }
 
-function animate(){
+        /* ==========================
+           Animation
+        ========================== */
 
-requestAnimationFrame(
-animate
-);
+        function animate() {
 
-canopy.rotation.y +=
-0.002;
+            requestAnimationFrame(
+                animate
+            );
 
-renderer.render(
-scene,
-camera
-);
+            canopy.rotation.y +=
+                0.002;
 
-}
+            renderer.render(
+                scene,
+                camera
+            );
 
-animate();
+        }
 
-/* ==========================
-   Resize
-========================== */
+        animate();
 
-window.addEventListener(
-"resize",
-()=>{
+        /* ==========================
+           Resize
+        ========================== */
 
-camera.aspect =
-window.innerWidth /
-window.innerHeight;
+        window.addEventListener(
+            "resize",
+            () => {
 
-camera.updateProjectionMatrix();
+                camera.aspect =
+                    window.innerWidth /
+                    window.innerHeight;
 
-renderer.setSize(
-window.innerWidth,
-window.innerHeight
-);
+                camera.updateProjectionMatrix();
 
-}
-);
+                renderer.setSize(
+                    window.innerWidth,
+                    window.innerHeight
+                );
 
-</script>
+            }
+        );
+
+    </script>
 
 </body>
+
 </html>
