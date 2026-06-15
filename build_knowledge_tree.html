@@ -1,171 +1,590 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Build Your Knowledge Tree</title>
 
 <style>
 body{
-    font-family:Arial, sans-serif;
-    background:#f4f8f5;
-    text-align:center;
-    margin:20px;
+    margin:0;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
 }
 
-h1{
+#ui{
+    position:absolute;
+    top:20px;
+    right:20px;
+    width:320px;
+    background:rgba(255,255,255,0.95);
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 0 15px rgba(0,0,0,.25);
+    z-index:100;
+}
+
+h2{
+    margin-top:0;
     color:#245b4f;
 }
 
-#tree{
-    width:400px;
-    margin:auto;
-}
-
-.node{
-    background:white;
-    border:2px solid #245b4f;
-    border-radius:10px;
-    padding:15px;
-    margin:10px;
-    cursor:move;
-    font-weight:bold;
-    box-shadow:0 2px 4px rgba(0,0,0,.15);
-}
-
-.node:hover{
-    background:#eaf3ef;
-}
-
 button{
+    width:100%;
+    margin:4px 0;
+    padding:10px;
+    border:none;
+    border-radius:6px;
     background:#245b4f;
     color:white;
-    border:none;
-    padding:10px 20px;
-    border-radius:6px;
-    font-size:16px;
     cursor:pointer;
+    font-size:14px;
 }
 
 button:hover{
     background:#173d35;
 }
 
-#result{
-    margin-top:20px;
-    font-size:20px;
+#xp{
     font-weight:bold;
+    margin-bottom:10px;
+}
+
+#message{
+    margin-top:10px;
+    min-height:80px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🌳 Build Your Knowledge Tree</h1>
+<div id="ui">
+
+<h2>🌳 Build Your Knowledge Tree</h2>
+
+<div id="xp">XP: 0</div>
 
 <p>
-Arrange the scientific process in the correct order.
+Build your scientific knowledge tree.
+Avoid unrelated branches.
 </p>
 
-<div id="tree">
+<div id="choices"></div>
 
-<div class="node" draggable="true">Discussion</div>
-<div class="node" draggable="true">Observation</div>
-<div class="node" draggable="true">Publication</div>
-<div class="node" draggable="true">Experiment</div>
-<div class="node" draggable="true">Hypothesis</div>
-<div class="node" draggable="true">Analysis</div>
+<div id="message">
+Start with Observation.
+</div>
 
 </div>
 
-<button onclick="checkAnswer()">
-Check My Knowledge Tree
-</button>
+<script type="module">
 
-<div id="result"></div>
+import * as THREE from "https://unpkg.com/three@0.167.1/build/three.module.js";
 
-<script>
+/* ==========================
+   Scene
+========================== */
 
-const tree = document.getElementById('tree');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xcfe8cf);
 
-let dragged;
+const camera = new THREE.PerspectiveCamera(
+60,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
 
-document.addEventListener("dragstart", e=>{
-    if(e.target.classList.contains("node")){
-        dragged = e.target;
-    }
+camera.position.set(0,6,12);
+
+const renderer = new THREE.WebGLRenderer({
+antialias:true
 });
 
-document.addEventListener("dragover", e=>{
-    e.preventDefault();
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+document.body.appendChild(
+renderer.domElement
+);
+
+/* ==========================
+   Lights
+========================== */
+
+scene.add(
+new THREE.AmbientLight(
+0xffffff,
+1.8
+)
+);
+
+const sun =
+new THREE.DirectionalLight(
+0xffffff,
+2
+);
+
+sun.position.set(
+10,
+20,
+10
+);
+
+scene.add(sun);
+
+/* ==========================
+   Ground
+========================== */
+
+const ground =
+new THREE.Mesh(
+
+new THREE.CircleGeometry(
+10,
+64
+),
+
+new THREE.MeshStandardMaterial({
+color:0x68a868
+})
+
+);
+
+ground.rotation.x =
+-Math.PI/2;
+
+scene.add(ground);
+
+/* ==========================
+   Seed
+========================== */
+
+const seed =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+0.15,
+16,
+16
+),
+
+new THREE.MeshStandardMaterial({
+color:0x5a3925
+})
+
+);
+
+scene.add(seed);
+
+/* ==========================
+   Tree Trunk
+========================== */
+
+const trunk =
+new THREE.Mesh(
+
+new THREE.CylinderGeometry(
+0.25,
+0.35,
+4,
+12
+),
+
+new THREE.MeshStandardMaterial({
+color:0x8b5a2b
+})
+
+);
+
+trunk.position.y = 2;
+trunk.scale.y = 0.05;
+
+scene.add(trunk);
+
+/* ==========================
+   Canopy
+========================== */
+
+const canopy =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+2,
+32,
+32
+),
+
+new THREE.MeshStandardMaterial({
+color:0x2d8a43
+})
+
+);
+
+canopy.position.y = 5;
+
+canopy.scale.set(
+0.05,
+0.05,
+0.05
+);
+
+scene.add(canopy);
+
+/* ==========================
+   Game Data
+========================== */
+
+const correctStages = [
+
+"Observation",
+"Hypothesis",
+"Experiment",
+"Analysis",
+"Discussion",
+"Publication"
+
+];
+
+const wrongStages = [
+
+"Fake Data",
+"Trust Me Bro",
+"No Statistics",
+"Plagiarism",
+"ChatGPT Everything"
+
+];
+
+let currentStep = 0;
+let xp = 0;
+
+/* ==========================
+   UI
+========================== */
+
+const choices =
+document.getElementById(
+"choices"
+);
+
+const xpDiv =
+document.getElementById(
+"xp"
+);
+
+const message =
+document.getElementById(
+"message"
+);
+
+function refreshButtons(){
+
+choices.innerHTML = "";
+
+const options = [
+
+correctStages[currentStep],
+...wrongStages
+
+];
+
+options.sort(
+()=>Math.random()-0.5
+);
+
+options.forEach(text=>{
+
+const btn =
+document.createElement(
+"button"
+);
+
+btn.innerText = text;
+
+btn.onclick =
+()=>choose(text);
+
+choices.appendChild(btn);
+
 });
 
-document.addEventListener("drop", e=>{
-    e.preventDefault();
-
-    if(e.target.classList.contains("node")){
-        const rect = e.target.getBoundingClientRect();
-
-        const next =
-            (e.clientY - rect.top) >
-            rect.height/2;
-
-        tree.insertBefore(
-            dragged,
-            next ? e.target.nextSibling : e.target
-        );
-    }
-});
-
-function checkAnswer(){
-
-    const correct = [
-        "Observation",
-        "Hypothesis",
-        "Experiment",
-        "Analysis",
-        "Discussion",
-        "Publication"
-    ];
-
-    const nodes =
-        document.querySelectorAll(".node");
-
-    let score = 0;
-
-    nodes.forEach((node,i)=>{
-        if(node.innerText === correct[i]){
-            score++;
-        }
-    });
-
-    if(score === correct.length){
-
-        document.getElementById("result").innerHTML =
-        "🎉 Perfect! You have built your Knowledge Tree.<br><br>" +
-        "Observation → Hypothesis → Experiment → Analysis → Discussion → Publication";
-
-    }else{
-
-        document.getElementById("result").innerHTML =
-        "Score: " + score +
-        "/" + correct.length +
-        "<br>Keep growing your Knowledge Tree!";
-    }
 }
 
-window.onload = () => {
+refreshButtons();
 
-    const container =
-        document.getElementById("tree");
+/* ==========================
+   Tree Growth
+========================== */
 
-    for(let i=container.children.length;i>=0;i--){
-        container.appendChild(
-            container.children[
-                Math.random()*i|0
-            ]
-        );
-    }
+function growTree(){
+
+const p =
+(currentStep+1) /
+correctStages.length;
+
+trunk.scale.y =
+0.05 + p;
+
+canopy.scale.set(
+0.05+p,
+0.05+p,
+0.05+p
+);
+
 }
+
+/* ==========================
+   Professor Prune
+========================== */
+
+function professorPrune(){
+
+let count = 0;
+
+const shake =
+setInterval(()=>{
+
+trunk.rotation.z =
+(Math.random()-0.5)*0.25;
+
+count++;
+
+if(count>15){
+
+clearInterval(shake);
+
+trunk.rotation.z = 0;
+
+}
+
+},30);
+
+}
+
+/* ==========================
+   Publication Fruits
+========================== */
+
+function createPublicationFruit(){
+
+for(let i=0;i<15;i++){
+
+const fruit =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.25,
+0.35,
+0.03
+),
+
+new THREE.MeshStandardMaterial({
+color:0xffffff
+})
+
+);
+
+fruit.position.set(
+
+(Math.random()-0.5)*3,
+
+4+Math.random()*2,
+
+(Math.random()-0.5)*3
+
+);
+
+scene.add(fruit);
+
+}
+
+}
+
+/* ==========================
+   Graduation Hat
+========================== */
+
+function createGraduationHat(){
+
+const hat =
+new THREE.Group();
+
+const top =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+1.5,
+0.1,
+1.5
+),
+
+new THREE.MeshStandardMaterial({
+color:0x111111
+})
+
+);
+
+const base =
+new THREE.Mesh(
+
+new THREE.BoxGeometry(
+0.6,
+0.3,
+0.6
+),
+
+new THREE.MeshStandardMaterial({
+color:0x111111
+})
+
+);
+
+base.position.y =
+-0.15;
+
+hat.add(top);
+hat.add(base);
+
+hat.position.y = 8;
+
+scene.add(hat);
+
+}
+
+/* ==========================
+   Victory
+========================== */
+
+function winGame(){
+
+choices.innerHTML="";
+
+message.innerHTML =
+
+"🎓 Congratulations!<br><br>" +
+
+"You have built your Knowledge Tree.<br><br>" +
+
+"Observation → Hypothesis → Experiment → Analysis → Discussion → Publication<br><br>" +
+
+"The job of professor is to cut unrelated branches.";
+
+createPublicationFruit();
+
+createGraduationHat();
+
+}
+
+/* ==========================
+   Choice Logic
+========================== */
+
+function choose(text){
+
+if(text===correctStages[currentStep]){
+
+xp += 20;
+
+xpDiv.innerHTML =
+"XP: " + xp;
+
+growTree();
+
+message.innerHTML =
+
+"✅ Correct!<br>" +
+
+text +
+
+"<br><br>Your knowledge tree grows.";
+
+currentStep++;
+
+if(
+currentStep <
+correctStages.length
+){
+
+refreshButtons();
+
+}else{
+
+winGame();
+
+}
+
+}else{
+
+xp =
+Math.max(
+0,
+xp-10
+);
+
+xpDiv.innerHTML =
+"XP: " + xp;
+
+message.innerHTML =
+
+"✂ Professor removed an unrelated branch:<br><b>" +
+
+text +
+
+"</b>";
+
+professorPrune();
+
+}
+
+}
+
+/* ==========================
+   Animation
+========================== */
+
+function animate(){
+
+requestAnimationFrame(
+animate
+);
+
+canopy.rotation.y +=
+0.002;
+
+renderer.render(
+scene,
+camera
+);
+
+}
+
+animate();
+
+/* ==========================
+   Resize
+========================== */
+
+window.addEventListener(
+"resize",
+()=>{
+
+camera.aspect =
+window.innerWidth /
+window.innerHeight;
+
+camera.updateProjectionMatrix();
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+}
+);
 
 </script>
 
