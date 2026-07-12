@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mantis Hunt: Functional Response Lab</title>
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    :root { --ink:#ecf4dd; --leaf:#8ebc5a; --gold:#f4c35a; --panel:rgba(13,30,18,.78); }
+    * { box-sizing:border-box; } body { margin:0; overflow:hidden; background:#102416; color:var(--ink); font:15px/1.3 system-ui,sans-serif; }
+    #game { position:fixed; inset:0; touch-action:none; } canvas { display:block; width:100%; height:100%; }
+    .hud { position:fixed; z-index:2; pointer-events:none; inset:0; padding:max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+    .card { background:var(--panel); border:1px solid rgba(206,239,160,.28); border-radius:14px; box-shadow:0 8px 30px #0007; backdrop-filter:blur(7px); }
+    #title { position:absolute; top:16px; left:16px; padding:10px 13px; max-width:min(390px,calc(100vw - 32px)); }
+    #title h1 { font:700 20px/1.1 Georgia,serif; margin:0 0 4px; color:#fff5c8; } #title p { margin:0; color:#cfe0bd; font-size:12px; }
+    #stats { position:absolute; top:16px; right:16px; width:250px; padding:11px 13px; }
+    #stats strong { color:var(--gold); } .row { display:flex; justify-content:space-between; gap:8px; margin:4px 0; }
+    #formula { position:absolute; bottom:16px; left:16px; padding:11px 13px; max-width:430px; font-size:13px; }
+    #formula .equation { color:#fff3af; font:italic 17px Georgia,serif; margin:4px 0; } #message { color:#b9e486; min-height:18px; }
+    #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-size:30px; text-shadow:0 1px 3px #000; }
+    #catch { position:absolute; right:22px; bottom:25px; pointer-events:auto; border:2px solid #fff1a9; background:rgba(84,115,42,.88); color:white; border-radius:50%; width:82px; height:82px; font-weight:800; box-shadow:0 4px 16px #0008; }
+    #catch:active { transform:scale(.94); background:#b17b28; } #joystick { position:absolute; left:20px; bottom:25px; pointer-events:auto; width:106px; height:106px; border-radius:50%; border:2px solid #ffffff44; background:#0c1d1288; }
+    #stick { position:absolute; left:32px; top:32px; width:38px; height:38px; border-radius:50%; background:#d9edb3aa; }
+    #start { position:fixed; z-index:5; inset:0; display:grid; place-items:center; padding:24px; background:linear-gradient(#0b2016dd,#0b2016ee); text-align:center; }
+    #start .card { padding:28px; max-width:480px; } #start h2 { color:#fff1b3; font:700 28px Georgia,serif; margin:0 0 10px; } button { font:inherit; cursor:pointer; } #play { margin-top:14px; border:0; border-radius:999px; padding:12px 24px; background:#a9cf63; color:#17220e; font-weight:800; }
+    @media (hover:hover) and (pointer:fine) { #joystick,#catch { display:none; } } @media (max-width:620px) { #stats { top:105px; right:12px; width:215px; font-size:12px; } #title { left:12px; top:10px; } #formula { left:12px; bottom:12px; max-width:calc(100vw - 124px); font-size:11px; } .equation { font-size:14px!important; } }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div class="hud">
+    <div id="title" class="card"><h1>Mantis Hunt</h1><p>Explore the forest, aim at a caterpillar, then catch it.</p></div>
+    <div id="stats" class="card">
+      <div class="row"><span>Time hunting</span><strong id="time">0.0 s</strong></div>
+      <div class="row"><span>Caterpillars, N</span><strong id="density">0</strong></div>
+      <div class="row"><span>Captured, Nₑ</span><strong id="caught">0</strong></div>
+      <div class="row"><span>Observed rate</span><strong id="observed">0.00 prey/s</strong></div>
+      <hr style="border-color:#ffffff22"><div class="row"><span>Attack rate, a</span><strong>0.045 s⁻¹ prey⁻¹</strong></div>
+      <div class="row"><span>Handling time, Tₕ</span><strong>2.0 s/prey</strong></div>
+      <div class="row"><span>Predicted rate</span><strong id="predicted">0.00 prey/s</strong></div>
+    </div>
+    <div id="crosshair">+</div>
+    <div id="formula" class="card"><b>Holling Type II (disc equation)</b><div class="equation">Nₑ = aNT / (1 + aTₕN)</div><span id="message">Find prey near leaves. Desktop: WASD + mouse. Touch: drag to look, left pad to move.</span></div>
+    <div id="joystick"><div id="stick"></div></div><button id="catch" aria-label="Catch caterpillar">CATCH</button>
+  </div>
+  <div id="start"><div class="card"><h2>You are a praying mantis</h2><p>Hunt green caterpillars among the trees. The displayed disc equation predicts how prey density and handling time constrain your intake rate.</p><p><b>Desktop:</b> click to look, WASD to move, Space/click to catch.<br><b>Touch:</b> drag the scene to look, use the left pad to move, then tap CATCH.</p><button id="play">Begin the hunt</button></div></div>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
+    const scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,180), renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; document.querySelector('#game').append(renderer.domElement);
+    scene.background=new THREE.Color(0x7aa6a7); scene.fog=new THREE.Fog(0x7aa6a7,18,105); camera.position.set(0,1.65,14);
+    scene.add(new THREE.HemisphereLight(0xdfffc6,0x20351d,2.4)); const sun=new THREE.DirectionalLight(0xfff2b5,2); sun.position.set(18,28,8); sun.castShadow=true; scene.add(sun);
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:0x476d35,roughness:1})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+    const leafMat=new THREE.MeshStandardMaterial({color:0x356b31,roughness:.9}), trunkMat=new THREE.MeshStandardMaterial({color:0x4a3520});
+    for(let i=0;i<75;i++){const x=(Math.random()-.5)*130,z=(Math.random()-.5)*130,h=4+Math.random()*7; const t=new THREE.Mesh(new THREE.CylinderGeometry(.16,.3,h,7),trunkMat);t.position.set(x,h/2,z);t.castShadow=true;scene.add(t); const crown=new THREE.Mesh(new THREE.SphereGeometry(1.6+Math.random(),7,6),leafMat);crown.position.set(x,h,z);crown.scale.y=.7;scene.add(crown)}
+    const prey=[], preyMat=new THREE.MeshStandardMaterial({color:0xa7db52,roughness:.6});
+    function makePrey(){const g=new THREE.Group(),body=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.42,5,8),preyMat);body.rotation.z=Math.PI/2;g.add(body); const head=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),preyMat);head.position.x=.38;g.add(head); g.position.set((Math.random()-.5)*65,.17,(Math.random()-.5)*65);g.rotation.y=Math.random()*6.28;g.userData.phase=Math.random()*6.28;scene.add(g);prey.push(g)} for(let i=0;i<38;i++)makePrey();
+    const keys={}, ray=new THREE.Raycaster(), clock=new THREE.Clock(); let yaw=0,pitch=0,running=false,elapsed=0,captured=0,handling=0,joy={x:0,y:0};
+    addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')catchPrey()}); addEventListener('keyup',e=>keys[e.code]=false);
+    renderer.domElement.addEventListener('click',()=>{if(running&&matchMedia('(hover:hover) and (pointer:fine)').matches) renderer.domElement.requestPointerLock(); catchPrey()});
+    addEventListener('mousemove',e=>{if(document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.0025; pitch=Math.max(-1.2,Math.min(1.2,pitch-e.movementY*.0025))}});
+    let look=null; renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||!matchMedia('(hover:hover) and (pointer:fine)').matches)look={x:e.clientX,y:e.clientY}}); renderer.domElement.addEventListener('pointermove',e=>{if(look){yaw-=(e.clientX-look.x)*.008;pitch=Math.max(-1.1,Math.min(1.1,pitch-(e.clientY-look.y)*.008));look={x:e.clientX,y:e.clientY}}); renderer.domElement.addEventListener('pointerup',()=>look=null);
+    const pad=document.querySelector('#joystick'),stick=document.querySelector('#stick'); function updatePad(e){const r=pad.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width/2),y=(e.clientY-r.top-r.height/2)/(r.height/2),d=Math.hypot(x,y),s=Math.min(1,d);joy={x:x/(d||1)*s,y:y/(d||1)*s};stick.style.transform=`translate(${joy.x*30}px,${joy.y*30}px)`} pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId);updatePad(e)});pad.addEventListener('pointermove',e=>{if(e.buttons)updatePad(e)});pad.addEventListener('pointerup',()=>{joy={x:0,y:0};stick.style.transform=''}); document.querySelector('#catch').onclick=catchPrey;
+    function catchPrey(){if(!running||handling>0)return;ray.setFromCamera({x:0,y:0},camera);const hit=ray.intersectObjects(prey,true)[0];if(hit&&hit.distance<4.2){let target=hit.object;while(target.parent&& !prey.includes(target))target=target.parent; const i=prey.indexOf(target);if(i>=0){scene.remove(target);prey.splice(i,1);captured++;handling=2;document.querySelector('#message').textContent='Captured! Handling prey for 2 seconds — your intake rate is temporarily limited.';setTimeout(()=>document.querySelector('#message').textContent='Hunt again. Compare your observed rate with the equation prediction.',2000)}}else document.querySelector('#message').textContent='No caterpillar in reach. Move closer and keep one at the crosshair.'}
+    function tick(){const dt=Math.min(clock.getDelta(),.05);if(running){elapsed+=dt;handling=Math.max(0,handling-dt);const f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-joy.y,side=(keys.KeyD?1:0)-(keys.KeyA?1:0)+joy.x,dir=new THREE.Vector3();camera.getWorldDirection(dir);dir.y=0;dir.normalize();const right=new THREE.Vector3().crossVectors(dir,camera.up);camera.position.addScaledVector(dir,f*dt*5);camera.position.addScaledVector(right,side*dt*5);camera.rotation.set(pitch,yaw,0,'YXZ');prey.forEach(p=>p.position.y=.2+Math.sin(elapsed*2+p.userData.phase)*.035);const N=prey.length,a=.045,Th=2,pred=(a*N)/(1+a*Th*N);document.querySelector('#time').textContent=elapsed.toFixed(1)+' s';document.querySelector('#density').textContent=N;document.querySelector('#caught').textContent=captured;document.querySelector('#observed').textContent=(captured/Math.max(elapsed,.1)).toFixed(2)+' prey/s';document.querySelector('#predicted').textContent=pred.toFixed(2)+' prey/s'}renderer.render(scene,camera);requestAnimationFrame(tick)}
+    document.querySelector('#play').onclick=()=>{running=true;clock.start();document.querySelector('#start').style.display='none'}; addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}); tick();
+  </script>
+</body>
+</html>
