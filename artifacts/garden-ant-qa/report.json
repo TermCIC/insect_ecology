@@ -1,0 +1,275 @@
+{
+  "target": "file:///C:/Users/ASUS/Documents/01_Research_and_Sensors/insect_ecology/garden_ant_rivalry.html",
+  "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "passed": 29,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "login ready",
+      "ok": true,
+      "detail": "{\"label\":\"Enter the garden\",\"disabled\":false}"
+    },
+    {
+      "name": "game starts",
+      "ok": true,
+      "detail": "{\"frame\":15,\"running\":true,\"mode\":\"surface\",\"time\":179.74889999997617,\"score\":0,\"blackFood\":0,\"redFood\":0,\"health\":100,\"carrying\":false,\"dug\":0,\"distance\":0,\"attacks\":0,\"redDefeated\":0,\"surfaceCollected\":0,\"undergroundDelivered\":0,\"complete\":false,\"fail\":false,\"player\":{\"u\":0,\"v\":1.35},\"objective\":\"collect-surface-food\"}"
+    },
+    {
+      "name": "surface food pickup",
+      "ok": true,
+      "detail": "{\"frame\":15,\"running\":true,\"mode\":\"surface\",\"time\":179.74889999997617,\"score\":0,\"blackFood\":0,\"redFood\":0,\"health\":100,\"carrying\":true,\"dug\":0,\"distance\":0,\"attacks\":0,\"redDefeated\":0,\"surfaceCollected\":1,\"undergroundDelivered\":0,\"complete\":false,\"fail\":false,\"player\":{\"u\":0,\"v\":0.45000000000000007},\"objective\":\"deliver-underground\"}"
+    },
+    {
+      "name": "carried food enters underground",
+      "ok": true,
+      "detail": "{\"frame\":15,\"running\":true,\"mode\":\"underground\",\"time\":179.74889999997617,\"score\":0,\"blackFood\":0,\"redFood\":0,\"health\":100,\"carrying\":true,\"dug\":0,\"distance\":0,\"attacks\":0,\"redDefeated\":0,\"surfaceCollected\":1,\"undergroundDelivered\":0,\"complete\":false,\"fail\":false,\"player\":{\"x\":4,\"y\":2},\"objective\":\"deliver-underground\"}"
+    },
+    {
+      "name": "underground delivery scores",
+      "ok": true,
+      "detail": "{\"frame\":15,\"running\":true,\"mode\":\"underground\",\"time\":179.74889999997617,\"score\":1,\"blackFood\":1,\"redFood\":0,\"health\":100,\"carrying\":false,\"dug\":0,\"distance\":0,\"attacks\":0,\"redDefeated\":0,\"surfaceCollected\":1,\"undergroundDelivered\":1,\"complete\":false,\"fail\":false,\"player\":{\"x\":11,\"y\":3},\"objective\":\"collect-surface-food\"}"
+    },
+    {
+      "name": "dig opens one cell",
+      "ok": true,
+      "detail": "{\"frame\":16,\"running\":true,\"mode\":\"underground\",\"time\":179.73209999999406,\"score\":1,\"blackFood\":1,\"redFood\":0,\"health\":100,\"carrying\":false,\"dug\":1,\"distance\":0,\"attacks\":0,\"redDefeated\":0,\"surfaceCollected\":1,\"undergroundDelivered\":1,\"complete\":false,\"fail\":false,\"player\":{\"x\":13,\"y\":3},\"objective\":\"collect-surface-food\"}"
+    },
+    {
+      "name": "restart restores excavated soil",
+      "ok": true,
+      "detail": "cell 14,3 is solid again"
+    },
+    {
+      "name": "attack displaces rival",
+      "ok": true,
+      "detail": "{\"frame\":18,\"running\":true,\"mode\":\"underground\",\"time\":180,\"score\":0,\"blackFood\":0,\"redFood\":0,\"health\":100,\"carrying\":false,\"dug\":0,\"distance\":0,\"attacks\":1,\"redDefeated\":1,\"surfaceCollected\":0,\"undergroundDelivered\":0,\"complete\":false,\"fail\":false,\"player\":{\"x\":50.5,\"y\":5},\"objective\":\"collect-surface-food\"}"
+    },
+    {
+      "name": "desktop-surface.png is nonempty",
+      "ok": true,
+      "detail": "92583 bytes"
+    },
+    {
+      "name": "desktop canvas varied",
+      "ok": true,
+      "detail": "{\"width\":1280,\"height\":720,\"variance\":186,\"colors\":21}"
+    },
+    {
+      "name": "desktop geometry budget",
+      "ok": true,
+      "detail": "{\"calls\":60,\"triangles\":7856,\"points\":0,\"lines\":0,\"geometries\":9,\"textures\":1,\"materials\":14,\"dpr\":1,\"shadows\":true}"
+    },
+    {
+      "name": "desktop-underground.png is nonempty",
+      "ok": true,
+      "detail": "62269 bytes"
+    },
+    {
+      "name": "underground canvas varied",
+      "ok": true,
+      "detail": "{\"width\":1280,\"height\":720,\"variance\":122,\"colors\":10}"
+    },
+    {
+      "name": "underground draw-call budget",
+      "ok": true,
+      "detail": "{\"calls\":17,\"triangles\":11556,\"points\":0,\"lines\":0,\"geometries\":9,\"textures\":1,\"materials\":14,\"dpr\":1,\"shadows\":true}"
+    },
+    {
+      "name": "soil is one instanced draw object",
+      "ok": true,
+      "detail": "{\"surfaceFood\":13,\"surfaceRed\":5,\"undergroundFood\":5,\"undergroundRed\":5,\"soilInstances\":864,\"soilDrawObjects\":1}"
+    },
+    {
+      "name": "timed result state available",
+      "ok": true,
+      "detail": "{\"frame\":53,\"running\":false,\"mode\":\"surface\",\"time\":0,\"score\":2,\"blackFood\":2,\"redFood\":0,\"health\":100,\"carrying\":false,\"dug\":0,\"distance\":0,\"attacks\":0,\"redDefeated\":0,\"surfaceCollected\":0,\"undergroundDelivered\":2,\"complete\":true,\"fail\":false,\"player\":{\"u\":0,\"v\":1.35},\"objective\":\"collect-surface-food\"}"
+    },
+    {
+      "name": "result and PNG control visible",
+      "ok": true,
+      "detail": "{\"hidden\":false,\"download\":48,\"summary\":\"Automated QA · Black colony wins · Black 2 vs Red 0\"}"
+    },
+    {
+      "name": "desktop-result.png is nonempty",
+      "ok": true,
+      "detail": "111397 bytes"
+    },
+    {
+      "name": "play again returns to login",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "mobile touch target >=44px",
+      "ok": true,
+      "detail": "{\"up\":{\"w\":48,\"h\":48},\"actions\":{\"top\":726,\"bottom\":830},\"stats\":{\"top\":4,\"bottom\":68.28125},\"viewport\":{\"w\":390,\"h\":844}}"
+    },
+    {
+      "name": "mobile controls inside viewport",
+      "ok": true,
+      "detail": "{\"up\":{\"w\":48,\"h\":48},\"actions\":{\"top\":726,\"bottom\":830},\"stats\":{\"top\":4,\"bottom\":68.28125},\"viewport\":{\"w\":390,\"h\":844}}"
+    },
+    {
+      "name": "mobile input moves and releases",
+      "ok": true,
+      "detail": "{\"before\":0,\"distance\":7.92,\"active\":false}"
+    },
+    {
+      "name": "mobile-surface.png is nonempty",
+      "ok": true,
+      "detail": "252588 bytes"
+    },
+    {
+      "name": "mobile canvas varied",
+      "ok": true,
+      "detail": "{\"width\":663,\"height\":1434,\"variance\":186,\"colors\":13}"
+    },
+    {
+      "name": "mobile-underground.png is nonempty",
+      "ok": true,
+      "detail": "194429 bytes"
+    },
+    {
+      "name": "mobile PNG button reachable",
+      "ok": true,
+      "detail": "{\"button\":{\"top\":566.84375,\"bottom\":614.84375},\"card\":{\"top\":206.15625,\"bottom\":637.84375},\"viewport\":844}"
+    },
+    {
+      "name": "mobile-result.png is nonempty",
+      "ok": true,
+      "detail": "272490 bytes"
+    },
+    {
+      "name": "no console errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "desktopDiagnostics": {
+    "renderer": {
+      "calls": 60,
+      "triangles": 7856,
+      "points": 0,
+      "lines": 0,
+      "geometries": 9,
+      "textures": 1,
+      "materials": 14,
+      "dpr": 1,
+      "shadows": true
+    },
+    "state": {
+      "frame": 36,
+      "running": true,
+      "mode": "surface",
+      "time": 180,
+      "score": 0,
+      "blackFood": 0,
+      "redFood": 0,
+      "health": 100,
+      "carrying": true,
+      "dug": 0,
+      "distance": 0,
+      "attacks": 0,
+      "redDefeated": 0,
+      "surfaceCollected": 1,
+      "undergroundDelivered": 0,
+      "complete": false,
+      "fail": false,
+      "player": {
+        "u": 0,
+        "v": 0.45000000000000007
+      },
+      "objective": "deliver-underground"
+    },
+    "frame": 36,
+    "frameTimeMs": 24.98221252561772,
+    "entities": {
+      "surfaceFood": 13,
+      "surfaceRed": 5,
+      "undergroundFood": 5,
+      "undergroundRed": 5,
+      "soilInstances": 864,
+      "soilDrawObjects": 1
+    }
+  },
+  "undergroundDiagnostics": {
+    "renderer": {
+      "calls": 17,
+      "triangles": 11556,
+      "points": 0,
+      "lines": 0,
+      "geometries": 9,
+      "textures": 1,
+      "materials": 14,
+      "dpr": 1,
+      "shadows": true
+    },
+    "state": {
+      "frame": 53,
+      "running": true,
+      "mode": "underground",
+      "time": 180,
+      "score": 0,
+      "blackFood": 0,
+      "redFood": 0,
+      "health": 100,
+      "carrying": false,
+      "dug": 0,
+      "distance": 0,
+      "attacks": 0,
+      "redDefeated": 0,
+      "surfaceCollected": 0,
+      "undergroundDelivered": 0,
+      "complete": false,
+      "fail": false,
+      "player": {
+        "x": 4,
+        "y": 2
+      },
+      "objective": "collect-surface-food"
+    },
+    "frame": 53,
+    "frameTimeMs": 25.119930438724555,
+    "entities": {
+      "surfaceFood": 13,
+      "surfaceRed": 5,
+      "undergroundFood": 5,
+      "undergroundRed": 5,
+      "soilInstances": 864,
+      "soilDrawObjects": 1
+    }
+  },
+  "artifacts": [
+    {
+      "file": "C:\\Users\\ASUS\\Documents\\01_Research_and_Sensors\\insect_ecology\\artifacts\\garden-ant-qa\\desktop-surface.png",
+      "bytes": 92583
+    },
+    {
+      "file": "C:\\Users\\ASUS\\Documents\\01_Research_and_Sensors\\insect_ecology\\artifacts\\garden-ant-qa\\desktop-underground.png",
+      "bytes": 62269
+    },
+    {
+      "file": "C:\\Users\\ASUS\\Documents\\01_Research_and_Sensors\\insect_ecology\\artifacts\\garden-ant-qa\\desktop-result.png",
+      "bytes": 111397
+    },
+    {
+      "file": "C:\\Users\\ASUS\\Documents\\01_Research_and_Sensors\\insect_ecology\\artifacts\\garden-ant-qa\\mobile-surface.png",
+      "bytes": 252588
+    },
+    {
+      "file": "C:\\Users\\ASUS\\Documents\\01_Research_and_Sensors\\insect_ecology\\artifacts\\garden-ant-qa\\mobile-underground.png",
+      "bytes": 194429
+    },
+    {
+      "file": "C:\\Users\\ASUS\\Documents\\01_Research_and_Sensors\\insect_ecology\\artifacts\\garden-ant-qa\\mobile-result.png",
+      "bytes": 272490
+    }
+  ]
+}

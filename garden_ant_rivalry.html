@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <title>Garden Ant Rivalry · Three.js</title>
+  <style>
+    :root{--cream:#f7f0d1;--gold:#f6cd63;--lime:#b8dc68;--panel:#071d15e8;--line:#9fbd6c88}
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#07130e;color:var(--cream);font-family:system-ui,-apple-system,sans-serif;touch-action:none}
+    #game{position:fixed;inset:0;width:100%;height:100%;display:block}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px #0009;backdrop-filter:blur(6px)}
+    #hud{position:fixed;z-index:3;inset:0;pointer-events:none}
+    #stats{position:absolute;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(760px,calc(100vw - 18px));padding:7px 10px;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+    .stat{font-size:10px;line-height:1.15;min-width:0}.stat b{display:block;color:var(--gold);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #message{position:absolute;left:50%;bottom:94px;transform:translateX(-50%);max-width:min(560px,70vw);padding:7px 12px;text-align:center;font-size:12px}
+    #zone{position:absolute;top:72px;left:12px;padding:6px 10px;color:#d8efaa;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+    #controls{position:fixed;z-index:4;inset:0;pointer-events:none}
+    button{appearance:none;border:1px solid #d4e99f;border-radius:13px;background:#173c25df;color:white;font:800 14px system-ui;padding:11px;box-shadow:0 5px 15px #0007;touch-action:none;user-select:none;-webkit-user-select:none}
+    button:active,button.active{background:var(--lime);color:#10220d;transform:scale(.97)}
+    #dpad{position:absolute;left:14px;bottom:max(14px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,46px);gap:4px;pointer-events:auto}
+    #dpad button{padding:0;font-size:20px}.blank{visibility:hidden}
+    #actions{position:absolute;right:14px;bottom:max(14px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(2,minmax(76px,100px));gap:8px;pointer-events:auto}
+    #interact{grid-column:1/-1;background:#4e732d;border-color:#fff1ae}
+    .overlay{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:16px;background:#03100be8;overflow:auto;touch-action:pan-y}
+    .overlay[hidden]{display:none!important}.overlay .card{width:min(680px,100%);padding:clamp(16px,4vw,30px);text-align:center}
+    h1,h2{font-family:Georgia,serif;color:#fff0ae;margin:0 0 10px;line-height:1.05}h1{font-size:clamp(34px,7vw,62px)}h2{font-size:clamp(28px,6vw,46px)}
+    .lead{font-size:clamp(15px,2.5vw,19px);line-height:1.5;margin:9px auto;max-width:570px}.instructions{font-size:13px;line-height:1.5;color:#dce8c5}
+    label{display:block;font-weight:800;margin:17px 0 5px}input{width:min(330px,100%);padding:12px;border:2px solid var(--lime);border-radius:11px;font:16px system-ui}.warn{height:19px;color:#ffd071;font-size:12px}
+    #begin,#again,#download{background:var(--lime);color:#10220d;border:none;font-size:17px;padding:13px 22px;margin:7px}
+    #resultCard{max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}#report{display:block;width:100%;height:auto;background:#f8f1df;border-radius:10px;margin:12px auto;touch-action:pan-y}
+    @media(max-width:620px){#stats{grid-template-columns:repeat(3,1fr);top:max(4px,env(safe-area-inset-top));padding:5px 8px}.stat{font-size:9px}.stat b{font-size:12px}#zone{top:92px;font-size:10px}#message{bottom:122px;max-width:58vw;font-size:10px}#dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px)}#actions{grid-template-columns:repeat(2,76px)}#actions button{min-height:48px;font-size:12px;padding:10px 5px}.overlay{padding:8px}.overlay .card{padding:15px}#report{max-height:45dvh;object-fit:contain}}
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="hud">
+    <div id="stats" class="card">
+      <div class="stat">Time<b id="time">3:00</b></div><div class="stat">Black food<b id="black">0</b></div><div class="stat">Red food<b id="red">0</b></div>
+      <div class="stat">Health<b id="health">100%</b></div><div class="stat">Carrying<b id="carry">none</b></div><div class="stat">Tunnels dug<b id="dug">0</b></div>
+    </div>
+    <div id="zone" class="card">Spherical garden</div><div id="message" class="card">Collect food, enter the burrow, and deliver it underground.</div>
+  </div>
+  <div id="controls">
+    <div id="dpad"><button class="blank">·</button><button data-move="up">▲</button><button class="blank">·</button><button data-move="left">◀</button><button class="blank">·</button><button data-move="right">▶</button><button class="blank">·</button><button data-move="down">▼</button><button class="blank">·</button></div>
+    <div id="actions"><button id="interact">ENTER / USE</button><button id="dig">DIG</button><button id="attack">ATTACK</button></div>
+  </div>
+  <section id="start" class="overlay"><div class="card"><h1>Garden Ant Rivalry</h1><p class="lead">Directly control one black worker ant. Explore a spherical garden, enter a side-scrolling underground nest, excavate tunnels, gather food, and compete with red ants.</p><label for="studentId">Student ID</label><input id="studentId" maxlength="40" placeholder="Enter your ID"><div id="warn" class="warn"></div><p class="instructions"><b>Desktop:</b> WASD / arrows move · E enters or uses · F digs · Space attacks.<br><b>Touch:</b> directional pad · ENTER / USE · DIG · ATTACK.</p><button id="begin">Enter the garden</button></div></section>
+  <section id="results" class="overlay" hidden><div id="resultCard" class="card"><h2>Garden Rivalry Report</h2><p id="summary"></p><canvas id="report" width="1000" height="650"></canvas><button id="download">Download PNG</button><button id="again">Play again</button></div></section>
+
+  <script>
+    (()=>{
+      const button=document.querySelector('#begin'),input=document.querySelector('#studentId'),warn=document.querySelector('#warn');
+      function requestStart(){
+        if(window.antLoadFailed){location.reload();return}
+        const id=input.value.trim();
+        if(!id){warn.textContent='Please enter your student ID.';input.focus();return}
+        warn.textContent='Loading the 3D garden…';button.disabled=true;button.textContent='Loading…';
+        if(window.launchAntGame)window.launchAntGame(id);else window.pendingAntStudent=id;
+      }
+      button.addEventListener('click',requestStart);
+      input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();requestStart()}});
+      window.showAntLoadError=message=>{window.antLoadFailed=true;warn.textContent=message;button.disabled=false;button.textContent='Reload game'};
+    })();
+  </script>
+  <script type="module">
+    let THREE;
+    try{
+      THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
+    }catch(primaryError){
+      try{THREE=await import('https://unpkg.com/three@0.160.1/build/three.module.js')}
+      catch(fallbackError){window.showAntLoadError?.('Unable to load Three.js. Check the network, then tap Try again.');throw fallbackError}
+    }
+
+    const $=s=>document.querySelector(s), canvas=$('#game');
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.7)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.outputColorSpace=THREE.SRGBColorSpace;
+    const clock=new THREE.Clock(), keys={}, touch={x:0,y:0};
+    const state={running:false,mode:'surface',time:180,health:100,blackFood:0,redFood:0,carrying:false,dug:0,distance:0,attacks:0,redDefeated:0,surfaceCollected:0,undergroundDelivered:0,student:'',messageUntil:0};
+    const C={planetR:24,antLift:.48,cell:1.15,cols:72,rows:12};
+    let surfaceScene,surfaceCamera,undergroundScene,undergroundCamera,playerSurface,playerUnder,planet,entranceMarker,redNestMarker,underLamp,surfaceAttackRing,underAttackRing;
+    let food=[],redAnts=[],trees=[],grid=[],baseGrid=[],soilField,underFoods=[],underReds=[],playerUV={u:0,v:1.35,heading:0},under={x:4,y:3,face:1},attackPulse=0,lastMove={x:1,y:0},testPaused=false,reducedMotion=false,frame=0,frameMs=16.7,testSeed=1;
+
+    const materialCache=new Map();
+    function mat(color,rough=.8){const key=`${color}:${rough}`;if(!materialCache.has(key))materialCache.set(key,new THREE.MeshStandardMaterial({color,roughness:rough,metalness:0}));return materialCache.get(key)}
+    const geo={sphere:new THREE.SphereGeometry(1,14,10),body:new THREE.SphereGeometry(1,12,8),leg:new THREE.CylinderGeometry(.035,.035,.55,6),food:new THREE.DodecahedronGeometry(.34,0),trunk:new THREE.CylinderGeometry(.12,.2,1.8,8),leaf:new THREE.DodecahedronGeometry(.72,0)};
+    function antModel(color,scale=1){
+      const g=new THREE.Group(),rig=new THREE.Group(),m=mat(color,.65),joints=[];g.add(rig);
+      [-.32,0,.38].forEach((z,i)=>{const p=new THREE.Mesh(geo.body,m);p.scale.set(i===1?.24:.2,i===1?.22:.19,i===1?.32:.24);p.position.z=z;rig.add(p)});
+      for(const side of[-1,1])for(let i=0;i<3;i++){
+        const pivot=new THREE.Group(),upper=new THREE.Mesh(geo.leg,m),lower=new THREE.Mesh(geo.leg,m);
+        pivot.position.set(.13*side,-.01,(i-1)*.28);pivot.rotation.z=1.05*side;
+        upper.scale.y=.72;upper.position.y=-.18;lower.scale.y=.62;lower.position.set(.08*side,-.43,0);lower.rotation.z=-.42*side;
+        pivot.add(upper,lower);rig.add(pivot);joints.push({pivot,side,row:i,baseZ:pivot.rotation.z,phase:((i+(side>0?1:0))%2)*Math.PI});
+      }
+      g.userData.walk={rig,joints,time:0,amount:0};g.scale.setScalar(scale);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g
+    }
+    function animateAnt(g,dt,moving,pace=1){
+      const walk=g.userData.walk;if(!walk)return;moving=moving&&!reducedMotion;walk.amount=THREE.MathUtils.lerp(walk.amount,moving?1:0,Math.min(1,dt*12));walk.time+=dt*(8+pace*5)*Math.max(.18,walk.amount);
+      walk.joints.forEach(j=>{const wave=Math.sin(walk.time+j.phase),lift=Math.max(0,Math.cos(walk.time+j.phase));j.pivot.rotation.y=wave*.62*walk.amount;j.pivot.rotation.z=j.baseZ-j.side*lift*.2*walk.amount});
+      walk.rig.position.y=Math.abs(Math.sin(walk.time*2))*.045*walk.amount;walk.rig.rotation.z=Math.sin(walk.time)*.035*walk.amount;
+    }
+    function setOnSphere(obj,n,lift=C.antLift){obj.position.copy(n).multiplyScalar(C.planetR+lift);obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),n)}
+    function normalFromUV(u,v){return new THREE.Vector3(Math.sin(v)*Math.cos(u),Math.cos(v),Math.sin(v)*Math.sin(u)).normalize()}
+    function angular(a,b){return Math.acos(THREE.MathUtils.clamp(a.dot(b),-1,1))}
+    function seededPoints(count,min=.22){const out=[];for(let i=0;i<count;i++){for(let tries=0;tries<100;tries++){const n=normalFromUV((i*2.399+tries*.37)%(Math.PI*2),.45+((i*.618+tries*.13)%1)*2.15);if(out.every(p=>angular(p,n)>min)){out.push(n);break}}}return out}
+    function makeAttackRing(color){const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity:0,depthWrite:false,depthTest:false}),ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.055,8,28),material);ring.visible=false;ring.renderOrder=5;return ring}
+    const soilOpenColor=new THREE.Color(0x4a2d22),soilSolidColor=new THREE.Color(0xb56d3e);
+    function paintSoilCell(q,r){if(!soilField)return;soilField.setColorAt(r*C.cols+q,grid[r][q]?soilOpenColor:soilSolidColor);soilField.instanceColor.needsUpdate=true}
+
+    function buildSurface(){surfaceScene=new THREE.Scene();surfaceScene.background=new THREE.Color(0x88bfd0);surfaceScene.fog=new THREE.Fog(0x88bfd0,24,65);surfaceCamera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,150);
+      surfaceScene.add(new THREE.HemisphereLight(0xcbe9ff,0x2d3a18,2));const sun=new THREE.DirectionalLight(0xfff1c1,2.4);sun.position.set(20,35,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);surfaceScene.add(sun);
+      planet=new THREE.Mesh(new THREE.SphereGeometry(C.planetR,64,40),mat(0x4f8434,1));planet.receiveShadow=true;surfaceScene.add(planet);
+      playerSurface=antModel(0x11120f,1.25);surfaceScene.add(playerSurface);
+      const points=seededPoints(40,.25);points.forEach((n,i)=>{const t=new THREE.Group(),tr=new THREE.Mesh(geo.trunk,mat(0x664323));tr.position.y=.9;tr.castShadow=true;t.add(tr);const crown=new THREE.Mesh(geo.leaf,mat(i%3?0x2f6e32:0x477d31));crown.scale.set(1,1.25,1);crown.position.y=2.15;crown.castShadow=true;t.add(crown);setOnSphere(t,n,.03);surfaceScene.add(t);trees.push(t)});
+      seededPoints(13,.34).forEach((n,i)=>{const mesh=new THREE.Mesh(geo.food,mat(i%2?0xe6be4b:0xd9893c));mesh.castShadow=true;setOnSphere(mesh,n,.38);surfaceScene.add(mesh);food.push({mesh,n,amount:2+i%3})});
+      seededPoints(8,.45).slice(3).forEach((n,i)=>{const mesh=antModel(0xb7352d,1);setOnSphere(mesh,n);surfaceScene.add(mesh);redAnts.push({mesh,n:n.clone(),startN:n.clone(),carry:false,speed:.13+i*.008,target:null})});
+      entranceMarker=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(.75,.13,8,20),mat(0x27170d));ring.rotation.x=Math.PI/2;entranceMarker.add(ring);const eN=normalFromUV(0,1.35);setOnSphere(entranceMarker,eN,.15);surfaceScene.add(entranceMarker);
+      redNestMarker=new THREE.Mesh(new THREE.ConeGeometry(.7,.8,12),mat(0x7a271f));setOnSphere(redNestMarker,normalFromUV(2.8,1.45),.28);surfaceScene.add(redNestMarker);
+      surfaceAttackRing=makeAttackRing(0xffdf77);surfaceAttackRing.rotation.x=Math.PI/2;surfaceAttackRing.position.y=-.28;playerSurface.add(surfaceAttackRing);updateSurfacePlayer();
+    }
+    function buildUnderground(){undergroundScene=new THREE.Scene();undergroundScene.background=new THREE.Color(0x2d1a14);undergroundCamera=new THREE.OrthographicCamera(-8,8,5,-5,.1,80);undergroundCamera.position.set(0,0,20);undergroundCamera.lookAt(0,0,0);undergroundScene.add(new THREE.HemisphereLight(0xffe0ad,0x3a2118,3.8),new THREE.AmbientLight(0xffc27c,1.15));const key=new THREE.DirectionalLight(0xffe2b0,3.4);key.position.set(-4,8,18);undergroundScene.add(key);
+      baseGrid=Array.from({length:C.rows},(_,r)=>Array.from({length:C.cols},(_,q)=>r===1||(q<14&&r>=2&&r<=4)||(q>48&&r>=4&&r<=6)));
+      for(let q=0;q<C.cols;q++)baseGrid[C.rows-1][q]=false;for(let q=0;q<7;q++)baseGrid[0][q]=true;grid=baseGrid.map(row=>row.slice());
+      const blockGeometry=new THREE.BoxGeometry(C.cell*.96,C.cell*.96,.5),blockMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.92,vertexColors:true,emissive:0x1f0d07,emissiveIntensity:.22});soilField=new THREE.InstancedMesh(blockGeometry,blockMaterial,C.cols*C.rows);soilField.receiveShadow=true;soilField.frustumCulled=false;const dummy=new THREE.Object3D();
+      for(let r=0;r<C.rows;r++)for(let q=0;q<C.cols;q++){dummy.position.set(q*C.cell,-r*C.cell,0);dummy.updateMatrix();soilField.setMatrixAt(r*C.cols+q,dummy.matrix);soilField.setColorAt(r*C.cols+q,grid[r][q]?soilOpenColor:soilSolidColor)}soilField.instanceMatrix.needsUpdate=true;soilField.instanceColor.needsUpdate=true;undergroundScene.add(soilField);
+      playerUnder=antModel(0x52623b,1.2);playerUnder.rotation.x=Math.PI/2;undergroundScene.add(playerUnder);underLamp=new THREE.PointLight(0xffd58c,18,17,1.7);undergroundScene.add(underLamp);underAttackRing=makeAttackRing(0xffdf77);undergroundScene.add(underAttackRing);
+      for(let i=0;i<5;i++){const mesh=new THREE.Mesh(geo.food,mat(0xe6bd4c));mesh.position.set((19+i*8)*C.cell,-(2+i%5)*C.cell,.7);mesh.scale.setScalar(.8);undergroundScene.add(mesh);underFoods.push({mesh,x:19+i*8,y:2+i%5,amount:2})}
+      for(let i=0;i<5;i++){const mesh=antModel(0xc84535,.9);mesh.rotation.x=Math.PI/2;undergroundScene.add(mesh);underReds.push({mesh,x:51+i*2,startX:51+i*2,y:5,dir:i%2?1:-1,startDir:i%2?1:-1})}
+      const chamber=new THREE.Mesh(new THREE.SphereGeometry(1.5,18,12),mat(0x17110f));chamber.scale.set(1.7,1,.45);chamber.position.set(11*C.cell,-3*C.cell,-.15);undergroundScene.add(chamber);syncUnderPlayer();
+    }
+    function updateSurfacePlayer(){const n=normalFromUV(playerUV.u,playerUV.v);setOnSphere(playerSurface,n);playerSurface.rotateY(playerUV.heading)}
+    function syncUnderPlayer(snapCamera=false){playerUnder.position.set(under.x*C.cell,-under.y*C.cell,.85);playerUnder.rotation.z=under.face<0?Math.PI:0;if(underLamp)underLamp.position.set(playerUnder.position.x,playerUnder.position.y,5);if(underAttackRing)underAttackRing.position.set(playerUnder.position.x,playerUnder.position.y,1.05);if(snapCamera&&undergroundCamera){undergroundCamera.position.x=playerUnder.position.x;undergroundCamera.position.y=playerUnder.position.y}}
+    function setMode(mode){state.mode=mode;$('#zone').textContent=mode==='surface'?'Spherical garden':'Underground nest · side-scrolling';$('#dig').disabled=mode!=='underground';$('#interact').textContent=mode==='surface'?'ENTER / USE':'EXIT / USE';flash(mode==='surface'?'Back on the garden planet. Find food and the nest entrance.':'Underground: explore horizontally, dig soil, and return food to the black chamber.');resize();if(mode==='underground')syncUnderPlayer(true)}
+    function flash(text,seconds=2.8){$('#message').textContent=text;state.messageUntil=performance.now()+seconds*1000}
+    function currentInput(){let x=(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+touch.x,y=(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0)+touch.y;const l=Math.hypot(x,y);return l>1?{x:x/l,y:y/l}:{x,y}}
+
+    function updateSurface(dt,input){const speed=.6,moving=Math.hypot(input.x,input.y)>.08;if(moving){playerUV.u=(playerUV.u+input.x*speed*dt+Math.PI*2)%(Math.PI*2);playerUV.v=THREE.MathUtils.clamp(playerUV.v-input.y*speed*dt,.22,Math.PI-.22);playerUV.heading=Math.atan2(input.x,input.y);state.distance+=speed*dt*C.planetR;lastMove={x:input.x,y:input.y};updateSurfacePlayer()}animateAnt(playerSurface,dt,moving,1.2);
+      const pn=normalFromUV(playerUV.u,playerUV.v);if(!state.carrying){const f=food.find(o=>o.amount>0&&angular(pn,o.n)<.045);if(f){f.amount--;state.carrying=true;state.surfaceCollected++;f.mesh.visible=f.amount>0;flash('Food collected. Find the burrow ring and deliver it to the underground chamber.')}}
+      redAnts.forEach(a=>{if(!a.mesh.visible)return;let target=a.carry?normalFromUV(2.8,1.45):(food.filter(f=>f.amount>0).sort((p,q)=>angular(a.n,p.n)-angular(a.n,q.n))[0]?.n||normalFromUV(2.8,1.45));const tangent=target.clone().addScaledVector(a.n,-target.dot(a.n)),moving=tangent.lengthSq()>.0001;if(moving)a.n.addScaledVector(tangent.normalize(),a.speed*dt).normalize();setOnSphere(a.mesh,a.n);animateAnt(a.mesh,dt,moving,.8);if(!a.carry){const f=food.find(o=>o.amount>0&&angular(a.n,o.n)<.04);if(f){f.amount--;f.mesh.visible=f.amount>0;a.carry=true}}else if(angular(a.n,normalFromUV(2.8,1.45))<.05){a.carry=false;state.redFood++}if(angular(a.n,pn)<.04)state.health=Math.max(0,state.health-9*dt)});
+      const camUp=pn,east=new THREE.Vector3(-Math.sin(playerUV.u),0,Math.cos(playerUV.u)).normalize(),north=new THREE.Vector3().crossVectors(east,pn).normalize(),portraitBoost=THREE.MathUtils.clamp(.82/Math.max(.42,surfaceCamera.aspect),1,1.8),cameraDistance=5.8*portraitBoost,cameraLift=3.2+(portraitBoost-1)*2.1;const behind=north.multiplyScalar(cameraDistance).add(east.multiplyScalar(-input.x*1.2));surfaceCamera.position.copy(pn).multiplyScalar(C.planetR+cameraLift).add(behind);surfaceCamera.up.copy(camUp);surfaceCamera.lookAt(pn.clone().multiplyScalar(C.planetR+.25));
+    }
+    function passCell(q,r){return q>=0&&q<C.cols&&r>=0&&r<C.rows&&grid[r][q]}
+    function updateUnderground(dt,input){const moving=Math.hypot(input.x,input.y)>.08;if(moving){const nx=under.x+input.x*3.4*dt,ny=under.y+input.y*3.4*dt;if(passCell(Math.round(nx),Math.round(under.y)))under.x=nx;if(passCell(Math.round(under.x),Math.round(ny)))under.y=ny;under.face=input.x<0?-1:input.x>0?1:under.face;lastMove={x:input.x,y:input.y};state.distance+=3.4*dt;syncUnderPlayer()}animateAnt(playerUnder,dt,moving,1.2);
+      if(!state.carrying){const f=underFoods.find(o=>o.amount>0&&Math.hypot(under.x-o.x,under.y-o.y)<.7);if(f){f.amount--;state.carrying=true;f.mesh.visible=f.amount>0;flash('Underground food collected. Return to the black chamber.')}}
+      if(state.carrying&&Math.hypot(under.x-11,under.y-3)<1.8){state.blackFood++;state.undergroundDelivered++;state.carrying=false;flash('Food delivered underground: +1 black food. Return to the surface for another load.')}
+      underReds.forEach(a=>{if(!a.mesh.visible)return;let nx=a.x+a.dir*1.05*dt,moving=true;if(!passCell(Math.round(nx),Math.round(a.y))){a.dir*=-1;nx=a.x;moving=false}a.x=nx;a.mesh.position.set(a.x*C.cell,-a.y*C.cell,.7);a.mesh.rotation.z=a.dir<0?Math.PI:0;animateAnt(a.mesh,dt,moving,.7);if(Math.hypot(a.x-under.x,a.y-under.y)<1)state.health=Math.max(0,state.health-12*dt)});
+      undergroundCamera.position.x=THREE.MathUtils.lerp(undergroundCamera.position.x,under.x*C.cell,.08);undergroundCamera.position.y=THREE.MathUtils.lerp(undergroundCamera.position.y,-under.y*C.cell,.08);undergroundCamera.position.z=20;
+    }
+    function dig(){if(!state.running||state.mode!=='underground'){flash('Digging is available inside the underground nest.');return}const dx=Math.abs(lastMove.x)>=Math.abs(lastMove.y)?Math.sign(lastMove.x||under.face):0,dy=dx?0:Math.sign(lastMove.y);const q=Math.round(under.x)+dx,r=Math.round(under.y)+dy;if(q<0||q>=C.cols||r<1||r>=C.rows){flash('You cannot dig beyond the soil boundary.');return}if(grid[r][q]){flash('That space is already open.');return}grid[r][q]=true;paintSoilCell(q,r);state.dug++;flash('Tunnel excavated. New space is now connected.')}
+    function interact(){if(!state.running)return;if(state.mode==='surface'){const n=normalFromUV(playerUV.u,playerUV.v),e=normalFromUV(0,1.35);if(angular(n,e)<.075){setMode('underground');under.x=4;under.y=2;syncUnderPlayer(true)}else flash('Find the glowing burrow ring to enter the underground nest.')}else if(under.x<7&&under.y<3.5){setMode('surface');playerUV.u=0;playerUV.v=1.35;updateSurfacePlayer()}else flash('Return to the tunnel opening at the far left to exit.')}
+    function attack(){if(!state.running)return;state.attacks++;attackPulse=.3;const before=state.redDefeated;if(state.mode==='surface'){const p=normalFromUV(playerUV.u,playerUV.v);redAnts.forEach(a=>{if(a.mesh.visible&&angular(a.n,p)<.085){a.mesh.visible=false;state.redDefeated++}})}else underReds.forEach(a=>{if(a.mesh.visible&&Math.hypot(a.x-under.x,a.y-under.y)<1.7){a.mesh.visible=false;state.redDefeated++}});flash(state.redDefeated>before?'A red ant retreated after the encounter.':'Attack missed — move closer to a red ant.')}
+    function updateAttackVfx(){const active=attackPulse>0,t=active?1-attackPulse/.3:1;for(const ring of[surfaceAttackRing,underAttackRing]){if(!ring)continue;ring.visible=active;ring.scale.setScalar(1+t*2.1);ring.material.opacity=active?(1-t)*.85:0}}
+    function update(dt){if(!state.running||testPaused)return;state.time-=dt;attackPulse=Math.max(0,attackPulse-dt);const input=currentInput();state.mode==='surface'?updateSurface(dt,input):updateUnderground(dt,input);updateAttackVfx();if(state.time<=0||state.health<=0)finish();if(performance.now()>state.messageUntil)$('#message').textContent=state.mode==='surface'?(state.carrying?'Carry the food to the burrow ring and enter the nest.':'Explore the garden and collect a food item.'):'Move through tunnels; deliver food at the chamber and DIG adjacent soil.';hud()}
+    function render(){renderer.render(state.mode==='surface'?surfaceScene:undergroundScene,state.mode==='surface'?surfaceCamera:undergroundCamera)}
+    function loop(){requestAnimationFrame(loop);const dt=Math.min(.05,clock.getDelta());frame++;frameMs=THREE.MathUtils.lerp(frameMs,dt*1000,.05);update(dt);render()}
+    function hud(){const t=Math.max(0,state.time),m=Math.floor(t/60),s=Math.floor(t%60);$('#time').textContent=`${m}:${String(s).padStart(2,'0')}`;$('#black').textContent=state.blackFood;$('#red').textContent=state.redFood;$('#health').textContent=`${Math.ceil(state.health)}%`;$('#carry').textContent=state.carrying?'food':'none';$('#dug').textContent=state.dug}
+    function reset(){state.time=180;state.health=100;state.blackFood=state.redFood=state.dug=state.distance=state.attacks=state.redDefeated=state.surfaceCollected=state.undergroundDelivered=0;state.carrying=false;attackPulse=0;testPaused=false;playerUV={u:0,v:1.35,heading:0};under={x:4,y:2,face:1};food.forEach((f,i)=>{f.amount=2+i%3;f.mesh.visible=true});redAnts.forEach(a=>{a.mesh.visible=true;a.carry=false;a.n.copy(a.startN);setOnSphere(a.mesh,a.n)});underFoods.forEach(f=>{f.amount=2;f.mesh.visible=true});underReds.forEach(a=>{a.mesh.visible=true;a.x=a.startX;a.dir=a.startDir;a.mesh.position.set(a.x*C.cell,-a.y*C.cell,.7)});grid=baseGrid.map(row=>row.slice());for(let r=0;r<C.rows;r++)for(let q=0;q<C.cols;q++)paintSoilCell(q,r);surfaceAttackRing.visible=underAttackRing.visible=false;updateSurfacePlayer();syncUnderPlayer();setMode('surface');hud()}
+    function finish(){if(!state.running)return;state.running=false;const outcome=state.blackFood>state.redFood?'Black colony wins':state.blackFood<state.redFood?'Red colony wins':'Food score tied';$('#summary').textContent=`${state.student} · ${outcome} · Black ${state.blackFood} vs Red ${state.redFood}`;drawReport(outcome);$('#results').hidden=false}
+    function drawReport(outcome){const c=$('#report'),g=c.getContext('2d');g.fillStyle='#f8f1df';g.fillRect(0,0,c.width,c.height);g.fillStyle='#24351f';g.font='bold 44px Georgia';g.fillText('Garden Ant Rivalry — Performance Report',50,65);g.font='22px system-ui';g.fillText(`Student ID: ${state.student}`,50,105);g.strokeStyle='#557344';g.lineWidth=3;g.strokeRect(45,135,910,360);g.font='bold 27px system-ui';g.fillStyle='#314a29';g.fillText(outcome,70,185);g.font='23px system-ui';const left=[`Black colony food: ${state.blackFood}`,`Red colony food: ${state.redFood}`,`Underground deliveries: ${state.undergroundDelivered}`,`Worker health: ${Math.ceil(state.health)}%`],right=[`Tunnel cells excavated: ${state.dug}`,`Distance travelled: ${state.distance.toFixed(1)} units`,`Attacks used: ${state.attacks}`,`Red ants displaced: ${state.redDefeated}`];left.forEach((v,i)=>g.fillText(v,75,235+i*58));right.forEach((v,i)=>g.fillText(v,520,235+i*58));g.font='19px system-ui';g.fillText('Reflection: How did the spherical surface, tunnel layout, and red-ant competition influence your foraging strategy?',50,550);g.fillText('Compare underground deliveries with excavation effort and defensive actions. Was your worker efficient?',50,586);g.fillStyle='#6b843f';g.fillRect(50,610,900,5)}
+    function resize(){renderer.setSize(innerWidth,innerHeight,false);surfaceCamera.aspect=innerWidth/innerHeight;surfaceCamera.updateProjectionMatrix();const aspect=innerWidth/innerHeight,viewH=aspect<.7?12:10;undergroundCamera.left=-viewH*aspect/2;undergroundCamera.right=viewH*aspect/2;undergroundCamera.top=viewH/2;undergroundCamera.bottom=-viewH/2;undergroundCamera.updateProjectionMatrix()}
+
+    function setPlayerFromNormal(n){playerUV.u=(Math.atan2(n.z,n.x)+Math.PI*2)%(Math.PI*2);playerUV.v=Math.acos(THREE.MathUtils.clamp(n.y,-1,1));updateSurfacePlayer()}
+    function snapshot(){return{frame,running:state.running,mode:state.mode,time:state.time,score:state.blackFood,blackFood:state.blackFood,redFood:state.redFood,health:state.health,carrying:state.carrying,dug:state.dug,distance:state.distance,attacks:state.attacks,redDefeated:state.redDefeated,surfaceCollected:state.surfaceCollected,undergroundDelivered:state.undergroundDelivered,complete:!state.running&&!$('#results').hidden,fail:state.health<=0,player:state.mode==='surface'?{u:playerUV.u,v:playerUV.v}:{x:under.x,y:under.y},objective:state.carrying?'deliver-underground':'collect-surface-food'}}
+    function sampleRenderedPixels(){render();const gl=renderer.getContext(),pixel=new Uint8Array(4),colors=new Set();let min=255,max=0;for(let gy=1;gy<8;gy++)for(let gx=1;gx<8;gx++){gl.readPixels(Math.floor(gl.drawingBufferWidth*gx/8),Math.floor(gl.drawingBufferHeight*gy/8),1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);min=Math.min(min,pixel[0],pixel[1],pixel[2]);max=Math.max(max,pixel[0],pixel[1],pixel[2]);colors.add(`${pixel[0]}-${pixel[1]}-${pixel[2]}`)}return{width:gl.drawingBufferWidth,height:gl.drawingBufferHeight,variance:max-min,colors:colors.size}}
+    window.__THREE_GAME_DIAGNOSTICS__={get renderer(){return{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,points:renderer.info.render.points,lines:renderer.info.render.lines,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,materials:materialCache.size,dpr:renderer.getPixelRatio(),shadows:renderer.shadowMap.enabled}},get state(){return snapshot()},get frame(){return frame},get frameTimeMs(){return frameMs},get entities(){return{surfaceFood:food.filter(f=>f.amount>0).length,surfaceRed:redAnts.filter(a=>a.mesh.visible).length,undergroundFood:underFoods.filter(f=>f.amount>0).length,undergroundRed:underReds.filter(a=>a.mesh.visible).length,soilInstances:C.cols*C.rows,soilDrawObjects:soilField?.isInstancedMesh?1:0}}};
+    window.__THREE_GAME_TEST_HOOKS__={
+      seed(value){testSeed=Number(value)||1;return testSeed},sampleCanvas:sampleRenderedPixels,
+      setPausedForScreenshot(value){testPaused=!!value;return snapshot()},
+      setReducedMotion(value){reducedMotion=!!value},hideDebugUi(){},snapshot,
+      setState(name){if(name==='result'){reset();state.student='Automated QA';state.running=true;state.blackFood=2;state.undergroundDelivered=2;state.time=0;finish();return snapshot()}reset();state.student='Automated QA';state.running=true;$('#start').hidden=true;$('#results').hidden=true;if(name==='underground'||name==='stress'){setMode('underground');under={x:name==='stress'?50:4,y:name==='stress'?5:2,face:1};syncUnderPlayer(true)}else{setMode('surface');if(name==='active-play'&&food[0])setPlayerFromNormal(food[0].n);updateSurface(0,{x:0,y:0})}hud();return snapshot()},
+      placeAtSurfaceFood(){setMode('surface');const target=food.find(f=>f.amount>0);if(target){setPlayerFromNormal(target.n);updateSurface(0,{x:0,y:0})}hud();return snapshot()},
+      enterNest(){setPlayerFromNormal(normalFromUV(0,1.35));interact();return snapshot()},
+      placeAtChamber(){setMode('underground');under={x:11,y:3,face:1};syncUnderPlayer(true);updateUnderground(0,{x:0,y:0});hud();return snapshot()},
+      placeNextToSolid(){setMode('underground');under={x:13,y:3,face:1};lastMove={x:1,y:0};syncUnderPlayer(true);return snapshot()},
+      placeNearRed(){setMode('underground');const rival=underReds.find(a=>a.mesh.visible);if(rival){under={x:rival.x-.5,y:rival.y,face:1};syncUnderPlayer(true)}return snapshot()},
+      cell(q,r){return!!grid?.[r]?.[q]},
+      expire(){testPaused=false;state.time=0;finish();return snapshot()},restart(){reset();state.running=true;$('#results').hidden=true;$('#start').hidden=true;return snapshot()}
+    };
+
+    function releaseInputs(){touch.x=touch.y=0;Object.keys(keys).forEach(k=>keys[k]=false);document.querySelectorAll('[data-move].active').forEach(button=>button.classList.remove('active'))}
+    addEventListener('resize',resize);addEventListener('blur',releaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseInputs()});
+    addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='KeyE')interact();if(e.code==='KeyF')dig();if(e.code==='Space')attack()});addEventListener('keyup',e=>keys[e.code]=false);
+    document.querySelectorAll('[data-move]').forEach(btn=>{const v=btn.dataset.move,set=on=>{touch.x=on?(v==='right'?1:v==='left'?-1:0):0;touch.y=on?(v==='down'?1:v==='up'?-1:0):0;btn.classList.toggle('active',on)};btn.addEventListener('pointerdown',e=>{e.preventDefault();btn.setPointerCapture(e.pointerId);set(true)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>btn.addEventListener(ev,()=>set(false)))});
+    $('#interact').onclick=interact;$('#dig').onclick=dig;$('#attack').onclick=attack;
+    $('#again').onclick=()=>{$('#results').hidden=true;$('#start').hidden=false};$('#download').onclick=()=>{const a=document.createElement('a');a.download=`garden-ant-rivalry-${state.student}.png`;a.href=$('#report').toDataURL('image/png');a.click()};
+    try{
+      buildSurface();buildUnderground();resize();reset();loop();
+      window.launchAntGame=id=>{state.student=id;reset();state.running=true;clock.getDelta();$('#warn').textContent='';$('#begin').disabled=false;$('#begin').textContent='Enter the garden';$('#start').hidden=true};
+      if(window.pendingAntStudent)window.launchAntGame(window.pendingAntStudent);
+      else{$('#warn').textContent='';$('#begin').disabled=false;$('#begin').textContent='Enter the garden'}
+    }catch(error){console.error(error);window.showAntLoadError?.('The 3D garden could not start on this device. Tap Try again or reload the page.')}
+  </script>
+</body>
+</html>
