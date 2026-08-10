@@ -544,6 +544,112 @@
       margin-top: 16px;
     }
 
+    .notum-layout {
+      display: grid;
+      grid-template-columns: minmax(520px, 1.12fr) minmax(0, 0.88fr);
+      align-items: center;
+      gap: clamp(26px, 3.5vw, 58px);
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .notum-diagram {
+      display: grid;
+      gap: 13px;
+      padding: clamp(18px, 1.7vw, 28px);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+    }
+
+    .notum-row {
+      display: grid;
+      grid-template-columns: 142px minmax(0, 1fr);
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    .notum-name {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 12px 14px;
+      border-radius: 15px;
+      color: white;
+      background: var(--teal-dark);
+    }
+
+    .notum-name strong {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(17px, 1.35vw, 23px);
+    }
+
+    .notum-name span {
+      margin-top: 3px;
+      font-size: clamp(10px, 0.72vw, 13px);
+      font-weight: 750;
+      opacity: 0.82;
+    }
+
+    .notum-parts {
+      display: grid;
+      grid-template-columns: 0.72fr 2.15fr 1.15fr 0.78fr;
+      min-height: 76px;
+      overflow: hidden;
+      border: 2px solid rgba(23, 51, 56, 0.26);
+      border-radius: 16px;
+    }
+
+    .notum-part {
+      display: grid;
+      place-items: center;
+      padding: 8px 5px;
+      border-right: 1px solid rgba(23, 51, 56, 0.22);
+      color: var(--ink);
+      font-size: clamp(11px, 0.84vw, 15px);
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .notum-part:last-child { border-right: 0; }
+    .notum-part.prescutum { background: #f6d49b; }
+    .notum-part.scutum { background: #b8d9cf; }
+    .notum-part.scutellum { background: #ddc7e8; }
+    .notum-part.postnotum { background: #efaa91; }
+
+    .notum-parts.simple {
+      position: relative;
+      grid-template-columns: 1fr 0.27fr;
+    }
+
+    .notum-parts.simple::after {
+      content: "antecostal suture";
+      position: absolute;
+      right: 19%;
+      bottom: 4px;
+      color: var(--coral);
+      font-size: clamp(9px, 0.64vw, 12px);
+      font-weight: 850;
+      transform: translateX(50%);
+    }
+
+    .notum-parts.simple .tergite { background: #dce8c9; }
+    .notum-parts.simple .acrotergite { background: #9fd0c5; }
+
+    .notum-caption {
+      margin: 2px 0 0 156px;
+      color: var(--muted);
+      font-size: clamp(10px, 0.74vw, 13px);
+      line-height: 1.35;
+    }
+
+    .notum-copy .term-list { margin-top: 12px; }
+
+    .notum-copy .term-list dt {
+      min-width: 90px;
+    }
+
     .sequence {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -876,11 +982,13 @@
       .title-grid,
       .figure-layout,
       .summary-grid,
-      .segment-layout { grid-template-columns: 1fr; }
+      .segment-layout,
+      .notum-layout { grid-template-columns: 1fr; }
       .title-grid { gap: 18px; }
       .hero-figure { display: none; }
       .figure-layout { grid-template-rows: minmax(250px, 52%) 1fr; gap: 14px; }
-      .segment-layout { overflow-y: auto; }
+      .segment-layout,
+      .notum-layout { overflow-y: auto; }
       .segment-figure { min-height: 430px; }
       .segment-map { width: min(42vh, 360px); }
       .figure-copy { padding-right: 5px; }
@@ -1030,6 +1138,56 @@
           <div class="figure-notes">
             <div class="note function"><span class="note-label">Function</span><p>The membrane permits bending and telescoping while the sclerotized tergum carries muscle forces.</p></div>
             <div class="note evolution"><span class="note-label">Evolution</span><p>Secondary segmentation reorganizes the original metameric pattern into more effective mechanical units.</p></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide content-slide" data-title="Subdivision of the thoracic nota">
+      <span class="section-mark" aria-hidden="true"></span>
+      <p class="eyebrow">From segmentation to regional specialization</p>
+      <h2>Subdivision of the thoracic nota</h2>
+      <p class="takeaway"><strong>Read the diagram vertically:</strong> it compares the dorsal plate of T1, T2, and T3. The labeled subdivisions are regions within a notum—not additional body segments.</p>
+      <div class="notum-layout">
+        <figure class="notum-diagram" aria-label="Comparison of the pronotum, mesonotum, and metanotum">
+          <div class="notum-row">
+            <div class="notum-name"><strong>Pronotum</strong><span>Prothorax · T1</span></div>
+            <div class="notum-parts simple">
+              <span class="notum-part tergite">Main tergal region</span>
+              <span class="notum-part acrotergite">Acrotergite</span>
+            </div>
+          </div>
+          <div class="notum-row">
+            <div class="notum-name"><strong>Mesonotum</strong><span>Mesothorax · T2</span></div>
+            <div class="notum-parts">
+              <span class="notum-part prescutum">Prescutum</span>
+              <span class="notum-part scutum">Scutum</span>
+              <span class="notum-part scutellum">Scutellum</span>
+              <span class="notum-part postnotum">Postnotum</span>
+            </div>
+          </div>
+          <div class="notum-row">
+            <div class="notum-name"><strong>Metanotum</strong><span>Metathorax · T3</span></div>
+            <div class="notum-parts">
+              <span class="notum-part prescutum">Prescutum</span>
+              <span class="notum-part scutum">Scutum</span>
+              <span class="notum-part scutellum">Scutellum</span>
+              <span class="notum-part postnotum">Postnotum</span>
+            </div>
+          </div>
+          <figcaption class="notum-caption">Generalized comparison; the size and external visibility of each region vary among insect orders.</figcaption>
+        </figure>
+        <article class="notum-copy">
+          <p class="eyebrow">Key regions</p>
+          <dl class="term-list">
+            <dt>Prescutum</dt><dd>The anterior notal region; often small, reduced, or externally inconspicuous.</dd>
+            <dt>Scutum</dt><dd>The largest alinotal region and a major site for transmitting forces generated by the indirect flight muscles.</dd>
+            <dt>Scutellum</dt><dd>The posterior shield-like region, often conspicuous as a triangular or rounded plate.</dd>
+            <dt>Postnotum</dt><dd>The posterior notal region; its internal inflection may form a <strong>phragma</strong> for flight-muscle attachment.</dd>
+          </dl>
+          <div class="figure-notes">
+            <div class="note function"><span class="note-label">Function</span><p>The enlarged T2 notum braces the forewing base and provides attachment surfaces for the principal flight motor.</p></div>
+            <div class="note evolution"><span class="note-label">Evolution</span><p>T1 remains comparatively simple, whereas the wing-bearing T2 and T3 nota—the <strong>alinota</strong>—became subdivided and internally reinforced. T2 is usually the more developed flight segment.</p></div>
           </div>
         </article>
       </div>
@@ -1633,7 +1791,7 @@
   <nav class="controls" aria-label="Slide controls">
     <div class="progress-wrap">
       <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
-      <span class="slide-count" id="slideCount">1 / 27</span>
+      <span class="slide-count" id="slideCount">1 / 28</span>
     </div>
     <div class="nav-group">
       <button class="control-btn" id="prevBtn" type="button" aria-label="Previous slide" title="Previous slide (Left Arrow)">←</button>
