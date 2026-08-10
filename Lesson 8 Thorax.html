@@ -411,6 +411,139 @@
       line-height: 1.38;
     }
 
+    .segment-layout {
+      display: grid;
+      grid-template-columns: minmax(390px, 0.9fr) minmax(0, 1.1fr);
+      align-items: center;
+      gap: clamp(34px, 5vw, 86px);
+      width: 100%;
+      margin-top: 18px;
+    }
+
+    .segment-figure {
+      display: grid;
+      place-items: center;
+      min-height: min(64vh, 650px);
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: var(--shadow);
+    }
+
+    .segment-map {
+      position: relative;
+      width: min(48vh, 500px);
+      aspect-ratio: 1;
+      margin: 38px 70px;
+    }
+
+    .segment-ring {
+      position: absolute;
+      inset: 0;
+      border: clamp(58px, 6.4vh, 78px) solid;
+      border-color: #7eae72 #e1a34f #73a6b8 #e1a34f;
+      border-radius: 46% 46% 42% 42%;
+      background: #fbf7ed;
+      box-shadow:
+        inset 0 0 0 2px rgba(23, 51, 56, 0.16),
+        0 14px 34px rgba(35, 50, 47, 0.12);
+    }
+
+    .segment-ring::after {
+      content: "Haemocoel\A internal organs";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: clamp(13px, 1.05vw, 18px);
+      font-weight: 750;
+      line-height: 1.25;
+      text-align: center;
+      white-space: pre;
+    }
+
+    .segment-label {
+      position: absolute;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      color: #173338;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(17px, 1.45vw, 25px);
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .segment-label.tergum { top: 8%; left: 27%; right: 27%; }
+    .segment-label.sternum { right: 27%; bottom: 8%; left: 27%; }
+    .segment-label.pleuron-left { top: 43%; left: -3%; transform: rotate(-90deg); }
+    .segment-label.pleuron-right { top: 43%; right: -3%; transform: rotate(90deg); }
+
+    .axis-label {
+      position: absolute;
+      z-index: 3;
+      color: var(--teal-dark);
+      font-size: clamp(11px, 0.8vw, 14px);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .axis-label.dorsal { top: -44px; left: 50%; transform: translateX(-50%); }
+    .axis-label.ventral { bottom: -46px; left: 50%; transform: translateX(-50%); }
+    .axis-label.left-side { top: 50%; left: -70px; transform: translateY(-50%); }
+    .axis-label.right-side { top: 50%; right: -78px; transform: translateY(-50%); }
+
+    .axis-label.dorsal::after,
+    .axis-label.ventral::before {
+      display: block;
+      color: var(--amber);
+      font-size: 22px;
+      line-height: 0.8;
+      text-align: center;
+    }
+
+    .axis-label.dorsal::after { content: "↑"; margin-top: 5px; }
+    .axis-label.ventral::before { content: "↓"; margin-bottom: 5px; }
+
+    .appendage-base {
+      position: absolute;
+      z-index: 1;
+      top: 62%;
+      width: 92px;
+      height: 34px;
+      border: 2px solid rgba(23, 51, 56, 0.35);
+      border-radius: 999px;
+      background: #d4b287;
+    }
+
+    .appendage-base.left { left: -70px; transform: rotate(-12deg); }
+    .appendage-base.right { right: -70px; transform: rotate(12deg); }
+
+    .appendage-caption {
+      position: absolute;
+      right: 12%;
+      bottom: 24%;
+      z-index: 4;
+      padding: 5px 8px;
+      border-radius: 8px;
+      color: #5c4834;
+      background: rgba(248, 229, 197, 0.92);
+      font-size: clamp(10px, 0.72vw, 13px);
+      font-weight: 800;
+    }
+
+    .segment-copy {
+      min-width: 0;
+    }
+
+    .segment-copy .term-list {
+      margin-top: 16px;
+    }
+
     .sequence {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -742,10 +875,14 @@
       .slide { padding: 24px 30px 80px; }
       .title-grid,
       .figure-layout,
-      .summary-grid { grid-template-columns: 1fr; }
+      .summary-grid,
+      .segment-layout { grid-template-columns: 1fr; }
       .title-grid { gap: 18px; }
       .hero-figure { display: none; }
       .figure-layout { grid-template-rows: minmax(250px, 52%) 1fr; gap: 14px; }
+      .segment-layout { overflow-y: auto; }
+      .segment-figure { min-height: 430px; }
+      .segment-map { width: min(42vh, 360px); }
       .figure-copy { padding-right: 5px; }
       .wide-grid { grid-template-columns: 1fr; overflow-y: auto; }
       .sequence { grid-template-columns: 1fr; overflow-y: auto; }
@@ -829,6 +966,45 @@
           <span class="card-number">3</span>
           <h3>Interpret transformation</h3>
           <p>Use fusion, reduction, membranization, displacement, and functional reassignment to compare thoraces across insect groups.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide content-slide" data-title="Basic organization of a body segment">
+      <span class="section-mark" aria-hidden="true"></span>
+      <div class="segment-layout">
+        <figure class="segment-figure" aria-label="Simplified cross section of an insect body segment">
+          <div class="segment-map" role="img" aria-label="The tergum forms the dorsal surface, paired pleura form the left and right sides, and the sternum forms the ventral surface">
+            <span class="axis-label dorsal">Dorsal</span>
+            <span class="axis-label ventral">Ventral</span>
+            <span class="axis-label left-side">Left side</span>
+            <span class="axis-label right-side">Right side</span>
+            <span class="appendage-base left" aria-hidden="true"></span>
+            <span class="appendage-base right" aria-hidden="true"></span>
+            <div class="segment-ring" aria-hidden="true"></div>
+            <span class="segment-label tergum">Tergum</span>
+            <span class="segment-label pleuron-left">Pleuron</span>
+            <span class="segment-label pleuron-right">Pleuron</span>
+            <span class="segment-label sternum">Sternum</span>
+            <span class="appendage-caption">appendage base</span>
+          </div>
+        </figure>
+        <article class="segment-copy">
+          <p class="eyebrow">The basic coordinate system</p>
+          <h2>Basic organization of a body segment</h2>
+          <p class="takeaway">A generalized insect segment is organized into a dorsal tergum, paired lateral pleura, and a ventral sternum.</p>
+          <dl class="term-list">
+            <dt>Tergum</dt><dd>The dorsal region or principal dorsal sclerite of a segment; in the thorax it is commonly called the <strong>notum</strong>.</dd>
+            <dt>Pleuron</dt><dd>The lateral body-wall region between the tergum and sternum; in the thorax it supports the appendage base and becomes highly reinforced.</dd>
+            <dt>Sternum</dt><dd>The ventral region or principal ventral sclerite of a segment, providing protection and muscle attachment below the body.</dd>
+            <dt>Sclerite</dt><dd>A locally hardened plate of cuticle; adjacent sclerites may be separated by sutures or flexible membrane.</dd>
+            <dt>Haemocoel</dt><dd>The main internal body cavity containing haemolymph and the visceral organs.</dd>
+          </dl>
+          <div class="figure-notes">
+            <div class="note function"><span class="note-label">Function</span><p>The tergum resists dorsal loads, the pleura transmit appendage forces, and the sternum braces the ventral surface.</p></div>
+            <div class="note evolution"><span class="note-label">Evolution</span><p>Fusion, subdivision, and internal inflection transform this simple plan into the specialized thoracic skeleton.</p></div>
+          </div>
+          <p class="source-note"><strong>Remember:</strong> these are body-wall regions. Their visible adult plates may not correspond exactly to the primary embryonic segment.</p>
         </article>
       </div>
     </section>
@@ -1350,6 +1526,34 @@
       </div>
     </section>
 
+    <section class="slide figure-slide" data-title="Muscle connections in Thyreus albomaculatus" data-figure="Meira et al. 2024, Fig. 1">
+      <span class="section-mark" aria-hidden="true"></span>
+      <div class="figure-layout">
+        <figure class="figure-stage">
+          <span class="figure-index">Modern case study · micro-CT</span>
+          <img src="Figures/Thyreus albomaculatus - external and muscles.jpg" alt="External habitus and internal sagittal bisection of Thyreus albomaculatus showing reconstructed muscles" data-zoomable>
+          <figcaption><span>Meira et al. 2024, Fig. 1 · <em>Thyreus albomaculatus</em> · <a href="https://doi.org/10.1002/jmor.21751">J. Morphol. 285:e21751</a> · CC BY-NC-ND</span><span class="zoom-hint">Click to enlarge</span></figcaption>
+        </figure>
+        <article class="figure-copy">
+          <p class="eyebrow">From diagram to three-dimensional anatomy</p>
+          <h2>Muscles connect the exoskeleton into a functional system</h2>
+          <p class="takeaway">The external plates define the animal's form, but their internal surfaces, ridges, and apodemes provide the attachment sites that generate movement.</p>
+          <dl class="term-list">
+            <dt>External habitus</dt><dd>The complete external body form; panel (a) shows the sclerites, tagmata, and appendage bases.</dd>
+            <dt>Sagittal bisection</dt><dd>A longitudinal division along the body axis; panel (b) exposes the internal muscles and their skeletal connections.</dd>
+            <dt>Muscle origin</dt><dd>The usually broader or more stable attachment from which a muscle is described as acting.</dd>
+            <dt>Muscle insertion</dt><dd>The attachment on the structure that is typically displaced during contraction.</dd>
+            <dt>Apodeme</dt><dd>An inward cuticular ridge, plate, or process—such as a phragma or furca—that increases attachment area.</dd>
+            <dt>Indirect flight muscle</dt><dd>A large muscle that moves the wings by deforming the thoracic box rather than inserting directly on the wing.</dd>
+          </dl>
+          <div class="figure-notes">
+            <div class="note function"><span class="note-label">Follow the connections</span><p>Large thoracic muscles attach to the notum and internal apodemes; leg muscles connect pleural and sternal supports to the coxa and trochanter; abdominal muscles link successive terga and sterna.</p></div>
+            <div class="note evolution"><span class="note-label">Functional evolution</span><p>The mesothorax is enlarged to house the flight motor, while the abdomen retains a serial muscle pattern for ventilation, telescoping, and visceral movement.</p></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="slide content-slide" data-title="Functional synthesis">
       <span class="section-mark" aria-hidden="true"></span>
       <p class="eyebrow">Functional synthesis</p>
@@ -1429,7 +1633,7 @@
   <nav class="controls" aria-label="Slide controls">
     <div class="progress-wrap">
       <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
-      <span class="slide-count" id="slideCount">1 / 25</span>
+      <span class="slide-count" id="slideCount">1 / 27</span>
     </div>
     <div class="nav-group">
       <button class="control-btn" id="prevBtn" type="button" aria-label="Previous slide" title="Previous slide (Left Arrow)">←</button>
