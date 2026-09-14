@@ -108,11 +108,11 @@
 
   /* ------------------------------ layout ------------------------------ */
   .main{flex:1;display:flex;min-height:0;position:relative}
-  .stage{flex:1;position:relative;min-width:0;overflow:hidden;background:var(--bg)}
+  .stage{flex:1;position:relative;min-width:0;overflow:hidden;background:#eff2f7}
   #svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
   .stage.panning #svg{cursor:grabbing}
   .stage.linking #svg{cursor:crosshair}
-  .grid-line{stroke:var(--line-strong);opacity:.45}
+  .grid-line{stroke:#c8d1de;opacity:.55}
 
   .empty{
     position:absolute;inset:0;display:grid;place-content:center;
@@ -205,18 +205,19 @@
   .node{cursor:grab}
   .stage.linking .node{cursor:crosshair}
   .node:hover .node-shape{filter:brightness(.975)}
-  .sel-ring{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:5 4}
-  .handle{fill:var(--surface);stroke:var(--accent);stroke-width:2;visibility:hidden;cursor:crosshair}
+  .sel-ring{fill:none;stroke:#3b5bfd;stroke-width:2.5;stroke-dasharray:5 4}
+  .handle{fill:#fff;stroke:#3b5bfd;stroke-width:2;visibility:hidden;
+    pointer-events:none}   /* the wider .handle-hit beneath it takes the pointer */
   .handle-hit{fill:transparent;visibility:hidden;cursor:crosshair}
   .node:hover .handle,.node:hover .handle-hit,
   .node.selected .handle,.node.selected .handle-hit{visibility:visible}
   .stage.dragging .handle,.stage.dragging .handle-hit,
   .stage.linking .handle,.stage.linking .handle-hit{visibility:hidden !important}
   .edge-hit{stroke:transparent;stroke-width:18;fill:none;pointer-events:stroke;cursor:pointer}
-  .edge.selected .edge-line{stroke:var(--accent);stroke-width:3}
-  .edge.selected .edge-label{fill:var(--accent)}
-  .preview{stroke:var(--accent);stroke-width:2.4;stroke-dasharray:6 5;fill:none;pointer-events:none}
-  .drop-hint{fill:none;stroke:var(--accent);stroke-width:3;pointer-events:none}
+  .edge.selected .edge-line{stroke:#3b5bfd;stroke-width:3}
+  .edge.selected .edge-label{fill:#3b5bfd}
+  .preview{stroke:#3b5bfd;stroke-width:2.4;stroke-dasharray:6 5;fill:none;pointer-events:none}
+  .drop-hint{fill:none;stroke:#3b5bfd;stroke-width:3;pointer-events:none}
 
   @media (max-width:900px){
     .side{position:absolute;right:0;top:0;bottom:0;z-index:10;box-shadow:var(--shadow-lg)}
@@ -245,7 +246,7 @@
     <div class="group" role="group" aria-label="Edit">
       <button id="undoBtn" class="icon" title="Undo — Ctrl+Z">&#8630;</button>
       <button id="redoBtn" class="icon" title="Redo — Ctrl+Shift+Z">&#8631;</button>
-      <button id="delBtn"  class="icon" title="Delete selection — Delete">&#10005;</button>
+      <button id="delBtn"  title="Delete the selected node or arrow — Delete key">&#10005; Delete</button>
     </div>
 
     <div class="spacer"></div>
