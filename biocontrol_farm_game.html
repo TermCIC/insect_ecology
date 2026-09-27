@@ -283,13 +283,24 @@ const P = {
   lady:  { a: 0.8, ae: 0.5, h: 0.02, conv: 0.035, dev: 18, m: 0.02, K: 3 },
   aph:   { b: 0.0015, h: 0.05, dev: 10, yield: 0.7, m: 0.14, K: 4 },
   tri:   { a: 1.2, h: 0.03, dev: 9, yield: 1.3, m: 0.25, K: 6 },
+  temp:  { base: 10, ref: 26 },                         // development threshold and reference temperature (°C)
+  ipm:   { lag: 3, r: 0.15, tMax: 20, eggEq: 30 },       // ET lead time (d), assumed growth rate, EIL horizon, aphid-eq per moth egg
+  spray: { cost: 8, kA: 0.88, kL: 0.7, resStep: 0.1 },  // broad-spectrum insecticide
+  bt:    { cost: 10, kL: 0.9, resStep: 0.04 },          // Bacillus thuringiensis, caterpillars only
 };
+const LARVA_EQ = P.moth.dmg / P.aphid.dmg;               // one larva does the damage of 50 aphids
 const POOLS = ['aN', 'aA', 'aM', 'mE', 'mL', 'mP', 'mA', 'mEp', 'lA', 'lJ', 'wA', 'tA'];
 const G = {
   day: 0, money: START_MONEY, sub: 0, over: false, history: [],
   stats: { planted: 0, harvested: 0, revenue: 0, spent: 0, lost: 0, sprays: 0, agents: 0, shelters: 0, peakAphid: 0, peakLarva: 0, natural: 0 },
   seen: {},
+  temps: [], f: 1, dd: 0, res: { broad: 0, bt: 0 }, trapLog: [], biofix: null,
+  ipm: { actions: [], bioKill: 0, chemKill: 0, alerts: 0, daysOverEIL: 0 },
 };
+// Seasonal temperature: a warming spring into summer with day-to-day noise
+for (let d = 0; d <= SEASON + 40; d++) G.temps.push(18 + 10 * Math.sin(Math.PI * d / 150) + (Math.random() - 0.5) * 4);
+const devFactor = T => Math.max(0, T - P.temp.base) / (P.temp.ref - P.temp.base);
+G.f = devFactor(G.temps[0]);
 const hooks = { emit() {}, change() {} };
 
 function newTile(x, z, i) {
@@ -321,6 +332,7 @@ function computeShelter() {
     t.K.lady = P.lady.K + 6 * bw + 3 * fw;
     t.K.aph = P.aph.K + 12 * fw + 3 * bw;
     t.K.tri = P.tri.K + 15 * fw + 2 * bw;
+    t.disrupt = tiles.some(s => s.trap && cheb(s, t) <= 1);   // pheromone mating disruption
   }
 }
 
@@ -338,7 +350,7 @@ const frAphidius = N => P.aph.b * N * N / (1 + P.aph.b * P.aph.h * N * N);
 const frTricho = N => P.tri.a * N / (1 + P.tri.a * P.tri.h * N);
 
 function stepTile(t, dt) {
-  const crop = t.kind === 'crop', size = sizeOf(t), Kap = aphidK(t);
+  const crop = t.kind === 'crop', size = sizeOf(t), Kap = aphidK(t), f = G.f;
   const aTot = t.aN + t.aA, fw = Math.min(1, t.fw), bw = Math.min(1, t.bw), res = t.residue > 0 ? 1 : 0;
 
   // Ladybird: multi-prey Type II. Larvae (lJ) feed at 60% of the adult rate.
@@ -353,21 +365,21 @@ function stepTile(t, dt) {
 
   // Aphids
   const shareN = aTot > 0 ? t.aN / aTot : 0;
-  const births = crop ? P.aphid.fec * t.aA * Math.max(0, 1 - aTot / Kap) : 0;
-  const [nMat, nMort, nEat, nPar] = flows(t.aN, [t.aN / P.aphid.dev, t.aN * (crop ? P.aphid.mN : 0.6), eatA * shareN, attW], dt);
+  const births = crop ? P.aphid.fec * f * t.aA * Math.max(0, 1 - aTot / Kap) : 0;
+  const [nMat, nMort, nEat, nPar] = flows(t.aN, [t.aN * f / P.aphid.dev, t.aN * (crop ? P.aphid.mN : 0.6), eatA * shareN, attW], dt);
   const [aMort, aEat] = flows(t.aA, [t.aA * (crop ? P.aphid.mA : 0.6), eatA * (1 - shareN)], dt);
-  const [mEm, mMort] = flows(t.aM, [t.aM / P.aph.dev, t.aM * (0.02 + res * 0.3)], dt);
+  const [mEm, mMort] = flows(t.aM, [t.aM * f / P.aph.dev, t.aM * (0.02 + res * 0.3)], dt);
   // Moth
-  const [eHatch, eMort, eEat, ePar] = flows(t.mE, [t.mE / P.moth.egg, t.mE * 0.05, eatE, attT], dt);
-  const [lPup, lMort] = flows(t.mL, [t.mL / P.moth.larva, t.mL * (crop ? 0.03 + 0.1 * (1 - t.health) : 0.8)], dt);
-  const [pEc, pMort] = flows(t.mP, [t.mP / P.moth.pupa, t.mP * 0.02], dt);
+  const [eHatch, eMort, eEat, ePar] = flows(t.mE, [t.mE * f / P.moth.egg, t.mE * 0.05, eatE, attT], dt);
+  const [lPup, lMort] = flows(t.mL, [t.mL * f / P.moth.larva, t.mL * (crop ? 0.03 + 0.1 * (1 - t.health) : 0.8)], dt);
+  const [pEc, pMort] = flows(t.mP, [t.mP * f / P.moth.pupa, t.mP * 0.02], dt);
   const [mAMort] = flows(t.mA, [t.mA * P.moth.mA], dt);
-  t.eggOut += P.moth.fec * t.mA * dt;
-  const [epEm, epMort] = flows(t.mEp, [t.mEp / P.tri.dev, t.mEp * (0.02 + res * 0.3)], dt);
+  t.eggOut += P.moth.fec * f * (t.disrupt ? 0.5 : 1) * t.mA * dt;
+  const [epEm, epMort] = flows(t.mEp, [t.mEp * f / P.tri.dev, t.mEp * (0.02 + res * 0.3)], dt);
   // Ladybird demography: recruitment is proportional to food and limited by K
   const room = Math.max(0, 1 - (t.lA + t.lJ) / t.K.lady);
   const recruit = P.lady.conv * t.lA * food * room * dt;
-  const [jMat, jMort] = flows(t.lJ, [t.lJ / P.lady.dev, t.lJ * (0.05 + 0.2 * starve + res * 0.8)], dt);
+  const [jMat, jMort] = flows(t.lJ, [t.lJ * f / P.lady.dev, t.lJ * (0.05 + 0.2 * starve + res * 0.8)], dt);
   const [lAMort] = flows(t.lA, [t.lA * (P.lady.m + 0.12 * starve + res * 0.8)], dt);
   // Parasitoid demography: emergence above K leaves the field
   const [wMort] = flows(t.wA, [t.wA * (P.aph.m * (1 - 0.5 * fw) + res * 0.9)], dt);
@@ -390,6 +402,7 @@ function stepTile(t, dt) {
   for (const k of POOLS) if (!(t[k] > 1e-4)) t[k] = 0;
 
   t.acc.lady += nEat + aEat + eEat; t.acc.wasp += nPar; t.acc.tri += ePar;
+  G.ipm.bioKill += nEat + aEat + nPar + P.ipm.eggEq * (eEat + ePar);
 
   if (crop) {
     const C = CROPS[t.crop];
@@ -457,6 +470,101 @@ function disperse() {
   for (const t of tiles) for (const k in t.inb) t[k] += t.inb[k];
 }
 
+// ---- IPM: economic injury level (Pedigo) and economic threshold
+// Pest pressure in aphid-equivalents: one feeding larva injures the crop like LARVA_EQ aphids.
+const pestEq = t => t.aN + t.aA + LARVA_EQ * t.mL;
+const daysToRipe = t => t.kind !== 'crop' ? 0 : Math.max(0, (CROPS[t.crop].days - t.grow) / (0.4 + 0.6 * Math.max(0.05, t.health)));
+const sprayK = () => P.spray.kA * (1 - G.res.broad);
+// EIL = C / (V · D · K · T): control cost / (crop value × damage per pest-day × control efficacy × days of exposure)
+function eilParts(t) {
+  const C = P.spray.cost, V = CROPS[t.crop].value * Math.max(0.1, t.health), D = P.aphid.dmg, K = Math.max(0.05, sprayK());
+  const T = Math.min(P.ipm.tMax, Math.max(1, daysToRipe(t)));
+  return { C, V, D, K, T, eil: C / (V * D * K * T) };
+}
+const eil = t => eilParts(t).eil;
+// ET sits below the EIL so that control can act before the growing population crosses the EIL.
+const et = t => eil(t) * Math.exp(-P.ipm.r * P.ipm.lag);
+// Daily pest-equivalents removed by natural enemies vs added by reproduction (enemy-adjusted threshold)
+function bioBalance(t) {
+  const aTot = t.aN + t.aA, [fA, fE] = frLady(aTot, t.mE), effL = t.lA + 0.6 * t.lJ;
+  const kill = effL * fA + t.wA * frAphidius(t.aN) + P.ipm.eggEq * (effL * fE + t.tA * frTricho(t.mE));
+  const growth = (t.kind === 'crop' ? P.aphid.fec * G.f * t.aA * Math.max(0, 1 - aTot / aphidK(t)) : 0) + P.ipm.eggEq * t.mE * G.f / P.moth.egg;
+  return { kill, growth, winning: kill >= growth && kill > 0 };
+}
+function status(t) {
+  if (t.kind !== 'crop') return null;
+  const pe = pestEq(t), E = et(t), L = eil(t);
+  return { pe, et: E, eil: L, level: pe >= L ? 'eil' : pe >= E ? 'et' : 'ok' };
+}
+function forecastDD(need) {
+  let acc = 0, d = G.day;
+  while (acc < need && d < G.temps.length - 1) { d++; acc += Math.max(0, G.temps[d] - P.temp.base); }
+  return d - G.day;
+}
+function trapCatch() {
+  const traps = tiles.filter(t => t.trap);
+  if (!traps.length) { G.trapLog.push(null); return; }
+  let total = 0;
+  for (const tr of traps) {
+    let c = 0;
+    for (const o of [tr, ...tr.n2]) { const k = o.mA * 0.1; o.mA -= k; c += k; }
+    tr.lastCatch = c; total += c;
+  }
+  const per = total / traps.length; G.trapLog.push(per);
+  if (G.biofix === null && per >= 0.3) {
+    G.biofix = G.day;
+    const dd = (P.temp.ref - P.temp.base);
+    hooks.emit(`🪤 <b>Biofix.</b> Pheromone traps caught the first moth flight. Degree-day forecast: egg hatch in about ${forecastDD(P.moth.egg * dd)} days (${P.moth.egg * dd} DD), and larvae in peak feeding in about ${forecastDD((P.moth.egg + P.moth.larva / 2) * dd)} days. Now is the time for Trichogramma (eggs) or Bt (young larvae).`, 'warn');
+  }
+}
+function thresholdAlerts() {
+  let told = 0;
+  for (const t of tiles) {
+    const s = status(t);
+    if (!s) { t.overET = false; continue; }
+    if (s.level === 'eil') G.ipm.daysOverEIL++;
+    if (!t.overET && s.pe >= s.et) {
+      t.overET = true; G.ipm.alerts++;
+      if (!told++) hooks.emit(`⚠️ ${label(t)} passed the economic threshold: ${Math.round(s.pe)} aphid-eq ≥ ET ${Math.round(s.et)}. Scout it: are natural enemies already winning?`, 'warn');
+    } else if (t.overET && s.pe < 0.7 * s.et) t.overET = false;
+  }
+}
+
+// Chemical control on the 5 tiles of a + shape. Returns what was killed and whether the
+// decision followed IPM rules (above ET and natural enemies not already winning).
+const plusArea = t => tiles.filter(o => Math.abs(o.x - t.x) + Math.abs(o.z - t.z) <= 1);
+function judge(t, kind) {
+  const crops = plusArea(t).filter(o => o.kind === 'crop');
+  if (!crops.length) return { verdict: 'nocrop', text: 'there were no crops in the treated area' };
+  const pe = o => kind === 'bt' ? LARVA_EQ * o.mL : pestEq(o);
+  const w = crops.reduce((b, o) => pe(o) / et(o) > pe(b) / et(b) ? o : b, crops[0]);
+  const v = pe(w), E = et(w), b = bioBalance(w);
+  if (kind === 'bt' && w.mL < 0.5) return { verdict: 'wrong', text: 'Bt only kills caterpillars, and there were almost none' };
+  if (v < E) return { verdict: 'early', text: `below the economic threshold (${Math.round(v)} < ET ${Math.round(E)} aphid-eq at ${label(w)})` };
+  if (b.winning) return { verdict: 'enemies', text: `natural enemies at ${label(w)} were already removing ${Math.round(b.kill)}/day vs ${Math.round(b.growth)}/day of growth` };
+  return { verdict: 'ok', text: `${Math.round(v)} aphid-eq ≥ ET ${Math.round(E)} at ${label(w)}, and enemies were not keeping up` };
+}
+function treat(t, kind) {
+  const j = judge(t, kind);
+  let pests = 0, enemies = 0;
+  const k = kind === 'bt' ? P.bt.kL * (1 - G.res.bt) : 0, kA = sprayK(), kL = P.spray.kL * (1 - G.res.broad);
+  for (const o of plusArea(t)) {
+    const pb = o.aN + o.aA + LARVA_EQ * o.mL + P.ipm.eggEq * o.mE, eb = o.lA + o.lJ + o.wA + o.tA;
+    if (kind === 'bt') o.mL *= 1 - k;
+    else {
+      o.aN *= 1 - kA; o.aA *= 1 - kA; o.mL *= 1 - kL; o.mE *= 0.7; o.mA *= 0.4;
+      o.lA *= 0.05; o.lJ *= 0.1; o.wA *= 0.03; o.tA *= 0.03; o.aM *= 0.5; o.mEp *= 0.5;
+      o.residue = 6;
+    }
+    pests += pb - (o.aN + o.aA + LARVA_EQ * o.mL + P.ipm.eggEq * o.mE); enemies += eb - (o.lA + o.lJ + o.wA + o.tA);
+  }
+  // Every application selects for resistance in the surviving pests
+  if (kind === 'bt') G.res.bt += P.bt.resStep * (1 - G.res.bt); else G.res.broad += P.spray.resStep * (1 - G.res.broad);
+  G.ipm.chemKill += pests;
+  G.ipm.actions.push({ day: G.day, kind, verdict: j.verdict });
+  return { pests, enemies, ...j };
+}
+
 function landEnemies(key, n, target, text, kind) {
   target[key] += n;
   G.stats.natural++;
@@ -506,7 +614,8 @@ function extinction() {
 }
 
 function census() {
-  const s = { day: G.day, aphid: 0, larva: 0, lady: 0, para: 0 };
+  const s = { day: G.day, aphid: 0, larva: 0, lady: 0, para: 0, overET: 0 };
+  for (const t of tiles) { const st = status(t); if (st && st.level !== 'ok') s.overET++; }
   for (const t of tiles) { s.aphid += t.aN + t.aA; s.larva += t.mL; s.lady += t.lA + t.lJ; s.para += t.wA + t.tA; }
   G.stats.peakAphid = Math.max(G.stats.peakAphid, s.aphid);
   G.stats.peakLarva = Math.max(G.stats.peakLarva, s.larva);
@@ -515,8 +624,10 @@ function census() {
 
 function dailyStep() {
   G.day++;
+  const T = G.temps[G.day]; G.f = devFactor(T); G.dd += Math.max(0, T - P.temp.base);
+  G.res.broad = Math.max(0, G.res.broad - 0.002); G.res.bt = Math.max(0, G.res.bt - 0.001);   // susceptible immigrants dilute resistance
   for (const t of tiles) { t.st = t.acc; t.acc = { lady: 0, wasp: 0, tri: 0, damage: 0 }; if (t.residue > 0) t.residue--; }
-  disperse(); immigrate(); extinction();
+  disperse(); immigrate(); extinction(); trapCatch(); thresholdAlerts();
   G.history.push(census());
 }
 
@@ -867,18 +978,17 @@ function apply(id, t) {
     case 'lady': t.lA += 10; spend(tool.cost); G.stats.agents++; floatText(t, '+10 🐞', 'pos'); toast(`🐞 Released 10 ladybirds at ${label(t)}. Surplus beyond the tile's K will spread out.`, 'enemy'); break;
     case 'aphidius': t.aM += 15; t.wA += 5; spend(tool.cost); G.stats.agents++; floatText(t, '+20 🐝', 'pos'); toast(`🐝 Released Aphidius at ${label(t)}: 5 adults and 15 mummies that will hatch over the next 10 days.`, 'enemy'); break;
     case 'tricho': t.mEp += 60; spend(tool.cost); G.stats.agents++; floatText(t, '+60 🥚', 'pos'); toast(`🥚 Hung a Trichogramma card at ${label(t)}. Wasps will emerge over about 9 days.`, 'enemy'); break;
-    case 'spray': {
+    case 'spray': case 'bt': {
       spend(tool.cost); G.stats.sprays++;
-      let pests = 0, enemies = 0;
-      for (const { o } of areaTiles('spray', t)) {
-        const before = o.aN + o.aA + o.mL, eb = o.lA + o.lJ + o.wA + o.tA;
-        o.aN *= 0.12; o.aA *= 0.12; o.mL *= 0.3; o.mE *= 0.7; o.mA *= 0.4;
-        o.lA *= 0.05; o.lJ *= 0.1; o.wA *= 0.03; o.tA *= 0.03; o.aM *= 0.5; o.mEp *= 0.5;
-        pests += before - (o.aN + o.aA + o.mL); enemies += eb - (o.lA + o.lJ + o.wA + o.tA);
-        o.residue = 6; styleTile(o);
-      }
+      const kBefore = id === 'bt' ? P.bt.kL * (1 - G.res.bt) : sprayK();
+      const r = treat(t, id);
+      plusArea(t).forEach(styleTile);
       floatText(t, `-$${tool.cost}`, 'neg');
-      toast(`🧪 Sprayed around ${label(t)}: killed ${fmt(pests)} pests <i>and ${fmt(enemies)} natural enemies</i>. The residue will keep killing enemies for 6 days.`, enemies > 1 ? 'bad' : 'warn');
+      const verdict = r.verdict === 'ok' ? `✅ <b>Justified:</b> ${r.text}.` : `⚠️ <b>Not an IPM decision:</b> ${r.text}.`;
+      const what = id === 'bt'
+        ? `🦠 Bt sprayed around ${label(t)}: killed ${fmt(r.pests)} aphid-eq of caterpillars (efficacy ${Math.round(kBefore * 100)}%). Natural enemies were unharmed.`
+        : `🧪 Broad-spectrum spray around ${label(t)}: killed ${fmt(r.pests)} aphid-eq of pests (efficacy ${Math.round(kBefore * 100)}%) <i>and ${fmt(r.enemies)} natural enemies</i>. The residue lasts 6 days.`;
+      toast(`${what} ${verdict} Resistance is now ${Math.round((id === 'bt' ? G.res.bt : G.res.broad) * 100)}%.`, r.verdict === 'ok' ? (id === 'bt' ? 'good' : 'warn') : 'bad');
       break;
     }
     case 'sickle': {
