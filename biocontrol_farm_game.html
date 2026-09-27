@@ -1,0 +1,1264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biocontrol Farm</title>
+<style>
+  :root{
+    --ink:#ecf4dd; --ink-2:#cfe0bd; --ink-3:#9fb48c;
+    --panel:rgba(14,30,19,.86); --panel-2:rgba(255,255,255,.06);
+    --line:rgba(206,239,160,.22); --gold:#f4c35a; --leaf:#a9cf63;
+    --bad:#ff8f70; --good:#9be07a;
+    --s-aphid:#3987e5; --s-larva:#d95926; --s-lady:#199e70; --s-para:#c98500; --s-tri:#d55181;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;overflow:hidden;background:#9fcde0;color:var(--ink);font:14px/1.35 system-ui,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  #scene{position:fixed;inset:0}
+  #scene canvas{display:block;width:100%;height:100%;touch-action:none}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.35);backdrop-filter:blur(8px)}
+
+  /* top bar */
+  #topbar{position:fixed;z-index:5;top:10px;left:10px;right:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 12px}
+  .brand b{display:block;font:700 18px/1.1 Georgia,serif;color:#fff5c8}
+  .brand span{font-size:11px;color:var(--ink-3)}
+  .stat{min-width:92px}
+  .stat span{display:block;font-size:11px;color:var(--ink-3)}
+  .stat strong{font-size:17px;color:var(--gold);font-variant-numeric:tabular-nums}
+  .season{height:4px;border-radius:2px;background:var(--panel-2);margin-top:3px;overflow:hidden}
+  .season i{display:block;height:100%;width:0;background:var(--leaf)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{border:0;background:transparent;padding:6px 10px;font-size:13px;color:var(--ink-2)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--leaf);color:#17220e;font-weight:700}
+  .seg button:focus-visible,.tool:focus-visible,.btn:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+  .btn{border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:6px 11px;color:var(--ink)}
+  .btn.primary{background:var(--leaf);color:#17220e;border:0;font-weight:800;border-radius:999px;padding:11px 22px}
+  .spacer{flex:1}
+  #panelBtn{display:none}
+  .close-panel{display:none;float:right;padding:2px 9px;margin-left:8px}
+
+  #heatLegend{position:fixed;z-index:4;left:10px;top:84px;padding:7px 10px;font-size:12px;display:none}
+  #heatLegend .ramp{width:140px;height:9px;border-radius:5px;margin:4px 0 2px}
+  #heatLegend .ends{display:flex;justify-content:space-between;color:var(--ink-3);font-size:11px}
+
+  /* log */
+  #log{position:fixed;z-index:4;left:10px;top:84px;width:min(360px,calc(100vw - 20px));display:flex;flex-direction:column;gap:6px;pointer-events:none}
+  body.heat #log{top:140px}
+  .toast{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--leaf);border-radius:10px;padding:7px 10px;font-size:12.5px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.3);transition:opacity .5s,transform .5s}
+  .toast b{color:var(--ink-3);font-weight:600;margin-right:4px}
+  .toast.warn{border-left-color:var(--gold)} .toast.bad{border-left-color:var(--bad)} .toast.good{border-left-color:var(--good)} .toast.enemy{border-left-color:var(--s-lady)}
+  .toast.out{opacity:0;transform:translateX(-12px)}
+
+  /* right panel */
+  #panel{position:fixed;z-index:4;right:10px;top:84px;bottom:112px;width:330px;display:flex;flex-direction:column;overflow:hidden}
+  #inspector{padding:12px 14px;overflow-y:auto;flex:1;min-height:0;user-select:text}
+  #inspector h3{margin:0 0 6px;font:700 17px/1.2 Georgia,serif;color:#fff5c8}
+  #inspector h4{margin:12px 0 5px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  #inspector .muted{color:var(--ink-3);font-size:12.5px}
+  .meter{height:7px;border-radius:4px;background:var(--panel-2);overflow:hidden;margin:3px 0 6px}
+  .meter i{display:block;height:100%;border-radius:4px}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12.5px}
+  .kv span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;color:#fff}
+  .kv .sub{padding-left:12px;color:var(--ink-2)}
+  .enemy-row{margin:4px 0 8px;font-size:12.5px}
+  .enemy-row .top{display:flex;justify-content:space-between}
+  .enemy-row .top b{font-weight:600}
+  .enemy-row .top span{font-variant-numeric:tabular-nums}
+  .fr-note{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--panel-2);font-size:12px;color:var(--ink-2)}
+  .chart-card{border-top:1px solid var(--line);padding:10px 12px 10px}
+  .chart-card h4{margin:0 0 4px;font-size:12px;color:var(--ink-2)}
+  .chart-card h4 small{color:var(--ink-3);font-weight:400}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--ink-2);margin-bottom:4px}
+  .legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+  .chart-wrap{position:relative}
+  canvas.chart{display:block;width:100%;height:150px}
+  .ctip{position:absolute;pointer-events:none;display:none;background:#0c1a10;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:11.5px;white-space:nowrap;z-index:2}
+  .ctip .r{display:flex;gap:6px;align-items:center}
+  .ctip i{width:10px;height:3px;border-radius:2px;display:inline-block}
+  .ctip b{margin-left:auto;padding-left:8px;font-variant-numeric:tabular-nums}
+
+  /* dock */
+  #dock{position:fixed;z-index:5;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:6px;padding:8px;max-width:calc(100vw - 20px)}
+  .tool{touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;width:70px;height:84px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);padding:4px 2px;cursor:grab;transition:transform .12s,background .12s}
+  .tool:hover{background:rgba(169,207,99,.18);transform:translateY(-2px)}
+  .tool .ic{font-size:30px;line-height:1.1}
+  .tool .nm{font-size:10.5px;color:var(--ink-2);text-align:center;line-height:1.1;margin-top:2px}
+  .tool .pr{font-size:11px;color:var(--gold);font-weight:700}
+  .tool.poor .pr{color:var(--bad)}
+  .tool.pulse{animation:pulse 1.4s infinite}
+  .dock-sep{width:1px;background:var(--line);margin:4px 2px}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,195,90,.0)}50%{box-shadow:0 0 0 5px rgba(244,195,90,.55)}}
+
+  #ghost{position:fixed;z-index:20;pointer-events:none;display:none;transform:translate(-50%,-70%);text-align:center}
+  #ghost .ic{font-size:44px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+  #ghost .cap{margin-top:2px;font-size:12px;background:var(--panel);border:1px solid var(--line);padding:3px 8px;border-radius:8px;white-space:nowrap}
+  #ghost.bad .cap{color:var(--bad)}
+  #tip{position:fixed;z-index:6;pointer-events:none;display:none;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 9px;font-size:12px;max-width:260px}
+  .float{position:fixed;z-index:8;pointer-events:none;font-weight:800;font-size:16px;transform:translate(-50%,-50%);animation:floatUp 1.4s ease-out forwards;text-shadow:0 2px 4px #000}
+  .float.pos{color:var(--good)} .float.neg{color:#ffd37d} .float.bad{color:var(--bad)}
+  @keyframes floatUp{to{transform:translate(-50%,-160%);opacity:0}}
+
+  /* modals */
+  .modal{position:fixed;z-index:30;inset:0;display:none;place-items:center;padding:16px;background:rgba(6,16,9,.72);overflow-y:auto}
+  .modal.show{display:grid}
+  .modal .card{width:min(760px,100%);padding:22px 24px;max-height:calc(100dvh - 32px);overflow-y:auto;user-select:text}
+  .modal h2{margin:0 0 8px;font:700 26px/1.15 Georgia,serif;color:#fff1b3}
+  .modal h3{margin:18px 0 6px;font:700 16px Georgia,serif;color:#fff1b3}
+  .modal p,.modal li{color:var(--ink-2)}
+  .modal .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .fr-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .fr-grid canvas{width:100%;height:190px;display:block;background:rgba(0,0,0,.18);border-radius:10px}
+  .fr-grid figcaption{font-size:12px;color:var(--ink-3);margin-top:4px}
+  table.params{border-collapse:collapse;width:100%;font-size:12.5px}
+  table.params th,table.params td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left}
+  table.params th{color:var(--ink-3);font-weight:600}
+  .end-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+  .end-stats div{border:1px solid var(--line);border-radius:10px;padding:8px}
+  .end-stats span{display:block;font-size:11px;color:var(--ink-3)}
+  .end-stats b{font-size:17px;color:var(--gold)}
+  .rating{font:700 20px Georgia,serif;color:var(--good)}
+  #endChart{height:200px}
+  .kbd{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:12px}
+
+  @media (max-width:980px){
+    #panelBtn{display:inline-block}
+    .close-panel{display:inline-block}
+    #panel{display:none;left:10px;right:10px;width:auto;top:auto;bottom:196px;max-height:52dvh}
+    #panel.open{display:flex}
+    .views button{padding:6px 7px;font-size:12px}
+  }
+  @media (max-width:760px){
+    #topbar{gap:6px 8px;padding:7px 9px}
+    .seg button{padding:5px 8px}
+    .brand span{display:none}
+    .brand b{font-size:15px}
+    .stat{min-width:70px}
+    .stat strong{font-size:15px}
+    #dock{flex-wrap:wrap;justify-content:center;width:calc(100vw - 20px)}
+    .dock-sep{display:none}
+    .tool{width:calc((100% - 30px)/6);min-width:48px;height:66px}
+    .tool .ic{font-size:24px}
+    .tool .nm{display:none}
+    #panel{bottom:170px;max-height:40dvh}
+    canvas.chart{height:110px}
+    #log{top:auto;bottom:220px}
+    body:has(#panel.open) #log{display:none}
+    body.heat #log{top:auto}
+    #heatLegend{top:auto;bottom:160px}
+    .fr-grid{grid-template-columns:1fr}
+    .end-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<header id="topbar" class="card">
+  <div class="brand"><b>Biocontrol Farm</b><span>Biological control &amp; functional response</span></div>
+  <div class="stat"><span>Day</span><strong id="day">0 / 120</strong><div class="season"><i id="seasonBar"></i></div></div>
+  <div class="stat"><span>Money</span><strong id="money">$250</strong></div>
+  <div class="seg" id="speed" role="group" aria-label="Game speed">
+    <button data-speed="0" title="Pause (Space)" aria-label="Pause">⏸</button>
+    <button data-speed="0.5" title="Normal speed (1)" aria-label="Normal speed">▶</button>
+    <button data-speed="1" title="Fast (2)" aria-label="Fast">▶▶</button>
+    <button data-speed="2" title="Very fast (3)" aria-label="Very fast">▶▶▶</button>
+  </div>
+  <div class="seg views" id="views" role="group" aria-label="Map view">
+    <button data-view="farm" class="on">Farm</button>
+    <button data-view="pests">Pests</button>
+    <button data-view="enemies">Enemies</button>
+    <button data-view="capacity">Enemy K</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="guideBtn">📖 Guide</button>
+  <button class="btn" id="panelBtn" aria-label="Toggle field panel">📋</button>
+</header>
+
+<div id="heatLegend" class="card"></div>
+<div id="log" aria-live="polite"></div>
+
+<aside id="panel" class="card">
+  <section id="inspector"></section>
+  <section class="chart-card">
+    <h4>Field populations <small>· whole farm, log scale</small></h4>
+    <div class="legend">
+      <span><i style="background:var(--s-aphid)"></i>Aphids</span>
+      <span><i style="background:var(--s-larva)"></i>Caterpillars</span>
+      <span><i style="background:var(--s-lady)"></i>Ladybirds</span>
+      <span><i style="background:var(--s-para)"></i>Parasitoids</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chart" class="chart"></canvas><div class="ctip" id="chartTip"></div></div>
+  </section>
+</aside>
+
+<nav id="dock" class="card" aria-label="Tools – drag onto a field tile"></nav>
+<div id="ghost"><div class="ic"></div><div class="cap"></div></div>
+<div id="tip"></div>
+
+<div class="modal show" id="startModal"><div class="card">
+  <h2>🌱 Biocontrol Farm</h2>
+  <p>You run an 8 × 8 vegetable farm for one <b>120-day season</b>. Plant crops, let them grow, and harvest them for money. Winged <b>aphids</b> and egg-laying <b>armyworm moths</b> fly in from the landscape and build up stage-structured populations on your plants.</p>
+  <p>Wild <b>predators</b> (ladybirds) and <b>parasitoids</b> (<i>Aphidius</i> and <i>Trichogramma</i> wasps) arrive too, but usually <b>late</b>. You can buy and release them, and plant <b>shelter plants</b> (flower strips, beetle banks) that raise the number of natural enemies each tile can hold (their carrying capacity, K).</p>
+  <p><b>Everything is drag-and-drop.</b> Drag an icon from the bottom dock onto a tile. Crops and the harvest basket can be swept across several tiles in one drag.<br>Drag on empty ground to rotate the view, right-drag to pan, scroll to zoom. Click a tile to scout it.</p>
+  <div class="row"><button class="btn primary" id="startBtn">Start the season</button><button class="btn" id="startGuide">📖 Read the guide first</button></div>
+</div></div>
+
+<div class="modal" id="guideModal"><div class="card">
+  <h2>📖 Field guide</h2>
+  <h3>How to play</h3>
+  <ul>
+    <li><b>🥬 Cabbage</b> ($10, 32 days, sells for up to $45) and <b>🍅 Tomato</b> ($20, 55 days, up to $110). The sale price is multiplied by crop health. Mature crops start to rot 12 days after ripening.</li>
+    <li><b>🧺 Harvest</b> ripe crops (they show a gold ring). <b>⛏️ Dig</b> clears a tile ($2, free if the plant is dead).</li>
+    <li><b>🌼 Flower strip</b> and <b>🌾 Beetle bank</b> take up a tile (they can replace a crop). They raise natural-enemy <b>carrying capacity K</b> within 2 tiles and attract wild enemies earlier in the season.</li>
+    <li><b>🐞 🐝 🥚</b> Buy and release natural enemies onto a tile. They spread out on their own.</li>
+    <li><b>🧪 Insecticide</b> works fast but kills about 95% of natural enemies and leaves a residue for 6 days, which often causes the pest to <i>resurge</i>.</li>
+    <li>Keyboard: <span class="kbd">Space</span> pause, <span class="kbd">1</span>–<span class="kbd">3</span> speed, <span class="kbd">G</span> guide, <span class="kbd">Esc</span> cancel a drag.</li>
+  </ul>
+  <h3>Functional response: how killing rate depends on prey density</h3>
+  <p>A <b>functional response</b> (Holling 1959) is the number of prey one natural enemy attacks per day, as a function of prey density <i>N</i>. Each enemy in this game follows its own curve:</p>
+  <div class="legend" style="margin:6px 0">
+    <span><i style="background:var(--s-lady)"></i>Ladybird (Type II)</span>
+    <span><i style="background:var(--s-para)"></i><em>Aphidius</em> (Type III)</span>
+    <span><i style="background:var(--s-tri)"></i><em>Trichogramma</em> (Type II)</span>
+  </div>
+  <div class="fr-grid">
+    <figure style="margin:0"><canvas id="frRate"></canvas><figcaption>Prey attacked per enemy per day. Type II (ladybird, <i>Trichogramma</i>) rises quickly and levels off at 1/h. Type III (<i>Aphidius</i>) is S-shaped.</figcaption></figure>
+    <figure style="margin:0"><canvas id="frProp"></canvas><figcaption>Share of the prey population killed by one enemy, scaled to each curve's peak. Type II is highest at low density. Type III peaks at intermediate density.</figcaption></figure>
+  </div>
+  <ul>
+    <li><b>Type II:</b> f(N) = aN / (1 + a·h·N). Search is efficient, but the time spent handling each prey caps intake. When prey are scarce it kills a large share of them. During an outbreak it saturates, so the share it kills falls (inverse density dependence).</li>
+    <li><b>Type III:</b> f(N) = bN² / (1 + b·h·N²). The wasp hardly bothers with rare hosts (learning, switching, refuges). Its killing rate rises with density before saturating, which is density-dependent and stabilising.</li>
+    <li><b>Numerical response:</b> a ladybird needs many prey to produce one offspring (about 1 juvenile per 30 prey, 18-day development), so its population grows slowly. A parasitoid turns <i>each</i> host into offspring (a mummy, or a black parasitised egg) and closely tracks the pest after a 9–10 day delay.</li>
+    <li><b>Carrying capacity (K):</b> natural enemies only recruit up to K on each tile. Nectar and pollen from flower strips (for parasitoids and ladybirds) and refuge and alternative prey on beetle banks (for predators) raise K and survival. Use the <b>Enemy K</b> view to see it.</li>
+  </ul>
+  <h3>Model parameters</h3>
+  <table class="params">
+    <tr><th>Organism</th><th>Role</th><th>Functional response</th><th>Key traits</th></tr>
+    <tr><td>Green peach aphid</td><td>Pest</td><td>–</td><td>nymph → adult in 6.5 d, 1.5 nymphs/adult/day, crowding limit set by plant size</td></tr>
+    <tr><td>Armyworm moth</td><td>Pest</td><td>–</td><td>egg 4 d → larva 12 d → pupa 7 d → moth; 4 eggs/female/day; larvae feed heavily</td></tr>
+    <tr><td>🐞 Ladybird</td><td>Predator (generalist)</td><td>Type II, a = 0.8, h = 0.02 d (max 50/day)</td><td>eats aphids and moth eggs; 18 d development; base K = 3 per tile</td></tr>
+    <tr><td>🐝 <i>Aphidius</i></td><td>Parasitoid of aphids</td><td>Type III, b = 0.0015, h = 0.05 d (max 20/day)</td><td>mummy 10 d → 0.7 wasps; short-lived without nectar; base K = 4</td></tr>
+    <tr><td>🥚 <i>Trichogramma</i></td><td>Egg parasitoid of moths</td><td>Type II, a = 1.2, h = 0.03 d (max 33/day)</td><td>9 d development → 1.3 wasps per egg; lives about 4 days; base K = 6</td></tr>
+  </table>
+  <div class="row"><button class="btn primary" data-close>Back to the farm</button></div>
+</div></div>
+
+<div class="modal" id="endModal"><div class="card">
+  <h2>🌾 Season over</h2>
+  <div class="rating" id="rating"></div>
+  <div class="end-stats" id="endStats"></div>
+  <div class="chart-wrap"><canvas id="endChart" class="chart"></canvas><div class="ctip" id="endTip"></div></div>
+  <div class="legend" style="margin-top:6px">
+    <span><i style="background:var(--s-aphid)"></i>Aphids</span>
+    <span><i style="background:var(--s-larva)"></i>Caterpillars</span>
+    <span><i style="background:var(--s-lady)"></i>Ladybirds</span>
+    <span><i style="background:var(--s-para)"></i>Parasitoids</span>
+  </div>
+  <h3>Field notes</h3>
+  <ul id="lessons"></ul>
+  <div class="row"><button class="btn primary" id="againBtn">Play another season</button></div>
+</div></div>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.1/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.1/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+// ==SIM START==
+// Population model. Plain JS with no DOM or Three.js, so it can be tested headless.
+const GW = 8, GH = 8, SEASON = 120, START_MONEY = 250, SUB = 0.25;
+const CROPS = {
+  cabbage: { name: 'Cabbage', icon: '🥬', cost: 10, value: 45, days: 32 },
+  tomato:  { name: 'Tomato',  icon: '🍅', cost: 20, value: 110, days: 55 },
+};
+const P = {
+  aphid: { fec: 1.5, dev: 6.5, mN: 0.05, mA: 0.1, dmg: 0.00006 },
+  moth:  { fec: 4, egg: 4, larva: 12, pupa: 7, mA: 0.15, dmg: 0.003 },
+  lady:  { a: 0.8, ae: 0.5, h: 0.02, conv: 0.035, dev: 18, m: 0.02, K: 3 },
+  aph:   { b: 0.0015, h: 0.05, dev: 10, yield: 0.7, m: 0.14, K: 4 },
+  tri:   { a: 1.2, h: 0.03, dev: 9, yield: 1.3, m: 0.25, K: 6 },
+};
+const POOLS = ['aN', 'aA', 'aM', 'mE', 'mL', 'mP', 'mA', 'mEp', 'lA', 'lJ', 'wA', 'tA'];
+const G = {
+  day: 0, money: START_MONEY, sub: 0, over: false, history: [],
+  stats: { planted: 0, harvested: 0, revenue: 0, spent: 0, lost: 0, sprays: 0, agents: 0, shelters: 0, peakAphid: 0, peakLarva: 0, natural: 0 },
+  seen: {},
+};
+const hooks = { emit() {}, change() {} };
+
+function newTile(x, z, i) {
+  const t = { i, x, z, kind: 'empty', crop: null, grow: 0, health: 1, ripe: 0, residue: 0, fw: 0, bw: 0,
+    K: { lady: P.lady.K, aph: P.aph.K, tri: P.tri.K }, eggOut: 0,
+    acc: { lady: 0, wasp: 0, tri: 0, damage: 0 }, st: { lady: 0, wasp: 0, tri: 0, damage: 0 }, inb: {} };
+  POOLS.forEach(k => t[k] = 0);
+  return t;
+}
+const tiles = [];
+for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) tiles.push(newTile(x, z, tiles.length));
+const cheb = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.z - b.z));
+tiles.forEach(t => { t.n1 = tiles.filter(o => o !== t && cheb(o, t) <= 1); t.n2 = tiles.filter(o => o !== t && cheb(o, t) <= 2); t.n3 = tiles.filter(o => o !== t && cheb(o, t) <= 3); });
+const label = t => 'ABCDEFGH'[t.x] + (t.z + 1);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const sizeOf = t => t.kind === 'crop' ? Math.min(1, t.grow / CROPS[t.crop].days) : 0;
+const aphidK = t => t.kind === 'crop' ? (100 + 900 * sizeOf(t)) * (0.35 + 0.65 * t.health) : 1;
+
+// Shelter influence: weight 1.5 on the shelter tile itself, 1 for neighbours, 0.5 two tiles away.
+function computeShelter() {
+  for (const t of tiles) {
+    let fw = 0, bw = 0;
+    for (const s of tiles) {
+      if (s.kind !== 'flower' && s.kind !== 'bank') continue;
+      const d = cheb(t, s), w = d === 0 ? 1.5 : d === 1 ? 1 : d === 2 ? 0.5 : 0;
+      if (s.kind === 'flower') fw += w; else bw += w;
+    }
+    t.fw = fw; t.bw = bw;
+    t.K.lady = P.lady.K + 6 * bw + 3 * fw;
+    t.K.aph = P.aph.K + 12 * fw + 3 * bw;
+    t.K.tri = P.tri.K + 15 * fw + 2 * bw;
+  }
+}
+
+// Scale a list of per-day outflows so they never remove more than the stock holds.
+function flows(stock, rates, dt) {
+  let sum = 0; for (const r of rates) sum += r;
+  sum *= dt;
+  const s = sum > stock && sum > 0 ? stock / sum : 1;
+  return rates.map(r => r * dt * s);
+}
+
+// Functional responses (prey per enemy per day)
+const frLady = (aphids, eggs) => { const d = 1 + P.lady.a * P.lady.h * aphids + P.lady.ae * P.lady.h * eggs; return [P.lady.a * aphids / d, P.lady.ae * eggs / d]; };
+const frAphidius = N => P.aph.b * N * N / (1 + P.aph.b * P.aph.h * N * N);
+const frTricho = N => P.tri.a * N / (1 + P.tri.a * P.tri.h * N);
+
+function stepTile(t, dt) {
+  const crop = t.kind === 'crop', size = sizeOf(t), Kap = aphidK(t);
+  const aTot = t.aN + t.aA, fw = Math.min(1, t.fw), bw = Math.min(1, t.bw), res = t.residue > 0 ? 1 : 0;
+
+  // Ladybird: multi-prey Type II. Larvae (lJ) feed at 60% of the adult rate.
+  const effL = t.lA + 0.6 * t.lJ;
+  const [fA, fE] = frLady(aTot, t.mE);
+  const eatA = fA * effL, eatE = fE * effL;
+  const food = fA + fE + 12 * bw + 5 * fw;           // alternative food from shelter plants
+  const starve = Math.max(0, 1 - food / 15);
+  // Parasitoids
+  const attW = t.wA * frAphidius(t.aN);
+  const attT = t.tA * frTricho(t.mE);
+
+  // Aphids
+  const shareN = aTot > 0 ? t.aN / aTot : 0;
+  const births = crop ? P.aphid.fec * t.aA * Math.max(0, 1 - aTot / Kap) : 0;
+  const [nMat, nMort, nEat, nPar] = flows(t.aN, [t.aN / P.aphid.dev, t.aN * (crop ? P.aphid.mN : 0.6), eatA * shareN, attW], dt);
+  const [aMort, aEat] = flows(t.aA, [t.aA * (crop ? P.aphid.mA : 0.6), eatA * (1 - shareN)], dt);
+  const [mEm, mMort] = flows(t.aM, [t.aM / P.aph.dev, t.aM * (0.02 + res * 0.3)], dt);
+  // Moth
+  const [eHatch, eMort, eEat, ePar] = flows(t.mE, [t.mE / P.moth.egg, t.mE * 0.05, eatE, attT], dt);
+  const [lPup, lMort] = flows(t.mL, [t.mL / P.moth.larva, t.mL * (crop ? 0.03 + 0.1 * (1 - t.health) : 0.8)], dt);
+  const [pEc, pMort] = flows(t.mP, [t.mP / P.moth.pupa, t.mP * 0.02], dt);
+  const [mAMort] = flows(t.mA, [t.mA * P.moth.mA], dt);
+  t.eggOut += P.moth.fec * t.mA * dt;
+  const [epEm, epMort] = flows(t.mEp, [t.mEp / P.tri.dev, t.mEp * (0.02 + res * 0.3)], dt);
+  // Ladybird demography: recruitment is proportional to food and limited by K
+  const room = Math.max(0, 1 - (t.lA + t.lJ) / t.K.lady);
+  const recruit = P.lady.conv * t.lA * food * room * dt;
+  const [jMat, jMort] = flows(t.lJ, [t.lJ / P.lady.dev, t.lJ * (0.05 + 0.2 * starve + res * 0.8)], dt);
+  const [lAMort] = flows(t.lA, [t.lA * (P.lady.m + 0.12 * starve + res * 0.8)], dt);
+  // Parasitoid demography: emergence above K leaves the field
+  const [wMort] = flows(t.wA, [t.wA * (P.aph.m * (1 - 0.5 * fw) + res * 0.9)], dt);
+  const newW = P.aph.yield * mEm * Math.max(0.1, 1 - t.wA / t.K.aph);
+  const [tMort] = flows(t.tA, [t.tA * (P.tri.m * (1 - 0.5 * fw) + res * 0.9)], dt);
+  const newT = P.tri.yield * epEm * Math.max(0.1, 1 - t.tA / t.K.tri);
+
+  t.aN += births * dt - nMat - nMort - nEat - nPar;
+  t.aA += nMat - aMort - aEat;
+  t.aM += nPar - mEm - mMort;
+  t.mE += -eHatch - eMort - eEat - ePar;
+  t.mL += eHatch - lPup - lMort;
+  t.mP += lPup - pEc - pMort;
+  t.mA += 0.5 * pEc - mAMort;            // females only
+  t.mEp += ePar - epEm - epMort;
+  t.lJ += recruit - jMat - jMort;
+  t.lA += jMat - lAMort;
+  t.wA += newW - wMort;
+  t.tA += newT - tMort;
+  for (const k of POOLS) if (!(t[k] > 1e-4)) t[k] = 0;
+
+  t.acc.lady += nEat + aEat + eEat; t.acc.wasp += nPar; t.acc.tri += ePar;
+
+  if (crop) {
+    const C = CROPS[t.crop];
+    const dmg = (P.aphid.dmg * aTot + P.moth.dmg * t.mL) * dt;
+    t.health -= dmg; t.acc.damage += dmg;
+    t.grow += dt * (0.4 + 0.6 * Math.max(0, t.health));
+    if (t.grow >= C.days) { t.ripe += dt; if (t.ripe > 12) t.health -= 0.03 * dt; }
+    if (t.health <= 0.02) {
+      t.health = 0; t.kind = 'dead'; G.stats.lost++;
+      hooks.emit(`💀 ${C.name} at ${label(t)} was killed by pests.`, 'bad');
+      hooks.change(t);
+    }
+  }
+}
+
+// Moths spread their eggs: half on their own crop tile, the rest on crops up to 3 tiles away.
+function distributeEggs() {
+  for (const t of tiles) {
+    if (t.eggOut <= 0) continue;
+    const eggs = t.eggOut; t.eggOut = 0;
+    const local = t.kind === 'crop' ? 0.5 : 0;
+    t.mE += eggs * local;
+    let dest = t.n3.filter(o => o.kind === 'crop');
+    if (!dest.length) { const all = tiles.filter(o => o.kind === 'crop' && o !== t); if (!all.length) continue; dest = [pick(all)]; }
+    const share = eggs * (1 - local) / Math.min(3, dest.length);
+    for (let k = 0; k < Math.min(3, dest.length); k++) pick(dest).mE += share;
+  }
+}
+
+function move(t, key, frac, loss, list, weight) {
+  const amt = t[key] * Math.min(0.95, frac);
+  if (amt < 0.01 || !list.length) return;
+  t[key] -= amt;
+  const ws = list.map(weight), s = ws.reduce((a, b) => a + b, 0);
+  if (s <= 0) return;
+  const stay = amt * (1 - loss);
+  list.forEach((o, k) => { o.inb[key] = (o.inb[key] || 0) + stay * ws[k] / s; });
+}
+const room = (o, key, pop) => 0.2 + Math.max(0, 1 - pop / o.K[key]);
+
+function disperse() {
+  for (const t of tiles) t.inb = {};
+  for (const t of tiles) {
+    const aTot = t.aN + t.aA;
+    // Winged aphids: more leave when crowded; all leave when there is no host plant
+    const aFrac = t.kind === 'crop' ? 0.02 + 0.25 * Math.max(0, aTot / aphidK(t) - 0.5) : 0.9;
+    move(t, 'aA', aFrac, 0.4, t.n2.filter(o => o.kind === 'crop'), () => 1);
+    // Ladybirds
+    const [fA, fE] = frLady(aTot, t.mE);
+    const starve = Math.max(0, 1 - (fA + fE + 12 * Math.min(1, t.bw) + 5 * Math.min(1, t.fw)) / 15);
+    const over = t.lA + t.lJ > t.K.lady ? (t.lA + t.lJ - t.K.lady) / (t.lA + t.lJ) : 0;
+    move(t, 'lA', 0.08 + 0.5 * starve + 0.6 * over, Math.min(0.9, 0.08 + 0.3 * starve + 0.6 * over), t.n1,
+      o => (1 + (o.aN + o.aA) / 20 + 3 * o.mE / 20 + 6 * Math.min(1, o.bw) + 3 * Math.min(1, o.fw)) * room(o, 'lady', o.lA + o.lJ));
+    // Aphidius: leaves when hosts are scarce or the tile is above K, and is lost faster without nectar
+    const scW = 1 - t.aN / (t.aN + 30);
+    const overW = t.wA > t.K.aph ? (t.wA - t.K.aph) / t.wA : 0;
+    move(t, 'wA', 0.15 + 0.5 * scW + 0.5 * overW, Math.min(0.9, 0.08 + 0.3 * scW * (1 - Math.min(1, t.fw)) + 0.7 * overW), t.n2,
+      o => (1 + o.aN / 10 + 5 * Math.min(1, o.fw)) * room(o, 'aph', o.wA));
+    // Trichogramma
+    const scT = 1 - t.mE / (t.mE + 10);
+    const overT = t.tA > t.K.tri ? (t.tA - t.K.tri) / t.tA : 0;
+    move(t, 'tA', 0.2 + 0.5 * scT + 0.5 * overT, Math.min(0.9, 0.12 + 0.3 * scT * (1 - Math.min(1, t.fw)) + 0.7 * overT), t.n1,
+      o => (1 + o.mE / 3 + 5 * Math.min(1, o.fw)) * room(o, 'tri', o.tA));
+  }
+  for (const t of tiles) for (const k in t.inb) t[k] += t.inb[k];
+}
+
+function landEnemies(key, n, target, text, kind) {
+  target[key] += n;
+  G.stats.natural++;
+  const first = !G.seen[key]; G.seen[key] = true;
+  hooks.emit(first ? text.first.replace('%t', label(target)) : text.again.replace('%t', label(target)).replace('%n', Math.round(n)), kind);
+}
+
+function immigrate() {
+  const crops = tiles.filter(t => t.kind === 'crop');
+  const shelters = tiles.filter(t => t.kind === 'flower' || t.kind === 'bank');
+  const nF = tiles.filter(t => t.kind === 'flower').length, nB = tiles.filter(t => t.kind === 'bank').length;
+  const tot = k => tiles.reduce((s, t) => s + t[k], 0);
+  const aph = tot('aN') + tot('aA'), aN = tot('aN'), eggs = tot('mE');
+  const maxBy = f => tiles.reduce((b, t) => f(t) > f(b) ? t : b, tiles[0]);
+
+  if (crops.length) {
+    if (Math.random() < 0.1 + G.day / 300) {
+      const t = pick(crops); t.aA += 2 + Math.random() * 3;
+      if (!G.seen.aphid) { G.seen.aphid = true; hooks.emit(`🟢 Winged aphids landed on ${label(t)}. They give birth to live young and multiply fast.`, 'warn'); }
+    }
+    if (G.day > 12 && Math.random() < 0.08 + G.day / 800) {
+      const t = pick(crops); t.mA += 1 + Math.random();
+      if (!G.seen.moth) { G.seen.moth = true; hooks.emit(`🦋 Armyworm moths are laying eggs around ${label(t)}. The larvae hatch in about 4 days.`, 'warn'); }
+    }
+  }
+  // Wild natural enemies arrive late. Shelter plants bring them in earlier and more often.
+  const ladyStart = Math.max(8, 30 - 3 * nB - 1.5 * nF);
+  if (G.day >= ladyStart && Math.random() < Math.min(0.5, 0.08 + 0.05 * (nB + 0.5 * nF)) * (0.25 + aph / (aph + 400))) {
+    const banks = shelters.filter(t => t.kind === 'bank');
+    const target = (banks.length || shelters.length) && Math.random() < 0.5 ? pick(banks.length ? banks : shelters) : maxBy(t => t.aN + t.aA);
+    landEnemies('lA', 2 + Math.random() * 2, target, { first: '🐞 The first wild ladybirds flew in to %t. These predators eat aphids and moth eggs.', again: '🐞 %n wild ladybirds arrived at %t.' }, 'enemy');
+  }
+  const aphStart = Math.max(12, 40 - 4 * nF - nB);
+  if (G.day >= aphStart && Math.random() < Math.min(0.5, 0.06 + 0.06 * nF) * (aN / (aN + 150))) {
+    const flowers = shelters.filter(t => t.kind === 'flower');
+    const target = flowers.length && Math.random() < 0.3 ? pick(flowers) : maxBy(t => t.aN);
+    landEnemies('wA', 2 + Math.random() * 3, target, { first: '🐝 Wild Aphidius wasps found your aphids at %t. Watch for bronze mummies.', again: '🐝 %n Aphidius wasps arrived at %t.' }, 'enemy');
+  }
+  const triStart = Math.max(25, 65 - 4 * nF);
+  if (G.day >= triStart && Math.random() < Math.min(0.3, 0.03 + 0.04 * nF) * (eggs / (eggs + 30))) {
+    landEnemies('tA', 3 + Math.random() * 3, maxBy(t => t.mE), { first: '🥚 Wild Trichogramma are parasitising moth eggs at %t.', again: '🥚 %n Trichogramma arrived at %t.' }, 'enemy');
+  }
+}
+
+function extinction() {
+  for (const t of tiles) for (const k of POOLS) if (t[k] > 0 && t[k] < 0.3 && Math.random() < 0.5) t[k] = 0;
+}
+
+function census() {
+  const s = { day: G.day, aphid: 0, larva: 0, lady: 0, para: 0 };
+  for (const t of tiles) { s.aphid += t.aN + t.aA; s.larva += t.mL; s.lady += t.lA + t.lJ; s.para += t.wA + t.tA; }
+  G.stats.peakAphid = Math.max(G.stats.peakAphid, s.aphid);
+  G.stats.peakLarva = Math.max(G.stats.peakLarva, s.larva);
+  return s;
+}
+
+function dailyStep() {
+  G.day++;
+  for (const t of tiles) { t.st = t.acc; t.acc = { lady: 0, wasp: 0, tri: 0, damage: 0 }; if (t.residue > 0) t.residue--; }
+  disperse(); immigrate(); extinction();
+  G.history.push(census());
+}
+
+function substep() {
+  for (const t of tiles) stepTile(t, SUB);
+  distributeEggs();
+  G.sub++;
+  if (G.sub % Math.round(1 / SUB) === 0) { dailyStep(); return true; }
+  return false;
+}
+G.history.push(census());
+// ==SIM END==
+
+// ---------------------------------------------------------------- tools
+const TOOLS = [
+  { id: 'cabbage', icon: '🥬', name: 'Cabbage', cost: 10, brush: true, hint: 'Plant on empty soil. Ripe in 32 days, sells for up to $45.' },
+  { id: 'tomato', icon: '🍅', name: 'Tomato', cost: 20, brush: true, hint: 'Plant on empty soil. Ripe in 55 days, sells for up to $110.' },
+  { id: 'sickle', icon: '🧺', name: 'Harvest', cost: 0, brush: true, hint: 'Sweep across ripe crops (gold ring) to sell them.' },
+  { id: 'shovel', icon: '⛏️', name: 'Dig', cost: 2, hint: 'Clear a crop, dead plant (free) or shelter plant.' },
+  'sep',
+  { id: 'flower', icon: '🌼', name: 'Flower strip', cost: 15, area: 2, hint: 'Nectar and pollen. Raises parasitoid K and survival within 2 tiles.' },
+  { id: 'bank', icon: '🌾', name: 'Beetle bank', cost: 15, area: 2, hint: 'Refuge and alternative prey. Raises predator K within 2 tiles.' },
+  'sep',
+  { id: 'lady', icon: '🐞', name: 'Ladybird ×10', cost: 30, hint: 'Predator with a Type II functional response. Eats aphids and moth eggs.' },
+  { id: 'aphidius', icon: '🐝', name: 'Aphidius ×20', cost: 25, hint: 'Aphid parasitoid with a Type III response. Delivered as 15 mummies and 5 adults.' },
+  { id: 'tricho', icon: '🥚', name: 'Tricho card', cost: 20, hint: 'Card of 60 parasitised moth eggs. Trichogramma wasps emerge over about 9 days.' },
+  { id: 'spray', icon: '🧪', name: 'Insecticide', cost: 8, area: 'plus', hint: 'Kills most pests on 5 tiles in a + shape, plus about 95% of natural enemies. Residue lasts 6 days.' },
+  'sep',
+  { id: 'lens', icon: '🔍', name: 'Scout', cost: 0, hint: 'Drop on a tile to inspect its populations.' },
+];
+const TOOL = Object.fromEntries(TOOLS.filter(t => t !== 'sep').map(t => [t.id, t]));
+const KIND_NAME = { empty: 'Bare soil', dead: 'Dead plant', flower: 'Flower strip', bank: 'Beetle bank' };
+
+// ---------------------------------------------------------------- three.js scene
+const $ = s => document.querySelector(s);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+$('#scene').append(renderer.domElement);
+const canvasEl = renderer.domElement;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa6d2e4);
+scene.fog = new THREE.Fog(0xa6d2e4, 24, 55);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 120);
+camera.position.set(0, 10.5, 10.5);
+const controls = new OrbitControls(camera, canvasEl);
+controls.target.set(0, 0, 0.3);
+controls.enableDamping = true;
+controls.minDistance = 3.5; controls.maxDistance = 30;
+controls.minPolarAngle = 0.12; controls.maxPolarAngle = 1.25;
+controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+
+scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x4d6b32, 1.5));
+const sun = new THREE.DirectionalLight(0xfff1d0, 2.4);
+sun.position.set(6, 12, 5); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 });
+sun.shadow.bias = -0.0006;
+scene.add(sun);
+
+const U = { sph: new THREE.SphereGeometry(1, 14, 10), cyl: new THREE.CylinderGeometry(1, 1, 1, 8), cone: new THREE.ConeGeometry(1, 1, 7) };
+const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...extra });
+function part(geo, mat, sx, sy, sz, x, y, z) { const m = new THREE.Mesh(geo, mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = true; return m; }
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), std(0x5f8f3c, { roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const frame = new THREE.Mesh(new THREE.BoxGeometry(GW + 0.5, 0.1, GH + 0.5), std(0x4a3322, { roughness: 1 }));
+frame.position.y = 0.05; frame.receiveShadow = true; scene.add(frame);
+// Decorative hedgerow trees around the field
+{
+  const trunk = std(0x5a3d25), crowns = [std(0x3f7a34), std(0x356b2c), std(0x4d8a3a)];
+  for (let i = 0; i < 46; i++) {
+    const a = i / 46 * Math.PI * 2 + Math.random() * 0.1, r = 8.5 + Math.random() * 5;
+    const g = new THREE.Group(); const h = 0.8 + Math.random() * 1.2;
+    g.add(part(U.cyl, trunk, 0.08, h, 0.08, 0, h / 2, 0));
+    g.add(part(U.sph, crowns[i % 3], 0.6 + Math.random() * 0.4, 0.55 + Math.random() * 0.3, 0.6 + Math.random() * 0.4, 0, h + 0.3, 0));
+    g.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); scene.add(g);
+  }
+}
+
+function soilTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#86603f'; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${40 + Math.random() * 60 | 0},${25 + Math.random() * 30 | 0},10,${Math.random() * 0.35})`; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
+  for (let r = 0; r < 5; r++) { g.fillStyle = 'rgba(40,24,12,.3)'; g.fillRect(0, r * 26 + 10, 128, 5); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const soilTex = soilTexture();
+const TOP = 0.16;
+const tilePos = t => [(t.x - (GW - 1) / 2), (t.z - (GH - 1) / 2)];
+const tileGeo = new THREE.BoxGeometry(0.94, TOP, 0.94);
+const heatGeo = new THREE.PlaneGeometry(0.94, 0.94).rotateX(-Math.PI / 2);
+const ringGeo = new THREE.TorusGeometry(0.4, 0.018, 6, 40).rotateX(Math.PI / 2);
+const tileMeshes = [];
+for (const t of tiles) {
+  const [wx, wz] = tilePos(t);
+  const m = new THREE.Mesh(tileGeo, new THREE.MeshStandardMaterial({ map: soilTex, roughness: 1 }));
+  m.position.set(wx, TOP / 2, wz); m.receiveShadow = true; m.userData.i = t.i;
+  scene.add(m); tileMeshes.push(m); t.mesh = m;
+  const heat = new THREE.Mesh(heatGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }));
+  heat.position.set(wx, TOP + 0.004, wz); heat.visible = false; scene.add(heat); t.heat = heat;
+  const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffd35a, transparent: true, opacity: 0.9 }));
+  ring.position.set(wx, TOP + 0.02, wz); ring.visible = false; scene.add(ring); t.ring = ring;
+}
+
+// ---------------------------------------------------------------- plants
+const SICK = new THREE.Color(0xb39a4a), DEADC = new THREE.Color(0x6b4e2e);
+function disposePlant(t) {
+  if (!t.plant) return;
+  t.plant.traverse(o => { if (o.material && o.userData.own) o.material.dispose(); });
+  scene.remove(t.plant); t.plant = null;
+}
+function buildPlant(t) {
+  disposePlant(t);
+  const g = new THREE.Group(); const [wx, wz] = tilePos(t); g.position.set(wx, TOP, wz);
+  const u = g.userData;
+  const own = m => { m.userData.own = true; return m; };
+  if (t.kind === 'crop' && t.crop === 'cabbage') {
+    u.leaf = std(0x5fa447); u.head = std(0xa9d77c, { roughness: 0.6 }); u.base = u.leaf.color.clone(); u.headBase = u.head.color.clone();
+    for (let k = 0; k < 7; k++) {
+      const a = k / 7 * Math.PI * 2;
+      const m = own(part(U.sph, u.leaf, 0.2, 0.05, 0.13, Math.cos(a) * 0.15, 0.06, Math.sin(a) * 0.15));
+      m.rotation.set(0, -a, 0.35); g.add(m);
+    }
+    g.add(own(part(U.sph, u.head, 0.14, 0.13, 0.14, 0, 0.12, 0)));
+  } else if (t.kind === 'crop' && t.crop === 'tomato') {
+    u.leaf = std(0x4f9a3c); u.base = u.leaf.color.clone(); u.fruitMat = std(0xd8342a, { roughness: 0.4 });
+    g.add(part(U.cyl, std(0x8a6a44), 0.012, 0.75, 0.012, 0.09, 0.375, 0.05));
+    g.add(own(part(U.cyl, u.leaf, 0.02, 0.55, 0.02, 0, 0.275, 0)));
+    [[0, 0.2, 0, 0.16], [0.06, 0.36, -0.04, 0.13], [-0.05, 0.5, 0.03, 0.11]].forEach(([x, y, z, r]) => g.add(own(part(U.sph, u.leaf, r, r * 0.8, r, x, y, z))));
+    u.fruits = [];
+    [[0.13, 0.25, 0.05], [-0.12, 0.3, 0.07], [0.05, 0.42, 0.12], [-0.08, 0.2, -0.1], [0.1, 0.46, -0.07]].forEach(([x, y, z]) => { const f = own(part(U.sph, u.fruitMat, 0.045, 0.045, 0.045, x, y, z)); g.add(f); u.fruits.push(f); });
+  } else if (t.kind === 'dead') {
+    const m = std(0x6b4e2e);
+    for (let k = 0; k < 5; k++) { const a = k / 5 * 6.28; const c = part(U.cone, m, 0.05, 0.3, 0.05, Math.cos(a) * 0.1, 0.03, Math.sin(a) * 0.1); c.rotation.set(Math.sin(a) * 1.3, 0, -Math.cos(a) * 1.3); g.add(c); }
+  } else if (t.kind === 'flower') {
+    g.add(part(U.sph, std(0x5b8f3a), 0.42, 0.07, 0.42, 0, 0.01, 0));
+    const cols = [0xffffff, 0xc9a7ff, 0xffe066, 0xff9ec7, 0xffffff].map(c => std(c, { roughness: 0.5 }));
+    const stem = std(0x4a8a30);
+    for (let k = 0; k < 16; k++) {
+      const x = (Math.random() - 0.5) * 0.7, z = (Math.random() - 0.5) * 0.7, h = 0.12 + Math.random() * 0.14;
+      g.add(part(U.cyl, stem, 0.006, h, 0.006, x, h / 2, z));
+      g.add(part(U.sph, cols[k % cols.length], 0.035, 0.022, 0.035, x, h, z));
+    }
+  } else if (t.kind === 'bank') {
+    g.add(part(U.sph, std(0x7a8a45), 0.44, 0.13, 0.44, 0, 0, 0));
+    const grass = [std(0x9aa850), std(0x6f8f3a), std(0xb8b060)];
+    for (let k = 0; k < 16; k++) {
+      const x = (Math.random() - 0.5) * 0.6, z = (Math.random() - 0.5) * 0.6, h = 0.18 + Math.random() * 0.18;
+      const c = part(U.cone, grass[k % 3], 0.035, h, 0.035, x, 0.08 + h / 2, z); c.rotation.set((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5); g.add(c);
+    }
+  } else { t.plant = null; styleTile(t); return; }
+  scene.add(g); t.plant = g; styleTile(t);
+}
+function styleTile(t) {
+  const m = t.mesh.material;
+  m.color.set(t.kind === 'crop' ? 0xd9c9b6 : t.kind === 'dead' ? 0x9a7f68 : t.kind === 'flower' || t.kind === 'bank' ? 0xa7c27f : 0xffffff);
+  m.emissive.set(t.residue > 0 ? 0x3a1a55 : 0x000000);
+}
+const tmpC = new THREE.Color();
+function updatePlants(time) {
+  for (const t of tiles) {
+    t.ring.visible = false;
+    if (!t.plant) continue;
+    const u = t.plant.userData;
+    if (t.kind === 'crop') {
+      const s = sizeOf(t);
+      t.plant.scale.setScalar(0.3 + 0.7 * s);
+      u.leaf.color.copy(u.base).lerp(SICK, Math.min(1, (1 - t.health) * 1.2));
+      if (u.head) u.head.color.copy(u.headBase).lerp(SICK, Math.min(1, (1 - t.health) * 1.2));
+      if (u.fruits) {
+        const show = s > 0.6;
+        u.fruits.forEach((f, k) => { f.visible = show && (s >= 1 || k < 2 + (s - 0.6) * 8); });
+        u.fruitMat.color.set(t.ripe > 12 ? 0x6e3a20 : s >= 1 ? 0xd8342a : s > 0.8 ? 0x7fbf3f : 0xf5d23a);
+      }
+      if (s >= 1) { t.ring.visible = true; t.ring.material.opacity = 0.5 + 0.4 * Math.sin(time * 4); t.ring.material.color.set(t.ripe > 12 ? 0xff8f70 : 0xffd35a); }
+    } else if (t.kind === 'flower' || t.kind === 'bank') {
+      t.plant.rotation.z = Math.sin(time * 1.3 + t.i) * 0.025;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- insects (instanced)
+function colored(geo, hex) { const c = new THREE.Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } geo.setAttribute('color', new THREE.BufferAttribute(a, 3)); return geo; }
+const ladyGeo = mergeGeometries([
+  colored(new THREE.SphereGeometry(0.05, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.75, 1.15), 0xd8261c),
+  colored(new THREE.SphereGeometry(0.024, 10, 6).translate(0, 0.012, 0.058), 0x111111),
+  ...[[0.022, 0.028, 0.02], [-0.022, 0.028, 0.02], [0.02, 0.026, -0.025], [-0.02, 0.026, -0.025], [0, 0.036, -0.004]].map(([x, y, z]) => colored(new THREE.SphereGeometry(0.011, 6, 4).translate(x, y, z), 0x111111)),
+]);
+const waspGeo = mergeGeometries([
+  colored(new THREE.CapsuleGeometry(0.01, 0.045, 4, 8).rotateX(Math.PI / 2), 0x1d1a16),
+  colored(new THREE.SphereGeometry(0.014, 8, 6).translate(0, 0, -0.035), 0x3a2a14),
+  colored(new THREE.PlaneGeometry(0.05, 0.02).rotateX(-Math.PI / 2).translate(0.03, 0.008, 0), 0xe6eef5),
+  colored(new THREE.PlaneGeometry(0.05, 0.02).rotateX(-Math.PI / 2).translate(-0.03, 0.008, 0), 0xe6eef5),
+]);
+const mothGeo = mergeGeometries([
+  colored(new THREE.CapsuleGeometry(0.012, 0.04, 4, 8).rotateX(Math.PI / 2), 0x5a4a38),
+  colored(new THREE.PlaneGeometry(0.07, 0.055).rotateX(-Math.PI / 2).translate(0.042, 0.004, -0.005), 0x9a8766),
+  colored(new THREE.PlaneGeometry(0.07, 0.055).rotateX(-Math.PI / 2).translate(-0.042, 0.004, -0.005), 0x9a8766),
+]);
+const SPECIES = [
+  { key: 'aphid', get: t => t.aN + t.aA, cap: 22, geo: new THREE.SphereGeometry(0.026, 8, 6).scale(0.8, 0.7, 1.1), color: 0x9ad65a },
+  { key: 'mummy', get: t => t.aM, cap: 8, geo: new THREE.SphereGeometry(0.028, 8, 6), color: 0xc49a60 },
+  { key: 'egg', get: t => t.mE, cap: 8, geo: new THREE.SphereGeometry(0.015, 6, 5), color: 0xf5eeb0 },
+  { key: 'epar', get: t => t.mEp, cap: 8, geo: new THREE.SphereGeometry(0.016, 6, 5), color: 0x151515 },
+  { key: 'larva', get: t => t.mL, cap: 8, geo: new THREE.CapsuleGeometry(0.017, 0.06, 4, 8).rotateX(Math.PI / 2), color: 0x3f7a22, walk: true, wiggle: true },
+  { key: 'pupa', get: t => t.mP, cap: 5, geo: new THREE.CapsuleGeometry(0.014, 0.03, 4, 6).rotateX(Math.PI / 2), color: 0x7a5a30, ground: true },
+  { key: 'moth', get: t => t.mA, cap: 4, geo: mothGeo, vc: true, fly: 0.55, flap: 14 },
+  { key: 'lady', get: t => t.lA, cap: 8, geo: ladyGeo, vc: true, walk: true },
+  { key: 'ladyJ', get: t => t.lJ, cap: 6, geo: new THREE.CapsuleGeometry(0.014, 0.05, 4, 6).rotateX(Math.PI / 2), color: 0x2e2e3a, walk: true },
+  { key: 'wasp', get: t => t.wA, cap: 8, geo: waspGeo, vc: true, fly: 0.42, flap: 40 },
+  { key: 'tricho', get: t => t.tA, cap: 8, geo: new THREE.SphereGeometry(0.016, 6, 5), color: 0xffc23a, fly: 0.25, emissive: true },
+];
+for (const sp of SPECIES) {
+  const mat = sp.vc ? new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, side: THREE.DoubleSide })
+    : new THREE.MeshStandardMaterial({ color: sp.color, roughness: 0.55, emissive: sp.emissive ? sp.color : 0x000000, emissiveIntensity: sp.emissive ? 0.6 : 0 });
+  sp.mesh = new THREE.InstancedMesh(sp.geo, mat, sp.cap * tiles.length);
+  sp.mesh.frustumCulled = false; sp.mesh.count = 0; scene.add(sp.mesh);
+}
+function rnd(a, b, c) { let h = Math.imul(a + 1, 374761393) ^ Math.imul(b + 7, 668265263) ^ Math.imul(c + 13, 2246822519); h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16; return (h >>> 0) / 4294967296; }
+const visCount = (N, cap) => N < 0.15 ? 0 : Math.min(cap, Math.ceil(N < 3 ? N : 3 + 2.5 * Math.log2(N / 3)));
+function plantHeight(t) {
+  if (t.kind === 'crop') { const s = 0.3 + 0.7 * sizeOf(t); return (t.crop === 'tomato' ? 0.55 : 0.22) * s; }
+  return t.kind === 'flower' ? 0.18 : t.kind === 'bank' ? 0.22 : t.kind === 'dead' ? 0.05 : 0.005;
+}
+const dummy = new THREE.Object3D();
+function updateInsects(time) {
+  SPECIES.forEach((sp, si) => {
+    let n = 0;
+    for (const t of tiles) {
+      const k = visCount(sp.get(t), sp.cap); if (!k) continue;
+      const [wx, wz] = tilePos(t), ph = plantHeight(t), spread = t.kind === 'crop' ? 0.45 + 0.55 * sizeOf(t) : 1;
+      for (let j = 0; j < k; j++) {
+        const u1 = rnd(t.i, si, j * 3), u2 = rnd(t.i, si, j * 3 + 1), u3 = rnd(t.i, si, j * 3 + 2);
+        let x, y, z, yaw;
+        if (sp.fly) {
+          const dir = u3 > 0.5 ? 1 : -1, ang = u2 * 6.283 + time * (0.5 + u1) * dir, r = 0.12 + 0.28 * u1;
+          x = wx + Math.cos(ang) * r; z = wz + Math.sin(ang) * r;
+          y = TOP + ph * 0.6 + sp.fly + 0.1 * Math.sin(time * 2.3 + u3 * 9);
+          yaw = Math.atan2(-Math.sin(ang) * dir, Math.cos(ang) * dir);
+        } else {
+          let ang = u2 * 6.283; if (sp.walk) ang += time * 0.25 * (u3 - 0.5);
+          const r = (0.05 + 0.3 * u1) * spread;
+          x = wx + Math.cos(ang) * r; z = wz + Math.sin(ang) * r;
+          y = TOP + 0.015 + (sp.ground ? 0 : u3 * ph * 0.9);
+          yaw = sp.walk ? Math.atan2(-Math.sin(ang), Math.cos(ang)) * (u3 > 0.5 ? 1 : -1) : u1 * 6.283;
+        }
+        dummy.position.set(x, y, z); dummy.rotation.set(0, yaw, 0);
+        if (sp.flap) dummy.scale.set(0.3 + 0.7 * Math.abs(Math.sin(time * sp.flap + u1 * 10)), 1, 1);
+        else if (sp.wiggle) dummy.scale.set(1, 1, 1 + 0.12 * Math.sin(time * 5 + u1 * 10));
+        else dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix(); sp.mesh.setMatrixAt(n++, dummy.matrix);
+      }
+    }
+    sp.mesh.count = n; sp.mesh.instanceMatrix.needsUpdate = true;
+  });
+}
+
+// ---------------------------------------------------------------- highlight helpers
+const boxEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(0.98, 0.22, 0.98));
+const hoverBox = new THREE.LineSegments(boxEdges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+const selBox = new THREE.LineSegments(boxEdges, new THREE.LineBasicMaterial({ color: 0xffd35a }));
+hoverBox.visible = selBox.visible = false; scene.add(hoverBox, selBox);
+const areaPool = [];
+for (let k = 0; k < 25; k++) { const m = new THREE.Mesh(heatGeo, new THREE.MeshBasicMaterial({ color: 0xffe27a, transparent: true, opacity: 0.3, depthWrite: false })); m.visible = false; scene.add(m); areaPool.push(m); }
+function areaTiles(toolId, t) {
+  const tool = TOOL[toolId];
+  if (tool.area === 2) return t.n2.concat([t]).map(o => ({ o, w: cheb(o, t) === 0 ? 1 : cheb(o, t) === 1 ? 0.66 : 0.33 }));
+  if (tool.area === 'plus') return tiles.filter(o => Math.abs(o.x - t.x) + Math.abs(o.z - t.z) <= 1).map(o => ({ o, w: 1 }));
+  return [];
+}
+function showHover(t, toolId) {
+  areaPool.forEach(m => m.visible = false);
+  if (!t) { hoverBox.visible = false; return null; }
+  const [wx, wz] = tilePos(t);
+  hoverBox.visible = true; hoverBox.position.set(wx, TOP / 2 + 0.02, wz);
+  const v = toolId ? canApply(toolId, t) : { ok: true };
+  hoverBox.material.color.set(v.ok ? 0xffffff : 0xff6a50);
+  if (toolId) areaTiles(toolId, t).forEach(({ o, w }, k) => {
+    const m = areaPool[k]; const [x, z] = tilePos(o);
+    m.visible = true; m.position.set(x, TOP + 0.008, z);
+    m.material.color.set(toolId === 'spray' ? 0xc07cff : 0xffe27a); m.material.opacity = 0.12 + 0.3 * w;
+  });
+  return v;
+}
+
+// ---------------------------------------------------------------- UI helpers
+const fmt = n => n < 0.05 ? '0' : n < 10 ? (Math.round(n * 10) / 10).toString() : n < 1000 ? Math.round(n).toString() : (n / 1000).toFixed(1) + 'k';
+const logEl = $('#log');
+function toast(msg, kind = 'info') {
+  const d = document.createElement('div'); d.className = 'toast ' + kind; d.innerHTML = `<b>Day ${G.day}</b>${msg}`;
+  logEl.prepend(d); while (logEl.children.length > 5) logEl.lastChild.remove();
+  setTimeout(() => d.classList.add('out'), 7000); setTimeout(() => d.remove(), 7600);
+}
+hooks.emit = toast;
+hooks.change = t => { buildPlant(t); if (G.selected === t) renderInspector(); };
+function floatText(t, text, cls) {
+  const [wx, wz] = tilePos(t); const v = new THREE.Vector3(wx, TOP + 0.6, wz).project(camera);
+  const d = document.createElement('div'); d.className = 'float ' + cls; d.textContent = text;
+  d.style.left = (v.x + 1) / 2 * innerWidth + 'px'; d.style.top = (1 - v.y) / 2 * innerHeight + 'px';
+  document.body.append(d); setTimeout(() => d.remove(), 1400);
+}
+function spend(c) { G.money -= c; G.stats.spent += c; }
+
+// ---------------------------------------------------------------- actions
+function canApply(id, t) {
+  const tool = TOOL[id];
+  const cost = id === 'shovel' && t.kind === 'dead' ? 0 : tool.cost;
+  if (G.over) return { ok: false, msg: 'The season is over' };
+  if (cost > G.money) return { ok: false, msg: `Need $${cost}` };
+  switch (id) {
+    case 'cabbage': case 'tomato':
+      return t.kind === 'empty' || t.kind === 'dead' ? { ok: true, msg: `Plant ${tool.name} · $${cost}` } : { ok: false, msg: 'Tile is occupied: harvest or dig it first' };
+    case 'flower': case 'bank':
+      return t.kind === id ? { ok: false, msg: `Already a ${tool.name}` } : { ok: true, msg: t.kind === 'crop' ? `Replace ${CROPS[t.crop].name} · $${cost}` : `${tool.name} · $${cost}` };
+    case 'sickle':
+      if (t.kind !== 'crop') return { ok: false, msg: 'No crop to harvest' };
+      return t.grow >= CROPS[t.crop].days ? { ok: true, msg: `Sell for $${Math.round(CROPS[t.crop].value * t.health)}` } : { ok: false, msg: `Not ripe (${Math.round(sizeOf(t) * 100)}% grown)` };
+    case 'shovel':
+      return t.kind === 'empty' ? { ok: false, msg: 'Nothing to dig' } : { ok: true, msg: cost ? `Clear tile · $${cost}` : 'Clear dead plant · free' };
+    case 'spray': return { ok: true, msg: `Spray 5 tiles · $${cost}` };
+    case 'lens': return { ok: true, msg: 'Scout this tile' };
+    default: return { ok: true, msg: `Release · $${cost}` };
+  }
+}
+function clearTile(t) {
+  Object.assign(t, { kind: 'empty', crop: null, grow: 0, health: 1, ripe: 0 });
+  t.aN = 0; t.aM *= 0.3; t.mE = 0; t.mL = 0; t.mP *= 0.5; t.mEp *= 0.3;
+}
+function apply(id, t) {
+  const tool = TOOL[id], v = canApply(id, t);
+  if (!v.ok) { floatText(t, v.msg, 'bad'); return false; }
+  const wasShelter = t.kind === 'flower' || t.kind === 'bank';
+  switch (id) {
+    case 'cabbage': case 'tomato':
+      Object.assign(t, { kind: 'crop', crop: id, grow: 0, health: 1, ripe: 0 });
+      spend(tool.cost); G.stats.planted++; floatText(t, `-$${tool.cost}`, 'neg'); break;
+    case 'flower': case 'bank': {
+      const prev = t.kind === 'crop' ? CROPS[t.crop].name : null;
+      clearTile(t); t.kind = id; spend(tool.cost); G.stats.shelters++; computeShelter();
+      floatText(t, `-$${tool.cost}`, 'neg');
+      toast(`${tool.icon} ${tool.name} planted at ${label(t)}${prev ? ` (replaced ${prev})` : ''}. Natural-enemy K goes up within 2 tiles.`, 'good');
+      break;
+    }
+    case 'lady': t.lA += 10; spend(tool.cost); G.stats.agents++; floatText(t, '+10 🐞', 'pos'); toast(`🐞 Released 10 ladybirds at ${label(t)}. Surplus beyond the tile's K will spread out.`, 'enemy'); break;
+    case 'aphidius': t.aM += 15; t.wA += 5; spend(tool.cost); G.stats.agents++; floatText(t, '+20 🐝', 'pos'); toast(`🐝 Released Aphidius at ${label(t)}: 5 adults and 15 mummies that will hatch over the next 10 days.`, 'enemy'); break;
+    case 'tricho': t.mEp += 60; spend(tool.cost); G.stats.agents++; floatText(t, '+60 🥚', 'pos'); toast(`🥚 Hung a Trichogramma card at ${label(t)}. Wasps will emerge over about 9 days.`, 'enemy'); break;
+    case 'spray': {
+      spend(tool.cost); G.stats.sprays++;
+      let pests = 0, enemies = 0;
+      for (const { o } of areaTiles('spray', t)) {
+        const before = o.aN + o.aA + o.mL, eb = o.lA + o.lJ + o.wA + o.tA;
+        o.aN *= 0.12; o.aA *= 0.12; o.mL *= 0.3; o.mE *= 0.7; o.mA *= 0.4;
+        o.lA *= 0.05; o.lJ *= 0.1; o.wA *= 0.03; o.tA *= 0.03; o.aM *= 0.5; o.mEp *= 0.5;
+        pests += before - (o.aN + o.aA + o.mL); enemies += eb - (o.lA + o.lJ + o.wA + o.tA);
+        o.residue = 6; styleTile(o);
+      }
+      floatText(t, `-$${tool.cost}`, 'neg');
+      toast(`🧪 Sprayed around ${label(t)}: killed ${fmt(pests)} pests <i>and ${fmt(enemies)} natural enemies</i>. The residue will keep killing enemies for 6 days.`, enemies > 1 ? 'bad' : 'warn');
+      break;
+    }
+    case 'sickle': {
+      const C = CROPS[t.crop], val = Math.round(C.value * t.health);
+      G.money += val; G.stats.harvested++; G.stats.revenue += val;
+      t.aA *= 0.5; clearTile(t); floatText(t, `+$${val}`, 'pos'); break;
+    }
+    case 'shovel': {
+      const cost = t.kind === 'dead' ? 0 : tool.cost; spend(cost); clearTile(t);
+      if (wasShelter) computeShelter(); if (cost) floatText(t, `-$${cost}`, 'neg'); break;
+    }
+    case 'lens': select(t); break;
+  }
+  if (id !== 'lens') { buildPlant(t); hint(); }
+  refreshHUD(); if (G.selected) renderInspector();
+  return true;
+}
+
+// ---------------------------------------------------------------- dock & drag-and-drop
+const dock = $('#dock');
+for (const tool of TOOLS) {
+  if (tool === 'sep') { const s = document.createElement('div'); s.className = 'dock-sep'; dock.append(s); continue; }
+  const b = document.createElement('button');
+  b.className = 'tool'; b.dataset.tool = tool.id; b.title = tool.hint;
+  b.innerHTML = `<span class="ic">${tool.icon}</span><span class="nm">${tool.name}</span><span class="pr">${tool.cost ? '$' + tool.cost : 'free'}</span>`;
+  b.addEventListener('pointerdown', e => startDrag(e, tool.id));
+  dock.append(b);
+}
+const ghost = $('#ghost'), tip = $('#tip');
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pickTile(e) {
+  if (document.elementFromPoint(e.clientX, e.clientY) !== canvasEl) return null;
+  ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(tileMeshes, false)[0];
+  return hit ? tiles[hit.object.userData.i] : null;
+}
+let drag = null;
+function startDrag(e, id) {
+  if (G.over || document.querySelector('.modal.show')) return;
+  e.preventDefault();
+  drag = { id, pointer: e.pointerId, last: null, done: new Set() };
+  controls.enabled = false; tip.style.display = 'none';
+  ghost.querySelector('.ic').textContent = TOOL[id].icon;
+  ghost.querySelector('.cap').textContent = TOOL[id].brush ? 'Sweep across tiles' : 'Drop on a tile';
+  ghost.className = ''; ghost.style.display = 'block'; moveGhost(e);
+  dock.querySelectorAll('.pulse').forEach(p => p.classList.remove('pulse'));
+}
+function moveGhost(e) { ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px'; }
+function endDrag() { drag = null; ghost.style.display = 'none'; controls.enabled = true; showHover(null); }
+addEventListener('pointermove', e => {
+  if (drag && e.pointerId === drag.pointer) {
+    moveGhost(e);
+    const t = pickTile(e), v = showHover(t, drag.id);
+    ghost.querySelector('.cap').textContent = t ? `${label(t)} · ${v.msg}` : (TOOL[drag.id].brush ? 'Sweep across tiles' : 'Drop on a tile');
+    ghost.className = t && !v.ok ? 'bad' : '';
+    if (t && TOOL[drag.id].brush && t !== drag.last && !drag.done.has(t.i) && v.ok) { apply(drag.id, t); drag.done.add(t.i); }
+    drag.last = t;
+  } else if (!drag && e.pointerType === 'mouse') hoverTip(e);
+});
+addEventListener('pointerup', e => {
+  if (drag && e.pointerId === drag.pointer) {
+    const t = pickTile(e);
+    if (t && !drag.done.has(t.i)) apply(drag.id, t);
+    endDrag();
+  }
+});
+addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pointer) endDrag(); });
+
+let downAt = null;
+canvasEl.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY }; });
+canvasEl.addEventListener('pointerup', e => {
+  if (!downAt || drag) return;
+  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6) { const t = pickTile(e); select(t); }
+  downAt = null;
+});
+function hoverTip(e) {
+  const t = pickTile(e);
+  showHover(t, null);
+  if (!t) { tip.style.display = 'none'; return; }
+  const name = t.kind === 'crop' ? `${CROPS[t.crop].icon} ${CROPS[t.crop].name} ${Math.round(sizeOf(t) * 100)}% · health ${Math.round(t.health * 100)}%` : KIND_NAME[t.kind];
+  tip.innerHTML = `<b>${label(t)}</b> · ${name}<br>Aphids ${fmt(t.aN + t.aA)} · Caterpillars ${fmt(t.mL)}<br>🐞 ${fmt(t.lA + t.lJ)} · 🐝 ${fmt(t.wA)} · 🥚 ${fmt(t.tA)}${t.residue > 0 ? '<br>🧪 insecticide residue' : ''}`;
+  tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 16, innerWidth - 270) + 'px'; tip.style.top = e.clientY + 16 + 'px';
+}
+canvasEl.addEventListener('pointerleave', () => { tip.style.display = 'none'; if (!drag) showHover(null); });
+
+function select(t) {
+  G.selected = t;
+  selBox.visible = !!t;
+  if (t) { const [wx, wz] = tilePos(t); selBox.position.set(wx, TOP / 2 + 0.02, wz); $('#panel').classList.add('open'); }
+  renderInspector();
+}
+
+// ---------------------------------------------------------------- inspector
+function meter(v, color) { return `<div class="meter"><i style="width:${Math.max(0, Math.min(100, v * 100))}%;background:${color}"></i></div>`; }
+function enemyRow(icon, name, pop, K, extra = '') {
+  return `<div class="enemy-row"><div class="top"><b>${icon} ${name}</b><span>${fmt(pop)} / K ${Math.round(K)}</span></div>${meter(pop / K, 'var(--s-lady)')}${extra}</div>`;
+}
+function renderInspector() {
+  const el = $('#inspector'), t = G.selected;
+  if (!t) {
+    el.innerHTML = `<h3>Scouting report</h3><p class="muted">Click a tile, or drop the 🔍 scout on it, to see its crop, pest life stages and natural enemies.</p>
+      <h4>Quick start</h4><ol class="muted" style="padding-left:18px;margin:0">
+      <li>Sweep 🥬 cabbages across some tiles.</li><li>Watch for aphids (green dots) and caterpillars.</li>
+      <li>Plant 🌼/🌾 shelter strips between crops so natural enemies build up early.</li>
+      <li>Release 🐞 🐝 🥚 where pests are building up. Only 🧪 spray when you must.</li><li>Sweep 🧺 across ripe crops (gold ring) to sell them.</li></ol>`;
+    return;
+  }
+  let head, body = '';
+  if (t.kind === 'crop') {
+    const C = CROPS[t.crop], s = sizeOf(t);
+    const stage = s >= 1 ? (t.ripe > 12 ? 'Over-ripe, rotting' : 'Ripe, ready to harvest') : s < 0.15 ? 'Seedling' : s < 0.6 ? 'Vegetative' : t.crop === 'tomato' ? 'Flowering / fruit set' : 'Heading';
+    head = `${C.icon} ${C.name} · ${label(t)}`;
+    body += `<div class="kv"><span>Growth: ${stage}</span><span>${Math.round(s * 100)}%</span></div>${meter(s, 'var(--leaf)')}
+      <div class="kv"><span>Health</span><span>${Math.round(t.health * 100)}%</span></div>${meter(t.health, t.health > 0.6 ? 'var(--good)' : t.health > 0.3 ? 'var(--gold)' : 'var(--bad)')}
+      <div class="kv"><span>${s >= 1 ? 'Sale value now' : 'Value if it ripens at this health'}</span><span>$${Math.round(C.value * t.health)}</span>
+      <span>Days to ripe</span><span>${s >= 1 ? '–' : Math.ceil((C.days - t.grow) / (0.4 + 0.6 * t.health))}</span>
+      <span>Aphid crowding limit</span><span>${fmt(aphidK(t))}</span></div>`;
+  } else {
+    head = `${t.kind === 'flower' ? '🌼 ' : t.kind === 'bank' ? '🌾 ' : ''}${KIND_NAME[t.kind]} · ${label(t)}`;
+    if (t.kind === 'flower') body += `<p class="muted">Provides nectar and pollen. Parasitoids live about twice as long nearby, and parasitoid K rises by up to 18 within 2 tiles.</p>`;
+    if (t.kind === 'bank') body += `<p class="muted">Tussock grass refuge with alternative prey. Ladybirds can survive and breed here without aphids, then spill over into nearby crops.</p>`;
+    if (t.kind === 'empty') body += `<p class="muted">Drag a crop here, or a shelter plant to raise natural-enemy capacity around it.</p>`;
+    if (t.kind === 'dead') body += `<p class="muted">Pests destroyed this plant. Dig it for free, or plant over it.</p>`;
+  }
+  if (t.residue > 0) body += `<p class="muted" style="color:var(--bad)">🧪 Insecticide residue: ${t.residue} more days. Natural enemies here die quickly.</p>`;
+  body += `<h4>Pests</h4><div class="kv">
+    <span>🟢 Aphids</span><span>${fmt(t.aN + t.aA)}</span>
+    <span class="sub">nymphs</span><span>${fmt(t.aN)}</span><span class="sub">adults</span><span>${fmt(t.aA)}</span>
+    <span class="sub">parasitised (mummies)</span><span>${fmt(t.aM)}</span>
+    <span>🐛 Armyworm</span><span>${fmt(t.mE + t.mL + t.mP + t.mA)}</span>
+    <span class="sub">eggs</span><span>${fmt(t.mE)}</span><span class="sub">larvae (feeding)</span><span>${fmt(t.mL)}</span>
+    <span class="sub">pupae</span><span>${fmt(t.mP)}</span><span class="sub">moths</span><span>${fmt(t.mA)}</span>
+    <span class="sub">parasitised eggs (black)</span><span>${fmt(t.mEp)}</span></div>`;
+  body += `<h4>Natural enemies · population / carrying capacity</h4>
+    ${enemyRow('🐞', 'Ladybirds', t.lA + t.lJ, t.K.lady, `<div class="kv"><span class="sub">adults · larvae</span><span>${fmt(t.lA)} · ${fmt(t.lJ)}</span></div>`)}
+    ${enemyRow('🐝', 'Aphidius', t.wA, t.K.aph)}
+    ${enemyRow('🥚', 'Trichogramma', t.tA, t.K.tri)}`;
+  body += `<h4>Yesterday on this tile</h4><div class="kv">
+    <span>Prey eaten by ladybirds</span><span>${fmt(t.st.lady)}</span>
+    <span>Aphids parasitised</span><span>${fmt(t.st.wasp)}</span>
+    <span>Moth eggs parasitised</span><span>${fmt(t.st.tri)}</span>
+    ${t.kind === 'crop' ? `<span>Crop health lost</span><span>${(t.st.damage * 100).toFixed(1)}%</span>` : ''}</div>`;
+  // Functional-response readout at this tile's current densities
+  const aTot = t.aN + t.aA, [fA, fE] = frLady(aTot, t.mE), fW = frAphidius(t.aN), fT = frTricho(t.mE);
+  const satL = (fA + fE) * P.lady.h, satW = fW * P.aph.h;
+  body += `<div class="fr-note"><b>Functional response right now</b><br>
+    🐞 one ladybird eats <b>${fmt(fA + fE)}</b> prey/day (${Math.round(satL * 100)}% of its 50/day ceiling, Type II)<br>
+    🐝 one Aphidius parasitises <b>${fmt(fW)}</b> aphids/day (${Math.round(satW * 100)}% of 20/day, Type III${t.aN < 40 ? ': low aphid density gives them a refuge' : ''})<br>
+    🥚 one Trichogramma parasitises <b>${fmt(fT)}</b> eggs/day (Type II)</div>`;
+  el.innerHTML = `<button class="btn close-panel" data-close-panel aria-label="Close panel">✕</button><h3>${head}</h3>${body}`;
+}
+
+// ---------------------------------------------------------------- charts
+const SERIES = [
+  { key: 'aphid', name: 'Aphids', color: '#3987e5' },
+  { key: 'larva', name: 'Caterpillars', color: '#d95926' },
+  { key: 'lady', name: 'Ladybirds', color: '#199e70' },
+  { key: 'para', name: 'Parasitoids', color: '#c98500' },
+];
+function prep(canvas) {
+  const dpr = Math.min(devicePixelRatio, 2), w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+  const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+function drawSeries(canvas, hover) {
+  const { ctx, w, h } = prep(canvas); if (!w) return null;
+  const hist = G.history, pad = { l: 34, r: 78, t: 14, b: 20 };
+  const maxV = Math.max(1, ...hist.flatMap(s => SERIES.map(S => s[S.key])));
+  const top = Math.max(2, Math.ceil(Math.log10(1 + maxV)));
+  const X = d => pad.l + d / SEASON * (w - pad.l - pad.r), Y = v => h - pad.b - Math.log10(1 + v) / top * (h - pad.t - pad.b);
+  ctx.font = '10.5px system-ui,sans-serif'; ctx.textBaseline = 'middle';
+  for (let k = 0; k <= top; k++) {
+    const y = Y(10 ** k - 1);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#9fb48c'; ctx.textAlign = 'right'; ctx.fillText(k === 0 ? '0' : 10 ** k >= 1000 ? 10 ** (k - 3) + 'k' : String(10 ** k), pad.l - 5, y);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let d = 0; d <= SEASON; d += 30) ctx.fillText('d' + d, X(d), h - pad.b + 5);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.moveTo(pad.l, h - pad.b); ctx.lineTo(w - pad.r, h - pad.b); ctx.stroke();
+  const ends = [];
+  for (const S of SERIES) {
+    ctx.strokeStyle = S.color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+    hist.forEach((s, i) => { const x = X(s.day), y = Y(s[S.key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+    const last = hist[hist.length - 1]; ends.push({ S, x: X(last.day), y: Y(last[S.key]) });
+  }
+  // direct labels at line ends, nudged apart so they do not collide
+  ends.sort((a, b) => a.y - b.y);
+  ends.forEach((e, i) => { e.ly = i ? Math.max(e.y, ends[i - 1].ly + 11) : Math.max(e.y, pad.t + 5); });
+  const overflow = ends[ends.length - 1].ly - (h - pad.b - 5);
+  if (overflow > 0) ends.forEach(e => e.ly -= overflow);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '10.5px system-ui,sans-serif';
+  for (const e of ends) {
+    ctx.fillStyle = e.S.color; ctx.fillRect(e.x + 4, e.ly - 1, 8, 2);
+    ctx.fillStyle = '#cfe0bd'; ctx.fillText(e.S.name, e.x + 15, e.ly);
+  }
+  if (hover != null && hist[hover]) {
+    const s = hist[hover], x = X(s.day);
+    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, h - pad.b); ctx.stroke();
+    for (const S of SERIES) { const y = Y(s[S.key]); ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fillStyle = S.color; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#10200f'; ctx.stroke(); }
+  }
+  return { X, pad, w };
+}
+function wireChartHover(canvas, tipEl) {
+  const show = e => {
+    const r = canvas.getBoundingClientRect(), geo = drawSeries(canvas, null); if (!geo) return;
+    const day = Math.round((e.clientX - r.left - geo.pad.l) / (geo.w - geo.pad.l - geo.pad.r) * SEASON);
+    const idx = Math.max(0, Math.min(G.history.length - 1, day));
+    const s = G.history[idx]; drawSeries(canvas, idx);
+    tipEl.innerHTML = `<div><b style="margin:0;padding:0">Day ${s.day}</b></div>` + SERIES.map(S => `<div class="r"><i style="background:${S.color}"></i>${S.name}<b>${fmt(s[S.key])}</b></div>`).join('');
+    tipEl.style.display = 'block';
+    const x = geo.X(s.day); tipEl.style.left = (x > r.width / 2 ? x - tipEl.offsetWidth - 10 : x + 10) + 'px'; tipEl.style.top = '4px';
+  };
+  canvas.addEventListener('pointermove', show);
+  canvas.addEventListener('pointerdown', show);
+  canvas.addEventListener('pointerleave', () => { tipEl.style.display = 'none'; drawSeries(canvas, null); });
+}
+wireChartHover($('#chart'), $('#chartTip'));
+wireChartHover($('#endChart'), $('#endTip'));
+
+// Functional-response curves for the guide
+const FR = [
+  { name: 'Ladybird (II)', color: '#199e70', f: N => frLady(N, 0)[0] },
+  { name: 'Aphidius (III)', color: '#c98500', f: frAphidius },
+  { name: 'Trichogramma (II)', color: '#d55181', f: frTricho },
+];
+function drawFR(canvas, mode) {
+  const { ctx, w, h } = prep(canvas); if (!w) return;
+  const pad = { l: 38, r: 12, t: 12, b: 30 }, NMAX = 400;
+  const val = (c, N) => mode === 'rate' ? c.f(N) : (N > 0 ? c.f(N) / N : 0);
+  const peaks = FR.map(c => { let m = 0; for (let N = 0.5; N <= NMAX; N += 0.5) m = Math.max(m, val(c, N)); return m; });
+  const ymax = mode === 'rate' ? 35 : 1;
+  const X = N => pad.l + N / NMAX * (w - pad.l - pad.r), Y = v => h - pad.b - v / ymax * (h - pad.t - pad.b);
+  ctx.font = '10.5px system-ui,sans-serif'; ctx.fillStyle = '#9fb48c';
+  const ticks = mode === 'rate' ? [0, 10, 20, 30] : [0, 0.5, 1];
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const v of ticks) { const y = Y(v); ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke(); ctx.fillText(mode === 'rate' ? v : Math.round(v * 100) + '%', pad.l - 5, y); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let N = 0; N <= NMAX; N += 100) ctx.fillText(N, X(N), h - pad.b + 4);
+  ctx.fillText('Prey density N per tile', (pad.l + w - pad.r) / 2, h - 13);
+  FR.forEach((c, k) => {
+    ctx.strokeStyle = c.color; ctx.lineWidth = 2; ctx.beginPath();
+    for (let N = 0; N <= NMAX; N += 1) { let v = val(c, N === 0 ? 0.01 : N); if (mode !== 'rate') v /= peaks[k]; const x = X(N), y = Y(Math.min(ymax, v)); N ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  });
+}
+
+// ---------------------------------------------------------------- heat map views
+let view = 'farm';
+const HEAT = {
+  pests: { color: '#d95926', label: 'Pest pressure (aphids + 20 × caterpillars)', v: t => Math.log10(1 + t.aN + t.aA + 20 * t.mL) / Math.log10(3001), lo: '0', hi: '3000+' },
+  enemies: { color: '#199e70', label: 'Natural enemies present', v: t => Math.log10(1 + t.lA + t.lJ + t.wA + t.tA) / Math.log10(61), lo: '0', hi: '60+' },
+  capacity: { color: '#9085e9', label: 'Enemy carrying capacity K (shelter effect)', v: t => Math.min(1, ((t.K.lady - P.lady.K) / 15 + (t.K.aph - P.aph.K) / 30) / 2), lo: 'base', hi: 'high' },
+};
+function updateHeat() {
+  const H = HEAT[view];
+  for (const t of tiles) {
+    t.heat.visible = !!H;
+    if (H) { const v = Math.max(0, Math.min(1, H.v(t))); t.heat.material.color.set(H.color); t.heat.material.opacity = 0.08 + 0.72 * v; }
+  }
+}
+function setView(v) {
+  view = v;
+  document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  const L = $('#heatLegend'), H = HEAT[v];
+  document.body.classList.toggle('heat', !!H);
+  if (H) { L.style.display = 'block'; L.innerHTML = `${H.label}<div class="ramp" style="background:linear-gradient(90deg,${H.color}22,${H.color})"></div><div class="ends"><span>${H.lo}</span><span>${H.hi}</span></div>`; }
+  else L.style.display = 'none';
+  updateHeat();
+}
+document.querySelectorAll('#views button').forEach(b => b.onclick = () => setView(b.dataset.view));
+
+// ---------------------------------------------------------------- HUD, speed, hints
+let speed = 0, lastSpeed = 0.5;
+function setSpeed(s) {
+  if (G.over) s = 0;
+  if (s > 0) lastSpeed = s;
+  speed = s;
+  document.querySelectorAll('#speed button').forEach(b => b.classList.toggle('on', Number(b.dataset.speed) === s));
+}
+document.querySelectorAll('#speed button').forEach(b => b.onclick = () => setSpeed(Number(b.dataset.speed)));
+function refreshHUD() {
+  $('#day').textContent = `${G.day} / ${SEASON}`;
+  $('#seasonBar').style.width = G.day / SEASON * 100 + '%';
+  $('#money').textContent = '$' + Math.round(G.money);
+  dock.querySelectorAll('.tool').forEach(b => b.classList.toggle('poor', TOOL[b.dataset.tool].cost > G.money));
+}
+function hint() {
+  const crops = tiles.filter(t => t.kind === 'crop').length;
+  dock.querySelectorAll('.pulse').forEach(p => p.classList.remove('pulse'));
+  if (!crops && !G.stats.planted) dock.querySelector('[data-tool="cabbage"]').classList.add('pulse');
+  else if (tiles.some(t => t.kind === 'crop' && t.grow >= CROPS[t.crop].days)) dock.querySelector('[data-tool="sickle"]').classList.add('pulse');
+}
+$('#panelBtn').onclick = () => $('#panel').classList.toggle('open');
+$('#inspector').addEventListener('click', e => { if (e.target.closest('[data-close-panel]')) { $('#panel').classList.remove('open'); select(null); } });
+
+// ---------------------------------------------------------------- modals
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+let resumeSpeed = 0;
+function openGuide() { resumeSpeed = speed; setSpeed(0); openModal('guideModal'); requestAnimationFrame(() => { drawFR($('#frRate'), 'rate'); drawFR($('#frProp'), 'prop'); }); }
+$('#guideBtn').onclick = openGuide;
+$('#startGuide').onclick = () => { closeModal('startModal'); openGuide(); resumeSpeed = 0.5; };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { closeModal('guideModal'); setSpeed(resumeSpeed); });
+$('#startBtn').onclick = () => { closeModal('startModal'); setSpeed(0.5); toast('🌱 The season has started. Drag 🥬 cabbages onto the soil to begin.', 'good'); };
+$('#againBtn').onclick = () => location.reload();
+
+function endSeason() {
+  G.over = true; setSpeed(0); endDrag();
+  let sold = 0;
+  for (const t of tiles) if (t.kind === 'crop' && t.grow >= CROPS[t.crop].days) { const v = Math.round(CROPS[t.crop].value * t.health); G.money += v; sold += v; G.stats.harvested++; G.stats.revenue += v; }
+  refreshHUD();
+  const S = G.stats, profit = G.money - START_MONEY;
+  $('#rating').textContent = G.money >= 1500 ? '🏆 IPM master' : G.money >= 800 ? '🌟 Skilled grower' : G.money >= START_MONEY ? '🙂 Break-even farmer' : '🥀 Pests won this season';
+  $('#endStats').innerHTML = [
+    ['Final money', '$' + Math.round(G.money)], ['Profit', (profit >= 0 ? '+$' : '−$') + Math.abs(Math.round(profit))],
+    ['Crops sold', S.harvested], ['Crops killed', S.lost],
+    ['Revenue', '$' + Math.round(S.revenue)], ['Spending', '$' + Math.round(S.spent)],
+    ['Peak aphids', fmt(S.peakAphid)], ['Peak caterpillars', fmt(S.peakLarva)],
+  ].map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+  const L = [];
+  if (S.lost > S.harvested) L.push(`More crops were killed (${S.lost}) than sold (${S.harvested}). Harvest ripe crops (gold ring) promptly, and step in before aphid and caterpillar numbers reach the hundreds on a tile.`);
+  if (sold) L.push(`Ripe crops still standing at the end were sold automatically for $${sold}.`);
+  if (S.sprays >= 3) L.push(`You sprayed ${S.sprays} times. Insecticide kills natural enemies more reliably than pests, and the residue stops them recolonising, so pests often <b>resurge</b> afterwards.`);
+  if (!S.shelters) L.push('You planted no shelter plants. Without nectar, pollen or refuge, enemy carrying capacity stayed at its base level and wild enemies arrived late (around day 30–40).');
+  else L.push(`You planted ${S.shelters} shelter plant(s). They raised enemy K nearby and brought wild enemies in earlier. Compare the Enemy K and Pests views next season.`);
+  if (!S.agents) L.push('You released no biological control agents. Early releases while pest numbers are low stop the exponential phase before it takes off.');
+  L.push('Ladybirds (Type II) knock outbreaks down quickly but saturate at about 50 prey/day and breed slowly. Parasitoids (Type III) are weak against rare hosts but multiply one-for-one with their hosts and keep populations in check once established.');
+  $('#lessons').innerHTML = L.map(x => `<li>${x}</li>`).join('');
+  openModal('endModal');
+  requestAnimationFrame(() => drawSeries($('#endChart'), null));
+}
+
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Escape') { if (drag) endDrag(); else if ($('#guideModal').classList.contains('show')) { closeModal('guideModal'); setSpeed(resumeSpeed); } }
+  if (document.querySelector('.modal.show')) return;
+  if (e.code === 'Space') { e.preventDefault(); setSpeed(speed ? 0 : lastSpeed); }
+  if (e.key === '1') setSpeed(0.5); if (e.key === '2') setSpeed(1); if (e.key === '3') setSpeed(2);
+  if (e.key === 'g' || e.key === 'G') openGuide();
+});
+function fitCamera() {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  const d = 14.8 * Math.max(1, 1.1 / camera.aspect);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target).addScaledVector(dir, Math.min(controls.maxDistance, d));
+}
+fitCamera();
+addEventListener('resize', () => {
+  fitCamera(); renderer.setSize(innerWidth, innerHeight);
+  drawSeries($('#chart'), null);
+});
+
+// ---------------------------------------------------------------- main loop
+tiles.forEach(buildPlant); computeShelter();
+setSpeed(0); refreshHUD(); renderInspector(); hint(); drawSeries($('#chart'), null);
+let last = performance.now(), acc = 0, uiT = 0;
+function loop(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now; const time = now / 1000;
+  if (!G.over && speed > 0) {
+    acc += dt * speed;
+    while (acc >= SUB) {
+      acc -= SUB;
+      if (substep()) {
+        tiles.forEach(t => { if (t.residue === 0 && t.mesh.material.emissive.getHex()) styleTile(t); });
+        drawSeries($('#chart'), null); hint();
+        if (G.day >= SEASON) { endSeason(); break; }
+      }
+    }
+  }
+  uiT += dt;
+  if (uiT > 0.25) { uiT = 0; refreshHUD(); updateHeat(); if (G.selected) renderInspector(); }
+  updatePlants(time); updateInsects(time);
+  controls.update(); renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
