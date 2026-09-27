@@ -42,11 +42,13 @@
 
   #heatLegend{position:fixed;z-index:4;left:10px;top:84px;padding:7px 10px;font-size:12px;display:none}
   #heatLegend .ramp{width:140px;height:9px;border-radius:5px;margin:4px 0 2px}
+  #heatLegend .st{display:flex;align-items:center;gap:6px;margin-top:3px}
+  #heatLegend .st i{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;color:#10200f}
   #heatLegend .ends{display:flex;justify-content:space-between;color:var(--ink-3);font-size:11px}
 
   /* log */
   #log{position:fixed;z-index:4;left:10px;top:84px;width:min(360px,calc(100vw - 20px));display:flex;flex-direction:column;gap:6px;pointer-events:none}
-  body.heat #log{top:140px}
+  body.heat #log{top:170px}
   .toast{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--leaf);border-radius:10px;padding:7px 10px;font-size:12.5px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.3);transition:opacity .5s,transform .5s}
   .toast b{color:var(--ink-3);font-weight:600;margin-right:4px}
   .toast.warn{border-left-color:var(--gold)} .toast.bad{border-left-color:var(--bad)} .toast.good{border-left-color:var(--good)} .toast.enemy{border-left-color:var(--s-lady)}
@@ -58,6 +60,14 @@
   #inspector h3{margin:0 0 6px;font:700 17px/1.2 Georgia,serif;color:#fff5c8}
   #inspector h4{margin:12px 0 5px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
   #inspector .muted{color:var(--ink-3);font-size:12.5px}
+  .gauge{position:relative;height:10px;border-radius:5px;background:var(--panel-2);margin:8px 0 18px}
+  .gauge i{display:block;height:100%;border-radius:5px}
+  .gauge b{position:absolute;top:-3px;width:2px;height:16px;background:var(--ink)}
+  .gauge b span{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;color:var(--ink-2)}
+  .rec{margin:8px 0;padding:8px 10px;border-radius:10px;background:var(--panel-2);font-size:12.5px;color:var(--ink-2)}
+  .rec-h{display:flex;align-items:center;gap:6px;margin-bottom:3px;color:var(--ink)}
+  .rec-h i{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:11px;color:#10200f}
+  .formula{font-size:11px;color:var(--ink-3);line-height:1.45;margin-bottom:4px}
   .meter{height:7px;border-radius:4px;background:var(--panel-2);overflow:hidden;margin:3px 0 6px}
   .meter i{display:block;height:100%;border-radius:4px}
   .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12.5px}
@@ -115,14 +125,23 @@
   table.params{border-collapse:collapse;width:100%;font-size:12.5px}
   table.params th,table.params td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left}
   table.params th{color:var(--ink-3);font-weight:600}
+  .pyramid{display:flex;flex-direction:column;align-items:center;gap:3px;margin:10px 0}
+  .pyramid div{padding:6px 10px;border-radius:8px;background:rgba(169,207,99,.14);border:1px solid var(--line);text-align:center;font-size:12.5px;color:var(--ink)}
   .end-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
   .end-stats div{border:1px solid var(--line);border-radius:10px;padding:8px}
   .end-stats span{display:block;font-size:11px;color:var(--ink-3)}
   .end-stats b{font-size:17px;color:var(--gold)}
   .rating{font:700 20px Georgia,serif;color:var(--good)}
+  .ipm-badge{display:inline-block;margin-left:8px;padding:3px 10px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);font:600 13px system-ui,sans-serif;color:var(--ink);vertical-align:middle}
+  .scorecard{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:10px}
+  .sc-row .top{display:flex;justify-content:space-between;font-size:13px}
+  .sc-row .muted{font-size:11.5px;color:var(--ink-3)}
+  @media (max-width:760px){.scorecard{grid-template-columns:1fr}}
   #endChart{height:200px}
   .kbd{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:12px}
 
+  @media (max-width:1320px){ .tool{width:60px;height:76px} .tool .ic{font-size:26px} .tool .nm{font-size:9.5px} #dock{gap:4px} }
+  @media (max-width:1060px) and (min-width:761px){ .tool{width:50px;height:58px} .tool .nm{display:none} .dock-sep{margin:4px 0} }
   @media (max-width:980px){
     #panelBtn{display:inline-block}
     .close-panel{display:inline-block}
@@ -137,10 +156,11 @@
     .brand b{font-size:15px}
     .stat{min-width:70px}
     .stat strong{font-size:15px}
+    .stat.opt{display:none}
     #dock{flex-wrap:wrap;justify-content:center;width:calc(100vw - 20px)}
     .dock-sep{display:none}
-    .tool{width:calc((100% - 30px)/6);min-width:48px;height:66px}
-    .tool .ic{font-size:24px}
+    .tool{width:calc((100% - 42px)/8);min-width:38px;height:58px}
+    .tool .ic{font-size:22px}
     .tool .nm{display:none}
     #panel{bottom:170px;max-height:40dvh}
     canvas.chart{height:110px}
@@ -160,6 +180,8 @@
   <div class="brand"><b>Biocontrol Farm</b><span>Biological control &amp; functional response</span></div>
   <div class="stat"><span>Day</span><strong id="day">0 / 120</strong><div class="season"><i id="seasonBar"></i></div></div>
   <div class="stat"><span>Money</span><strong id="money">$250</strong></div>
+  <div class="stat opt" title="Daily temperature and degree-days accumulated above the 10 °C development threshold"><span>Temp · degree-days</span><strong id="temp">18 °C · 0 DD</strong></div>
+  <div class="stat opt" title="Resistance of the pest population to the broad-spectrum insecticide / to Bt"><span>Resistance</span><strong id="resist">0% · Bt 0%</strong></div>
   <div class="seg" id="speed" role="group" aria-label="Game speed">
     <button data-speed="0" title="Pause (Space)" aria-label="Pause">⏸</button>
     <button data-speed="0.5" title="Normal speed (1)" aria-label="Normal speed">▶</button>
@@ -170,6 +192,7 @@
     <button data-view="farm" class="on">Farm</button>
     <button data-view="pests">Pests</button>
     <button data-view="enemies">Enemies</button>
+    <button data-view="threshold">ET/EIL</button>
     <button data-view="capacity">Enemy K</button>
   </div>
   <div class="spacer"></div>
@@ -210,11 +233,12 @@
   <h2>📖 Field guide</h2>
   <h3>How to play</h3>
   <ul>
-    <li><b>🥬 Cabbage</b> ($10, 32 days, sells for up to $45) and <b>🍅 Tomato</b> ($20, 55 days, up to $110). The sale price is multiplied by crop health. Mature crops start to rot 12 days after ripening.</li>
+    <li><b>🥬 Cabbage</b> ($10, 40 days, sells for up to $45) and <b>🍅 Tomato</b> ($20, 70 days, up to $110). The sale price is multiplied by crop health. Mature crops start to rot 12 days after ripening.</li>
     <li><b>🧺 Harvest</b> ripe crops (they show a gold ring). <b>⛏️ Dig</b> clears a tile ($2, free if the plant is dead).</li>
     <li><b>🌼 Flower strip</b> and <b>🌾 Beetle bank</b> take up a tile (they can replace a crop). They raise natural-enemy <b>carrying capacity K</b> within 2 tiles and attract wild enemies earlier in the season.</li>
     <li><b>🐞 🐝 🥚</b> Buy and release natural enemies onto a tile. They spread out on their own.</li>
-    <li><b>🧪 Insecticide</b> works fast but kills about 95% of natural enemies and leaves a residue for 6 days, which often causes the pest to <i>resurge</i>.</li>
+    <li><b>🪤 Pheromone trap</b> ($10) records moth flights and halves egg laying within 1 tile (mating disruption). <b>🔍 Scout</b> shows a tile's ET/EIL decision.</li>
+    <li><b>🦠 Bt</b> ($10) is a selective biopesticide that kills caterpillars only and spares natural enemies. <b>🧪 Broad-spectrum</b> ($8) kills aphids and caterpillars but also about 95% of natural enemies, leaves a 6-day residue, and builds resistance every time you use it.</li>
     <li>Keyboard: <span class="kbd">Space</span> pause, <span class="kbd">1</span>–<span class="kbd">3</span> speed, <span class="kbd">G</span> guide, <span class="kbd">Esc</span> cancel a drag.</li>
   </ul>
   <h3>Functional response: how killing rate depends on prey density</h3>
@@ -234,6 +258,25 @@
     <li><b>Numerical response:</b> a ladybird needs many prey to produce one offspring (about 1 juvenile per 30 prey, 18-day development), so its population grows slowly. A parasitoid turns <i>each</i> host into offspring (a mummy, or a black parasitised egg) and closely tracks the pest after a 9–10 day delay.</li>
     <li><b>Carrying capacity (K):</b> natural enemies only recruit up to K on each tile. Nectar and pollen from flower strips (for parasitoids and ladybirds) and refuge and alternative prey on beetle banks (for predators) raise K and survival. Use the <b>Enemy K</b> view to see it.</li>
   </ul>
+  <h3>Integrated Pest Management (IPM)</h3>
+  <p>IPM combines tactics in order of preference, and uses chemicals only when monitoring shows they pay for themselves.</p>
+  <div class="pyramid">
+    <div style="width:44%">🧪 Broad-spectrum chemicals: last resort</div>
+    <div style="width:56%">🦠 Selective control: Bt, pheromone mating disruption</div>
+    <div style="width:68%">🐞 Biological control: conservation, augmentation, wild enemies</div>
+    <div style="width:80%">📊 Decision rules: economic threshold (ET) and injury level (EIL)</div>
+    <div style="width:90%">🔍 Monitoring: scouting, 🪤 pheromone traps, degree-day forecasts</div>
+    <div style="width:100%">🌼 Prevention: habitat for enemies (flower strips, beetle banks), crop timing</div>
+  </div>
+  <ul>
+    <li><b>Economic injury level (Pedigo):</b> EIL = C / (V · D · K · T), the pest density at which the damage prevented equals the cost of control. <i>C</i> = $8 spray, <i>V</i> = crop value × health, <i>D</i> = 0.00006 health lost per aphid per day, <i>K</i> = spray efficacy, <i>T</i> = days until harvest (max 20). Close to harvest <i>T</i> is small, so the EIL rises and spraying no longer pays.</li>
+    <li><b>Economic threshold (action threshold):</b> ET = EIL × e<sup>−0.15 × 3</sup> ≈ 0.64 × EIL. You act at the ET, not the EIL, because a growing pest population would pass the EIL before control takes effect.</li>
+    <li><b>Aphid-equivalents:</b> one feeding caterpillar injures the crop as much as 50 aphids, so both pests are measured on one scale.</li>
+    <li><b>Enemy-adjusted threshold:</b> above the ET, first compare the daily kill by natural enemies (from their functional responses) with the pest's daily growth. If the enemies are winning, hold off, because a spray would remove free control.</li>
+    <li><b>Degree-days:</b> insect development depends on temperature. Each day adds (T − 10 °C) degree-days, and a moth egg needs about 64 DD to hatch. The pheromone-trap <b>biofix</b> (first moth flight) plus the temperature forecast predicts when larvae will appear. Hot mid-summer days speed up every insect in the game.</li>
+    <li><b>Resistance:</b> every broad-spectrum application raises resistance by about 10% of what remains (Bt by about 4%). It fades slowly as susceptible pests immigrate. Resistance lowers <i>K</i>, which raises the EIL. Calendar spraying builds it fastest.</li>
+    <li><b>Selectivity and resurgence:</b> broad-spectrum sprays kill natural enemies more thoroughly than pests. Survivors rebound without their enemies (<i>resurgence</i>). Selective tools like Bt keep biological control intact.</li>
+  </ul>
   <h3>Model parameters</h3>
   <table class="params">
     <tr><th>Organism</th><th>Role</th><th>Functional response</th><th>Key traits</th></tr>
@@ -250,6 +293,8 @@
   <h2>🌾 Season over</h2>
   <div class="rating" id="rating"></div>
   <div class="end-stats" id="endStats"></div>
+  <h3>IPM scorecard</h3>
+  <div class="scorecard" id="scorecard"></div>
   <div class="chart-wrap"><canvas id="endChart" class="chart"></canvas><div class="ctip" id="endTip"></div></div>
   <div class="legend" style="margin-top:6px">
     <span><i style="background:var(--s-aphid)"></i>Aphids</span>
@@ -274,12 +319,12 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // Population model. Plain JS with no DOM or Three.js, so it can be tested headless.
 const GW = 8, GH = 8, SEASON = 120, START_MONEY = 250, SUB = 0.25;
 const CROPS = {
-  cabbage: { name: 'Cabbage', icon: '🥬', cost: 10, value: 45, days: 32 },
-  tomato:  { name: 'Tomato',  icon: '🍅', cost: 20, value: 110, days: 55 },
+  cabbage: { name: 'Cabbage', icon: '🥬', cost: 10, value: 45, days: 40 },
+  tomato:  { name: 'Tomato',  icon: '🍅', cost: 20, value: 110, days: 70 },
 };
 const P = {
-  aphid: { fec: 1.5, dev: 6.5, mN: 0.05, mA: 0.1, dmg: 0.00006 },
-  moth:  { fec: 4, egg: 4, larva: 12, pupa: 7, mA: 0.15, dmg: 0.003 },
+  aphid: { fec: 1.9, dev: 6.5, mN: 0.05, mA: 0.1, dmg: 0.00006, alate: 0.06, crowdAlate: 0.4, alateLoss: 0.25 },
+  moth:  { fec: 5, egg: 4, larva: 12, pupa: 7, mA: 0.15, dmg: 0.003, stay: 0.35, spread: 4, move: 0.3 },
   lady:  { a: 0.8, ae: 0.5, h: 0.02, conv: 0.035, dev: 18, m: 0.02, K: 3 },
   aph:   { b: 0.0015, h: 0.05, dev: 10, yield: 0.7, m: 0.14, K: 4 },
   tri:   { a: 1.2, h: 0.03, dev: 9, yield: 1.3, m: 0.25, K: 6 },
@@ -423,12 +468,12 @@ function distributeEggs() {
   for (const t of tiles) {
     if (t.eggOut <= 0) continue;
     const eggs = t.eggOut; t.eggOut = 0;
-    const local = t.kind === 'crop' ? 0.5 : 0;
+    const local = t.kind === 'crop' ? P.moth.stay : 0;
     t.mE += eggs * local;
     let dest = t.n3.filter(o => o.kind === 'crop');
     if (!dest.length) { const all = tiles.filter(o => o.kind === 'crop' && o !== t); if (!all.length) continue; dest = [pick(all)]; }
-    const share = eggs * (1 - local) / Math.min(3, dest.length);
-    for (let k = 0; k < Math.min(3, dest.length); k++) pick(dest).mE += share;
+    const n = Math.min(P.moth.spread, dest.length), share = eggs * (1 - local) / n;
+    for (let k = 0; k < n; k++) pick(dest).mE += share;
   }
 }
 
@@ -448,8 +493,10 @@ function disperse() {
   for (const t of tiles) {
     const aTot = t.aN + t.aA;
     // Winged aphids: more leave when crowded; all leave when there is no host plant
-    const aFrac = t.kind === 'crop' ? 0.02 + 0.25 * Math.max(0, aTot / aphidK(t) - 0.5) : 0.9;
-    move(t, 'aA', aFrac, 0.4, t.n2.filter(o => o.kind === 'crop'), () => 1);
+    const aFrac = t.kind === 'crop' ? P.aphid.alate + P.aphid.crowdAlate * Math.max(0, aTot / aphidK(t) - 0.3) : 0.9;
+    move(t, 'aA', aFrac, P.aphid.alateLoss, t.n2.filter(o => o.kind === 'crop'), () => 1);
+    // Moths roam between tiles, preferring crops
+    move(t, 'mA', P.moth.move, 0.05, t.n2, o => o.kind === 'crop' ? 3 : 1);
     // Ladybirds
     const [fA, fE] = frLady(aTot, t.mE);
     const starve = Math.max(0, 1 - (fA + fE + 12 * Math.min(1, t.bw) + 5 * Math.min(1, t.fw)) / 15);
@@ -581,11 +628,11 @@ function immigrate() {
   const maxBy = f => tiles.reduce((b, t) => f(t) > f(b) ? t : b, tiles[0]);
 
   if (crops.length) {
-    if (Math.random() < 0.1 + G.day / 300) {
-      const t = pick(crops); t.aA += 2 + Math.random() * 3;
+    if (Math.random() < 0.16 + G.day / 250) {
+      const t = pick(crops); t.aA += 3 + Math.random() * 3;
       if (!G.seen.aphid) { G.seen.aphid = true; hooks.emit(`🟢 Winged aphids landed on ${label(t)}. They give birth to live young and multiply fast.`, 'warn'); }
     }
-    if (G.day > 12 && Math.random() < 0.08 + G.day / 800) {
+    if (G.day > 10 && Math.random() < 0.12 + G.day / 600) {
       const t = pick(crops); t.mA += 1 + Math.random();
       if (!G.seen.moth) { G.seen.moth = true; hooks.emit(`🦋 Armyworm moths are laying eggs around ${label(t)}. The larvae hatch in about 4 days.`, 'warn'); }
     }
@@ -610,7 +657,8 @@ function immigrate() {
 }
 
 function extinction() {
-  for (const t of tiles) for (const k of POOLS) if (t[k] > 0 && t[k] < 0.3 && Math.random() < 0.5) t[k] = 0;
+  // Tiny resident populations can die out locally; mobile moths and freshly laid eggs are exempt
+  for (const t of tiles) for (const k of POOLS) if (k !== 'mA' && k !== 'mE' && t[k] > 0 && t[k] < 0.15 && Math.random() < 0.4) t[k] = 0;
 }
 
 function census() {
@@ -643,8 +691,8 @@ G.history.push(census());
 
 // ---------------------------------------------------------------- tools
 const TOOLS = [
-  { id: 'cabbage', icon: '🥬', name: 'Cabbage', cost: 10, brush: true, hint: 'Plant on empty soil. Ripe in 32 days, sells for up to $45.' },
-  { id: 'tomato', icon: '🍅', name: 'Tomato', cost: 20, brush: true, hint: 'Plant on empty soil. Ripe in 55 days, sells for up to $110.' },
+  { id: 'cabbage', icon: '🥬', name: 'Cabbage', cost: 10, brush: true, hint: 'Plant on empty soil. Ripe in 40 days, sells for up to $45.' },
+  { id: 'tomato', icon: '🍅', name: 'Tomato', cost: 20, brush: true, hint: 'Plant on empty soil. Ripe in 70 days, sells for up to $110.' },
   { id: 'sickle', icon: '🧺', name: 'Harvest', cost: 0, brush: true, hint: 'Sweep across ripe crops (gold ring) to sell them.' },
   { id: 'shovel', icon: '⛏️', name: 'Dig', cost: 2, hint: 'Clear a crop, dead plant (free) or shelter plant.' },
   'sep',
@@ -654,9 +702,12 @@ const TOOLS = [
   { id: 'lady', icon: '🐞', name: 'Ladybird ×10', cost: 30, hint: 'Predator with a Type II functional response. Eats aphids and moth eggs.' },
   { id: 'aphidius', icon: '🐝', name: 'Aphidius ×20', cost: 25, hint: 'Aphid parasitoid with a Type III response. Delivered as 15 mummies and 5 adults.' },
   { id: 'tricho', icon: '🥚', name: 'Tricho card', cost: 20, hint: 'Card of 60 parasitised moth eggs. Trichogramma wasps emerge over about 9 days.' },
-  { id: 'spray', icon: '🧪', name: 'Insecticide', cost: 8, area: 'plus', hint: 'Kills most pests on 5 tiles in a + shape, plus about 95% of natural enemies. Residue lasts 6 days.' },
   'sep',
-  { id: 'lens', icon: '🔍', name: 'Scout', cost: 0, hint: 'Drop on a tile to inspect its populations.' },
+  { id: 'trap', icon: '🪤', name: 'Pheromone trap', cost: 10, area: 2, hint: 'Monitoring: catches moths (biofix + degree-day forecast), mass-traps within 2 tiles and halves egg laying within 1 tile (mating disruption).' },
+  { id: 'lens', icon: '🔍', name: 'Scout', cost: 0, hint: 'Drop on a tile to sample it: life stages, natural enemies, and the ET/EIL decision.' },
+  'sep',
+  { id: 'bt', icon: '🦠', name: 'Bt spray', cost: 10, area: 'plus', hint: 'Selective biopesticide: kills caterpillars only on 5 tiles in a + shape. Spares natural enemies. Resistance builds slowly.' },
+  { id: 'spray', icon: '🧪', name: 'Broad-spectrum', cost: 8, area: 'plus', hint: 'Kills aphids and caterpillars on 5 tiles in a + shape, plus about 95% of natural enemies. Residue lasts 6 days. Each use builds resistance.' },
 ];
 const TOOL = Object.fromEntries(TOOLS.filter(t => t !== 'sep').map(t => [t.id, t]));
 const KIND_NAME = { empty: 'Bare soil', dead: 'Dead plant', flower: 'Flower strip', bank: 'Beetle bank' };
@@ -784,6 +835,17 @@ function buildPlant(t) {
     }
   } else { t.plant = null; styleTile(t); return; }
   scene.add(g); t.plant = g; styleTile(t);
+}
+const trapMat = std(0xf4f1e6, { roughness: 0.6 }), lureMat = std(0xd8342a), stakeMat = std(0x8a6a44);
+function buildTrap(t) {
+  if (t.trap && !t.trapMesh) {
+    const g = new THREE.Group(), [wx, wz] = tilePos(t);
+    g.add(part(U.cyl, stakeMat, 0.012, 0.55, 0.012, 0, 0.275, 0));
+    const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.16, 3), trapMat);
+    roof.rotation.z = Math.PI / 2; roof.position.y = 0.58; roof.castShadow = true; g.add(roof);
+    g.add(part(U.sph, lureMat, 0.018, 0.018, 0.018, 0, 0.56, 0));
+    g.position.set(wx + 0.34, TOP, wz + 0.34); scene.add(g); t.trapMesh = g;
+  } else if (!t.trap && t.trapMesh) { scene.remove(t.trapMesh); t.trapMesh = null; }
 }
 function styleTile(t) {
   const m = t.mesh.material;
@@ -938,7 +1000,7 @@ function spend(c) { G.money -= c; G.stats.spent += c; }
 // ---------------------------------------------------------------- actions
 function canApply(id, t) {
   const tool = TOOL[id];
-  const cost = id === 'shovel' && t.kind === 'dead' ? 0 : tool.cost;
+  const cost = id === 'shovel' && (t.kind === 'dead' || t.kind === 'empty') ? 0 : tool.cost;
   if (G.over) return { ok: false, msg: 'The season is over' };
   if (cost > G.money) return { ok: false, msg: `Need $${cost}` };
   switch (id) {
@@ -950,8 +1012,11 @@ function canApply(id, t) {
       if (t.kind !== 'crop') return { ok: false, msg: 'No crop to harvest' };
       return t.grow >= CROPS[t.crop].days ? { ok: true, msg: `Sell for $${Math.round(CROPS[t.crop].value * t.health)}` } : { ok: false, msg: `Not ripe (${Math.round(sizeOf(t) * 100)}% grown)` };
     case 'shovel':
-      return t.kind === 'empty' ? { ok: false, msg: 'Nothing to dig' } : { ok: true, msg: cost ? `Clear tile · $${cost}` : 'Clear dead plant · free' };
-    case 'spray': return { ok: true, msg: `Spray 5 tiles · $${cost}` };
+      if (t.kind === 'empty') return t.trap ? { ok: true, msg: 'Remove trap · free' } : { ok: false, msg: 'Nothing to dig' };
+      return { ok: true, msg: cost ? `Clear tile · $${cost}` : 'Clear dead plant · free' };
+    case 'trap': return t.trap ? { ok: false, msg: 'Already has a trap' } : { ok: true, msg: `Hang trap · $${cost}` };
+    case 'spray': return { ok: true, msg: `Spray 5 tiles · kills ${Math.round(sprayK() * 100)}% · $${cost}` };
+    case 'bt': return { ok: true, msg: `Bt on 5 tiles · kills ${Math.round(P.bt.kL * (1 - G.res.bt) * 100)}% · $${cost}` };
     case 'lens': return { ok: true, msg: 'Scout this tile' };
     default: return { ok: true, msg: `Release · $${cost}` };
   }
@@ -993,16 +1058,21 @@ function apply(id, t) {
     }
     case 'sickle': {
       const C = CROPS[t.crop], val = Math.round(C.value * t.health);
-      G.money += val; G.stats.harvested++; G.stats.revenue += val;
+      G.money += val; G.stats.harvested++; G.stats.revenue += val; G.stats.healthSum = (G.stats.healthSum || 0) + t.health;
       t.aA *= 0.5; clearTile(t); floatText(t, `+$${val}`, 'pos'); break;
     }
+    case 'trap':
+      t.trap = true; spend(tool.cost); computeShelter(); floatText(t, `-$${tool.cost}`, 'neg');
+      toast(`🪤 Pheromone trap hung at ${label(t)}. It will record moth flights, and egg laying within 1 tile is halved by mating disruption.`, 'good');
+      break;
     case 'shovel': {
+      if (t.kind === 'empty' && t.trap) { t.trap = false; computeShelter(); break; }
       const cost = t.kind === 'dead' ? 0 : tool.cost; spend(cost); clearTile(t);
       if (wasShelter) computeShelter(); if (cost) floatText(t, `-$${cost}`, 'neg'); break;
     }
     case 'lens': select(t); break;
   }
-  if (id !== 'lens') { buildPlant(t); hint(); }
+  if (id !== 'lens') { buildPlant(t); buildTrap(t); hint(); }
   refreshHUD(); if (G.selected) renderInspector();
   return true;
 }
@@ -1070,7 +1140,7 @@ function hoverTip(e) {
   showHover(t, null);
   if (!t) { tip.style.display = 'none'; return; }
   const name = t.kind === 'crop' ? `${CROPS[t.crop].icon} ${CROPS[t.crop].name} ${Math.round(sizeOf(t) * 100)}% · health ${Math.round(t.health * 100)}%` : KIND_NAME[t.kind];
-  tip.innerHTML = `<b>${label(t)}</b> · ${name}<br>Aphids ${fmt(t.aN + t.aA)} · Caterpillars ${fmt(t.mL)}<br>🐞 ${fmt(t.lA + t.lJ)} · 🐝 ${fmt(t.wA)} · 🥚 ${fmt(t.tA)}${t.residue > 0 ? '<br>🧪 insecticide residue' : ''}`;
+  tip.innerHTML = `<b>${label(t)}</b> · ${name}<br>Aphids ${fmt(t.aN + t.aA)} · Caterpillars ${fmt(t.mL)}<br>🐞 ${fmt(t.lA + t.lJ)} · 🐝 ${fmt(t.wA)} · 🥚 ${fmt(t.tA)}${(() => { const st = status(t); return st ? `<br>${STATUS[st.level].icon} ${STATUS[st.level].name} (${fmt(st.pe)} / ET ${fmt(st.et)})` : ''; })()}${t.residue > 0 ? '<br>🧪 insecticide residue' : ''}`;
   tip.style.display = 'block';
   tip.style.left = Math.min(e.clientX + 16, innerWidth - 270) + 'px'; tip.style.top = e.clientY + 16 + 'px';
 }
@@ -1088,6 +1158,38 @@ function meter(v, color) { return `<div class="meter"><i style="width:${Math.max
 function enemyRow(icon, name, pop, K, extra = '') {
   return `<div class="enemy-row"><div class="top"><b>${icon} ${name}</b><span>${fmt(pop)} / K ${Math.round(K)}</span></div>${meter(pop / K, 'var(--s-lady)')}${extra}</div>`;
 }
+function ipmBlock(t, st) {
+  const e = eilParts(t), b = bioBalance(t), S = STATUS[st.level];
+  const top = Math.max(st.eil * 1.6, st.pe * 1.1, 1), pos = v => Math.min(100, v / top * 100);
+  let rec;
+  if (st.level === 'ok') rec = 'No action needed. Keep scouting and let natural enemies work.';
+  else if (b.winning) rec = `Natural enemies are removing ${fmt(b.kill)}/day against ${fmt(b.growth)}/day of new pests. <b>Hold</b> and re-scout in 2 days. A spray now would kill the enemies that are winning.`;
+  else if (LARVA_EQ * t.mL > t.aN + t.aA) rec = `<b>Act:</b> caterpillars dominate and no enemy attacks larvae. Use selective 🦠 Bt (spares enemies), and 🥚 Trichogramma against the next egg wave.`;
+  else rec = `<b>Act:</b> aphids are outgrowing their enemies (${fmt(b.kill)} vs ${fmt(b.growth)}/day). Release 🐝/🐞 now, or use 🧪 broad-spectrum as a last resort (it currently kills ${Math.round(sprayK() * 100)}%).`;
+  if (st.level === 'eil') rec = `Economic damage is already happening: the lost crop value now exceeds the cost of control. ` + rec;
+  return `<h4>IPM decision · economic threshold</h4>
+    <div class="kv"><span>Pest pressure</span><span>${fmt(st.pe)} aphid-eq</span></div>
+    <div class="muted" style="font-size:11.5px">aphids ${fmt(t.aN + t.aA)} + ${LARVA_EQ} × ${fmt(t.mL)} larvae (one larva injures like ${LARVA_EQ} aphids)</div>
+    <div class="gauge"><i style="width:${pos(st.pe)}%;background:${S.color}"></i><b style="left:${pos(st.et)}%"><span>ET</span></b><b style="left:${pos(st.eil)}%"><span>EIL</span></b></div>
+    <div class="kv"><span>Economic threshold (ET)</span><span>${fmt(st.et)}</span><span>Economic injury level (EIL)</span><span>${fmt(st.eil)}</span>
+    <span>Enemy kill vs pest growth</span><span>${fmt(b.kill)} vs ${fmt(b.growth)} /day</span></div>
+    <div class="rec"><div class="rec-h"><i style="background:${S.color}">${S.icon}</i><b>${S.name}</b></div>${rec}</div>
+    <div class="formula">EIL = C / (V·D·K·T) = $${e.C} / ($${e.V.toFixed(0)} × ${e.D} × ${e.K.toFixed(2)} × ${e.T.toFixed(0)} d) = <b>${fmt(e.eil)}</b><br>
+    C: spray cost · V: crop value × health · D: health lost per aphid per day · K: spray efficacy (falls with resistance) · T: days of exposure (to harvest, max ${P.ipm.tMax})<br>
+    ET = EIL × e<sup>−r·lag</sup> = EIL × ${Math.exp(-P.ipm.r * P.ipm.lag).toFixed(2)}: act ${P.ipm.lag} days before the growing population would reach the EIL.</div>`;
+}
+function fieldSummary() {
+  const st = tiles.map(status).filter(Boolean), over = st.filter(x => x.level !== 'ok').length, eilN = st.filter(x => x.level === 'eil').length;
+  const catches = G.trapLog.slice(-7).filter(v => v !== null);
+  const catchTxt = tiles.some(t => t.trap) ? `${catches.length ? (catches.reduce((a, b) => a + b, 0) / catches.length).toFixed(1) : '0'} moths/trap/day (last 7 days)` : 'no traps hung';
+  return `<h4>Field IPM status</h4><div class="kv">
+    <span>Crop tiles above ET · above EIL</span><span>${over} · ${eilN} of ${st.length}</span>
+    <span>Temperature · degree-days (>10 °C)</span><span>${Math.round(G.temps[G.day])} °C · ${Math.round(G.dd)}</span>
+    <span>Development speed vs reference</span><span>${Math.round(G.f * 100)}%</span>
+    <span>🪤 Pheromone traps</span><span>${catchTxt}</span>
+    <span>Moth biofix</span><span>${G.biofix === null ? 'not yet' : 'day ' + G.biofix}</span>
+    <span>Resistance: broad-spectrum · Bt</span><span>${Math.round(G.res.broad * 100)}% · ${Math.round(G.res.bt * 100)}%</span></div>`;
+}
 function renderInspector() {
   const el = $('#inspector'), t = G.selected;
   if (!t) {
@@ -1095,7 +1197,10 @@ function renderInspector() {
       <h4>Quick start</h4><ol class="muted" style="padding-left:18px;margin:0">
       <li>Sweep 🥬 cabbages across some tiles.</li><li>Watch for aphids (green dots) and caterpillars.</li>
       <li>Plant 🌼/🌾 shelter strips between crops so natural enemies build up early.</li>
-      <li>Release 🐞 🐝 🥚 where pests are building up. Only 🧪 spray when you must.</li><li>Sweep 🧺 across ripe crops (gold ring) to sell them.</li></ol>`;
+      <li>Scout tiles and use the <b>ET/EIL</b> view: act only where pests pass the economic threshold <i>and</i> natural enemies aren't keeping up.</li>
+      <li>Hang 🪤 traps to detect moth flights, then use the degree-day forecast to time 🥚 Trichogramma or 🦠 Bt.</li>
+      <li>Release 🐞 🐝 where aphids build up. Use 🧪 broad-spectrum only as a last resort.</li><li>Sweep 🧺 across ripe crops (gold ring) to sell them.</li></ol>
+      ${fieldSummary()}`;
     return;
   }
   let head, body = '';
@@ -1116,6 +1221,9 @@ function renderInspector() {
     if (t.kind === 'dead') body += `<p class="muted">Pests destroyed this plant. Dig it for free, or plant over it.</p>`;
   }
   if (t.residue > 0) body += `<p class="muted" style="color:var(--bad)">🧪 Insecticide residue: ${t.residue} more days. Natural enemies here die quickly.</p>`;
+  if (t.trap) body += `<p class="muted">🪤 Pheromone trap: caught ${fmt(t.lastCatch || 0)} moths yesterday. Egg laying is halved within 1 tile.</p>`;
+  const st = status(t);
+  if (st) body += ipmBlock(t, st);
   body += `<h4>Pests</h4><div class="kv">
     <span>🟢 Aphids</span><span>${fmt(t.aN + t.aA)}</span>
     <span class="sub">nymphs</span><span>${fmt(t.aN)}</span><span class="sub">adults</span><span>${fmt(t.aA)}</span>
@@ -1241,16 +1349,25 @@ function drawFR(canvas, mode) {
 
 // ---------------------------------------------------------------- heat map views
 let view = 'farm';
+const STATUS = {
+  ok: { color: '#3fae5a', icon: '✓', name: 'Below ET: keep monitoring' },
+  et: { color: '#e0a526', icon: '!', name: 'Above ET: decide now' },
+  eil: { color: '#e5484d', icon: '✕', name: 'Above EIL: losing money' },
+};
 const HEAT = {
   pests: { color: '#d95926', label: 'Pest pressure (aphids + 20 × caterpillars)', v: t => Math.log10(1 + t.aN + t.aA + 20 * t.mL) / Math.log10(3001), lo: '0', hi: '3000+' },
   enemies: { color: '#199e70', label: 'Natural enemies present', v: t => Math.log10(1 + t.lA + t.lJ + t.wA + t.tA) / Math.log10(61), lo: '0', hi: '60+' },
+  threshold: { status: true, label: 'Economic threshold status (crop tiles)' },
   capacity: { color: '#9085e9', label: 'Enemy carrying capacity K (shelter effect)', v: t => Math.min(1, ((t.K.lady - P.lady.K) / 15 + (t.K.aph - P.aph.K) / 30) / 2), lo: 'base', hi: 'high' },
 };
 function updateHeat() {
   const H = HEAT[view];
   for (const t of tiles) {
     t.heat.visible = !!H;
-    if (H) { const v = Math.max(0, Math.min(1, H.v(t))); t.heat.material.color.set(H.color); t.heat.material.opacity = 0.08 + 0.72 * v; }
+    if (H && H.status) {
+      const st = status(t); t.heat.visible = !!st;
+      if (st) { t.heat.material.color.set(STATUS[st.level].color); t.heat.material.opacity = 0.55; }
+    } else if (H) { const v = Math.max(0, Math.min(1, H.v(t))); t.heat.material.color.set(H.color); t.heat.material.opacity = 0.08 + 0.72 * v; }
   }
 }
 function setView(v) {
@@ -1258,7 +1375,8 @@ function setView(v) {
   document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
   const L = $('#heatLegend'), H = HEAT[v];
   document.body.classList.toggle('heat', !!H);
-  if (H) { L.style.display = 'block'; L.innerHTML = `${H.label}<div class="ramp" style="background:linear-gradient(90deg,${H.color}22,${H.color})"></div><div class="ends"><span>${H.lo}</span><span>${H.hi}</span></div>`; }
+  if (H && H.status) { L.style.display = 'block'; L.innerHTML = H.label + Object.values(STATUS).map(x => `<div class="st"><i style="background:${x.color}">${x.icon}</i>${x.name}</div>`).join(''); }
+  else if (H) { L.style.display = 'block'; L.innerHTML = `${H.label}<div class="ramp" style="background:linear-gradient(90deg,${H.color}22,${H.color})"></div><div class="ends"><span>${H.lo}</span><span>${H.hi}</span></div>`; }
   else L.style.display = 'none';
   updateHeat();
 }
@@ -1277,6 +1395,9 @@ function refreshHUD() {
   $('#day').textContent = `${G.day} / ${SEASON}`;
   $('#seasonBar').style.width = G.day / SEASON * 100 + '%';
   $('#money').textContent = '$' + Math.round(G.money);
+  $('#temp').textContent = `${Math.round(G.temps[G.day])} °C · ${Math.round(G.dd)} DD`;
+  $('#resist').textContent = `${Math.round(G.res.broad * 100)}% · Bt ${Math.round(G.res.bt * 100)}%`;
+  $('#resist').style.color = G.res.broad > 0.4 ? 'var(--bad)' : '';
   dock.querySelectorAll('.tool').forEach(b => b.classList.toggle('poor', TOOL[b.dataset.tool].cost > G.money));
 }
 function hint() {
@@ -1302,10 +1423,25 @@ $('#againBtn').onclick = () => location.reload();
 function endSeason() {
   G.over = true; setSpeed(0); endDrag();
   let sold = 0;
-  for (const t of tiles) if (t.kind === 'crop' && t.grow >= CROPS[t.crop].days) { const v = Math.round(CROPS[t.crop].value * t.health); G.money += v; sold += v; G.stats.harvested++; G.stats.revenue += v; }
+  for (const t of tiles) if (t.kind === 'crop' && t.grow >= CROPS[t.crop].days) { const v = Math.round(CROPS[t.crop].value * t.health); G.money += v; sold += v; G.stats.harvested++; G.stats.revenue += v; G.stats.healthSum = (G.stats.healthSum || 0) + t.health; }
   refreshHUD();
   const S = G.stats, profit = G.money - START_MONEY;
-  $('#rating').textContent = G.money >= 1500 ? '🏆 IPM master' : G.money >= 800 ? '🌟 Skilled grower' : G.money >= START_MONEY ? '🙂 Break-even farmer' : '🥀 Pests won this season';
+  const acts = G.ipm.actions, just = acts.filter(a => a.verdict === 'ok').length;
+  const sc = {
+    just: acts.length ? just / acts.length : 1,
+    bio: G.ipm.bioKill / Math.max(1, G.ipm.bioKill + G.ipm.chemKill),
+    res: 1 - G.res.broad,
+    health: S.harvested ? S.healthSum / S.harvested : 0,
+  };
+  const ipmScore = Math.round(30 * sc.just + 30 * sc.bio + 20 * sc.res + 20 * sc.health);
+  const title = G.money >= 1100 ? '🏆 Master grower' : G.money >= 600 ? '🌟 Skilled grower' : G.money >= START_MONEY ? '🙂 Break-even farmer' : '🥀 Pests won this season';
+  $('#rating').innerHTML = `${title} <span class="ipm-badge">IPM score ${ipmScore}/100 · ${ipmScore >= 80 ? 'certified IPM practice' : ipmScore >= 60 ? 'partial IPM' : 'conventional control'}</span>`;
+  $('#scorecard').innerHTML = [
+    ['Justified interventions', sc.just, 30, acts.length ? `${just} of ${acts.length} sprays were above ET with enemies losing` : 'no sprays needed'],
+    ['Biological share of kills', sc.bio, 30, `natural enemies ${fmt(G.ipm.bioKill)} vs pesticides ${fmt(G.ipm.chemKill)} aphid-eq`],
+    ['Resistance management', sc.res, 20, `broad-spectrum resistance ${Math.round(G.res.broad * 100)}%`],
+    ['Crop quality', sc.health, 20, `average health at harvest ${Math.round(sc.health * 100)}%`],
+  ].map(([k, v, w, d]) => `<div class="sc-row"><div class="top"><b>${k}</b><span>${Math.round(v * w)} / ${w}</span></div><div class="meter"><i style="width:${v * 100}%;background:var(--leaf)"></i></div><span class="muted">${d}</span></div>`).join('');
   $('#endStats').innerHTML = [
     ['Final money', '$' + Math.round(G.money)], ['Profit', (profit >= 0 ? '+$' : '−$') + Math.abs(Math.round(profit))],
     ['Crops sold', S.harvested], ['Crops killed', S.lost],
@@ -1318,6 +1454,11 @@ function endSeason() {
   if (S.sprays >= 3) L.push(`You sprayed ${S.sprays} times. Insecticide kills natural enemies more reliably than pests, and the residue stops them recolonising, so pests often <b>resurge</b> afterwards.`);
   if (!S.shelters) L.push('You planted no shelter plants. Without nectar, pollen or refuge, enemy carrying capacity stayed at its base level and wild enemies arrived late (around day 30–40).');
   else L.push(`You planted ${S.shelters} shelter plant(s). They raised enemy K nearby and brought wild enemies in earlier. Compare the Enemy K and Pests views next season.`);
+  const early = acts.filter(a => a.verdict === 'early').length, enem = acts.filter(a => a.verdict === 'enemies').length;
+  if (early) L.push(`${early} spray(s) were applied <b>below the economic threshold</b>. The control cost more than the damage it prevented.`);
+  if (enem) L.push(`${enem} spray(s) hit tiles where natural enemies were already winning. Spraying there only removed free control.`);
+  if (G.res.broad > 0.4) L.push(`Broad-spectrum resistance reached ${Math.round(G.res.broad * 100)}%. Repeated use of one mode of action selects for resistant pests, which raises the EIL (control is less efficient) and makes every spray less worthwhile. Rotate to selective products and keep sprays rare.`);
+  if (!tiles.some(t => t.trap) && G.biofix === null) L.push('No pheromone traps were used. Monitoring moth flights gives a biofix date, and degree-day forecasts turn it into the right day to hang Trichogramma cards or apply Bt.');
   if (!S.agents) L.push('You released no biological control agents. Early releases while pest numbers are low stop the exponential phase before it takes off.');
   L.push('Ladybirds (Type II) knock outbreaks down quickly but saturate at about 50 prey/day and breed slowly. Parasitoids (Type III) are weak against rare hosts but multiply one-for-one with their hosts and keep populations in check once established.');
   $('#lessons').innerHTML = L.map(x => `<li>${x}</li>`).join('');
