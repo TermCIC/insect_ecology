@@ -493,18 +493,18 @@ const GW = 8, GH = 8, SEASON = 120, SUB = 0.25;
 // gives a slightly larger starting budget, and sets the money needed to pass.
 const LEVELS = [
   { name: 'Backyard plot',    inv: 0.35, grow: 0.70, budget: 250, target: 450 },
-  { name: 'Community garden', inv: 0.50, grow: 0.78, budget: 260, target: 550 },
-  { name: 'Market garden',    inv: 0.65, grow: 0.86, budget: 275, target: 650 },
-  { name: 'Family farm',      inv: 0.80, grow: 0.93, budget: 290, target: 750 },
-  { name: 'Commercial farm',  inv: 1.00, grow: 1.00, budget: 300, target: 800 },
-  { name: 'Pest hotspot',     inv: 1.20, grow: 1.07, budget: 320, target: 850 },
-  { name: 'Outbreak year',    inv: 1.45, grow: 1.14, budget: 340, target: 875 },
-  { name: 'Invasion season',  inv: 1.75, grow: 1.21, budget: 360, target: 900 },
+  { name: 'Community garden', inv: 0.50, grow: 0.78, budget: 290, target: 600 },
+  { name: 'Market garden',    inv: 0.65, grow: 0.86, budget: 330, target: 800 },
+  { name: 'Family farm',      inv: 0.80, grow: 0.93, budget: 370, target: 950 },
+  { name: 'Commercial farm',  inv: 1.00, grow: 1.00, budget: 410, target: 1100 },
+  { name: 'Pest hotspot',     inv: 1.20, grow: 1.07, budget: 450, target: 1200 },
+  { name: 'Outbreak year',    inv: 1.45, grow: 1.14, budget: 500, target: 1250 },
+  { name: 'Invasion season',  inv: 1.75, grow: 1.21, budget: 550, target: 1300 },
 ];
 function levelParams(n) {
   if (n <= LEVELS.length) return LEVELS[n - 1];
   const L = LEVELS[LEVELS.length - 1], x = n - LEVELS.length;
-  return { name: `Endless ${x}`, inv: L.inv + 0.3 * x, grow: L.grow + 0.07 * x, budget: L.budget + 20 * x, target: L.target + 25 * x };
+  return { name: `Endless ${x}`, inv: L.inv + 0.3 * x, grow: L.grow + 0.07 * x, budget: L.budget + 50 * x, target: L.target + 50 * x };
 }
 const LEVEL = Math.max(1, parseInt(globalThis.__LEVEL ?? new URLSearchParams(globalThis.location?.search || '').get('level') ?? '1', 10) || 1);
 const D = levelParams(LEVEL);
