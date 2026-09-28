@@ -14,10 +14,10 @@
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;overflow:hidden;background:#9fcde0;color:var(--ink);font:14px/1.35 system-ui,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  body{margin:0;overflow:hidden;overscroll-behavior:none;-webkit-touch-callout:none;background:#9fcde0;color:var(--ink);font:14px/1.35 system-ui,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
   #scene{position:fixed;inset:0}
   #scene canvas{display:block;width:100%;height:100%;touch-action:none}
-  button{font:inherit;color:inherit;cursor:pointer}
+  button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.35);backdrop-filter:blur(8px)}
 
   /* top bar */
@@ -47,6 +47,12 @@
   #heatLegend .ends{display:flex;justify-content:space-between;color:var(--ink-3);font-size:11px}
 
   /* log */
+  #goalBanner{position:fixed;z-index:25;left:50%;top:50%;transform:translate(-50%,-50%);display:none;flex-direction:column;gap:6px;padding:18px 20px;width:min(380px,calc(100vw - 32px));text-align:center}
+  #goalBanner.show{display:flex}
+  #goalBanner b{font:700 22px Georgia,serif;color:#fff1b3}
+  #goalBanner span{color:var(--ink-2)}
+  #goalBanner .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+  .btn.primary.small{padding:6px 14px}
   #log{position:fixed;z-index:4;left:10px;top:84px;width:min(360px,calc(100vw - 20px));display:flex;flex-direction:column;gap:6px;pointer-events:none}
   body.heat #log{top:170px}
   .toast{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--leaf);border-radius:10px;padding:7px 10px;font-size:12.5px;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.3);transition:opacity .5s,transform .5s}
@@ -102,6 +108,13 @@
   .dock-sep{width:1px;background:var(--line);margin:4px 2px}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,195,90,.0)}50%{box-shadow:0 0 0 5px rgba(244,195,90,.55)}}
 
+  .tool.armed{background:rgba(244,195,90,.25);border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,195,90,.5)}
+  #armedBar{position:fixed;z-index:6;left:50%;transform:translateX(-50%);bottom:calc(112px + env(safe-area-inset-bottom));display:none;align-items:center;gap:10px;padding:7px 8px 7px 12px;width:min(520px,calc(100vw - 20px))}
+  #armedBar.show{display:flex}
+  #armedBar .ic{font-size:26px}
+  #armedBar div{flex:1;min-width:0}
+  #armedBar b{display:block;font-size:13px}
+  #armedBar div span{display:block;font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #ghost{position:fixed;z-index:20;pointer-events:none;display:none;transform:translate(-50%,-70%);text-align:center}
   #ghost .ic{font-size:44px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
   #ghost .cap{margin-top:2px;font-size:12px;background:var(--panel);border:1px solid var(--line);padding:3px 8px;border-radius:8px;white-space:nowrap}
@@ -151,6 +164,21 @@
 
   @media (max-width:1320px){ .tool{width:60px;height:76px} .tool .ic{font-size:26px} .tool .nm{font-size:9.5px} #dock{gap:4px} }
   @media (max-width:1060px) and (min-width:761px){ .tool{width:50px;height:58px} .tool .nm{display:none} .dock-sep{margin:4px 0} }
+  @media (max-height:520px) and (orientation:landscape){
+    #topbar{top:4px;padding:4px 8px;gap:6px}
+    .brand,.stat.opt{display:none}
+    #dock{bottom:4px;padding:4px;gap:3px}
+    .tool{width:40px;height:44px}
+    .tool .ic{font-size:19px}
+    .tool .nm,.tool .pr{display:none}
+    .dock-sep{display:none}
+    #panelBtn{display:inline-block}
+    .close-panel{display:inline-block}
+    #panel{display:none;top:58px;bottom:58px;right:6px;left:auto;width:min(320px,45vw);max-height:none}
+    #panel.open{display:flex}
+    #log{top:58px;width:min(300px,40vw)}
+    #armedBar{bottom:56px}
+  }
   @media (max-width:980px){
     #panelBtn{display:inline-block}
     .close-panel{display:inline-block}
@@ -159,24 +187,42 @@
     .views button{padding:6px 7px;font-size:12px}
   }
   @media (max-width:760px){
-    #topbar{gap:6px 8px;padding:7px 9px}
-    .seg button{padding:5px 8px}
-    .brand span{display:none}
-    .brand b{font-size:15px}
-    .stat{min-width:70px}
-    .stat strong{font-size:15px}
+    #topbar{top:max(6px,env(safe-area-inset-top));left:6px;right:6px;gap:5px 6px;padding:6px 8px;border-radius:12px}
+    .brand{display:none}
+    .spacer{display:none}
+    .stat{min-width:0;flex:1 1 0}
+    .stat span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .stat strong{font-size:14px;white-space:nowrap}
     .stat.opt{display:none}
-    #dock{flex-wrap:wrap;justify-content:center;width:calc(100vw - 20px)}
+    #level{font-size:0}
+    #level::before{content:attr(data-short);font-size:14px}
+    #speed{order:5}
+    #speed button{padding:6px 9px}
+    #views{order:6;flex:1 1 auto;overflow-x:auto;scrollbar-width:none}
+    #views::-webkit-scrollbar{display:none}
+    #views button{padding:6px 8px;font-size:11.5px;white-space:nowrap}
+    #guideBtn,#panelBtn,#nextLvlBtn{order:7;padding:6px 9px}
+    #guideBtn .lbl{display:none}
+    #dock{bottom:max(6px,env(safe-area-inset-bottom));flex-wrap:wrap;justify-content:center;width:calc(100vw - 12px);max-width:none;gap:4px;padding:6px}
     .dock-sep{display:none}
-    .tool{width:calc((100% - 42px)/8);min-width:38px;height:58px}
-    .tool .ic{font-size:22px}
+    .tool{width:calc((100% - 28px)/8);min-width:36px;height:52px;padding:2px;border-radius:10px}
+    .tool .ic{font-size:21px}
     .tool .nm{display:none}
-    #panel{bottom:170px;max-height:40dvh}
+    .tool .pr{font-size:10px}
+    .tool:hover{transform:none}
+    #armedBar{bottom:calc(128px + env(safe-area-inset-bottom))}
+    #panel{left:6px;right:6px;bottom:calc(126px + env(safe-area-inset-bottom));max-height:38dvh;overflow-y:auto;overscroll-behavior:contain;display:none}
+    #panel.open{display:block}
+    #inspector{overflow:visible;padding:10px 12px}
     canvas.chart{height:110px}
-    #log{top:auto;bottom:220px}
-    body:has(#panel.open) #log{display:none}
+    #log{top:auto;bottom:calc(132px + env(safe-area-inset-bottom));left:6px;width:calc(100vw - 12px);gap:4px}
+    #log .toast:nth-child(n+3){display:none}
+    .toast{font-size:11.5px;padding:5px 8px}
+    body:has(#panel.open) #log, body:has(#armedBar.show) #log{display:none}
     body.heat #log{top:auto}
-    #heatLegend{top:auto;bottom:160px}
+    #heatLegend{top:auto;bottom:calc(132px + env(safe-area-inset-bottom));left:6px;font-size:11px}
+    body:has(#panel.open) #heatLegend{display:none}
+    #ghost .ic{font-size:38px}
     .fr-grid{grid-template-columns:1fr}
     .end-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
@@ -206,10 +252,16 @@
     <button data-view="capacity">Enemy K</button>
   </div>
   <div class="spacer"></div>
-  <button class="btn" id="guideBtn">📖 Guide</button>
+  <button class="btn primary small" id="nextLvlBtn" hidden>Next level ▶</button>
+  <button class="btn" id="guideBtn">📖 <span class="lbl">Guide</span></button>
   <button class="btn" id="panelBtn" aria-label="Toggle field panel">📋</button>
 </header>
 
+<div id="goalBanner" class="card" role="dialog" aria-live="assertive">
+  <b>🎯 Goal reached!</b>
+  <span id="goalText"></span>
+  <div class="row"><button class="btn primary" id="goalNext">Next level ▶</button><button class="btn" id="goalStay">Keep farming</button></div>
+</div>
 <div id="heatLegend" class="card"></div>
 <div id="log" aria-live="polite"></div>
 
@@ -228,6 +280,7 @@
 </aside>
 
 <nav id="dock" class="card" aria-label="Tools – drag onto a field tile"></nav>
+<div id="armedBar" class="card"></div>
 <div id="ghost"><div class="ic"></div><div class="cap"></div></div>
 <div id="tip"></div>
 
@@ -236,6 +289,7 @@
   <p>You run an 8 × 8 vegetable farm for one <b>120-day season</b>. Plant crops, let them grow, and harvest them for money. Winged <b>aphids</b> and egg-laying <b>armyworm moths</b> fly in from the landscape and build up stage-structured populations on your plants.</p>
   <p>Wild <b>predators</b> (ladybirds) and <b>parasitoids</b> (<i>Aphidius</i> and <i>Trichogramma</i> wasps) arrive too, but usually <b>late</b>. You can buy and release them, and plant <b>shelter plants</b> (flower strips, beetle banks) that raise the number of natural enemies each tile can hold (their carrying capacity, K).</p>
   <p><b>Everything is drag-and-drop.</b> Drag an icon from the bottom dock onto a tile. Crops and the harvest basket can be swept across several tiles in one drag.<br>Drag on empty ground to rotate the view, right-drag to pan, scroll to zoom. Click a tile to scout it.</p>
+  <p><b>On a phone:</b> tap a tool to pick it up, then tap tiles to use it (tap ✕ to put it down), or drag it; the drop point sits just above your finger. Pinch to zoom, drag with two fingers to pan. Reach the money goal at any time to jump to the next level.</p>
   <h3 id="levelTitle">Choose a level</h3>
   <p id="levelInfo" style="margin-top:0"></p>
   <div class="levels" id="levelGrid"></div>
@@ -1110,6 +1164,7 @@ function apply(id, t) {
   }
   if (id !== 'lens') { buildPlant(t); buildTrap(t); hint(); }
   refreshHUD(); if (G.selected) renderInspector();
+  checkGoal();
   return true;
 }
 
@@ -1125,39 +1180,48 @@ for (const tool of TOOLS) {
 }
 const ghost = $('#ghost'), tip = $('#tip');
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const pickPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TOP), pickHit = new THREE.Vector3();
 function pickTile(e) {
   if (document.elementFromPoint(e.clientX, e.clientY) !== canvasEl) return null;
   ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
-  const hit = ray.intersectObjects(tileMeshes, false)[0];
-  return hit ? tiles[hit.object.userData.i] : null;
+  // Intersect the field's top plane rather than the tile boxes, so the gaps between tiles still count
+  if (!ray.ray.intersectPlane(pickPlane, pickHit)) return null;
+  const x = Math.floor(pickHit.x + GW / 2), z = Math.floor(pickHit.z + GH / 2);
+  return x >= 0 && x < GW && z >= 0 && z < GH ? tiles[z * GW + x] : null;
 }
 let drag = null;
+// On touch screens the finger hides the tile under it, so the drop point sits above the fingertip.
+const TOUCH_LIFT = 64;
+const aim = e => e.pointerType === 'touch' ? { clientX: e.clientX, clientY: e.clientY - TOUCH_LIFT } : e;
 function startDrag(e, id) {
-  if (G.over || document.querySelector('.modal.show')) return;
+  if (G.over || document.querySelector('.modal.show') || $('#goalBanner').classList.contains('show')) return;
   e.preventDefault();
-  drag = { id, pointer: e.pointerId, last: null, done: new Set() };
+  drag = { id, pointer: e.pointerId, last: null, done: new Set(), x0: e.clientX, y0: e.clientY, moved: false, touch: e.pointerType === 'touch' };
   controls.enabled = false; tip.style.display = 'none';
   ghost.querySelector('.ic').textContent = TOOL[id].icon;
   ghost.querySelector('.cap').textContent = TOOL[id].brush ? 'Sweep across tiles' : 'Drop on a tile';
   ghost.className = ''; ghost.style.display = 'block'; moveGhost(e);
   dock.querySelectorAll('.pulse').forEach(p => p.classList.remove('pulse'));
 }
-function moveGhost(e) { ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px'; }
+function moveGhost(e) { const a = aim(e); ghost.style.left = a.clientX + 'px'; ghost.style.top = a.clientY + 'px'; }
 function endDrag() { drag = null; ghost.style.display = 'none'; controls.enabled = true; showHover(null); }
 addEventListener('pointermove', e => {
   if (drag && e.pointerId === drag.pointer) {
     moveGhost(e);
-    const t = pickTile(e), v = showHover(t, drag.id);
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 12) drag.moved = true;
+    const t = pickTile(aim(e)), v = showHover(t, drag.id);
     ghost.querySelector('.cap').textContent = t ? `${label(t)} · ${v.msg}` : (TOOL[drag.id].brush ? 'Sweep across tiles' : 'Drop on a tile');
     ghost.className = t && !v.ok ? 'bad' : '';
     if (t && TOOL[drag.id].brush && t !== drag.last && !drag.done.has(t.i) && v.ok) { apply(drag.id, t); drag.done.add(t.i); }
     drag.last = t;
-  } else if (!drag && e.pointerType === 'mouse') hoverTip(e);
+  } else if (!drag && e.pointerType === 'mouse') { hoverTip(e); if (armed) { const t = pickTile(e); if (t) showHover(t, armed); } }
 });
 addEventListener('pointerup', e => {
   if (drag && e.pointerId === drag.pointer) {
-    const t = pickTile(e);
+    // A tap on a tool (no drag) arms it: then tap tiles to use it, which is easier on phones.
+    if (!drag.moved) { const id = drag.id; endDrag(); armed === id ? disarm() : arm(id); return; }
+    const t = pickTile(aim(e));
     if (t && !drag.done.has(t.i)) apply(drag.id, t);
     endDrag();
   }
@@ -1168,9 +1232,27 @@ let downAt = null;
 canvasEl.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY }; });
 canvasEl.addEventListener('pointerup', e => {
   if (!downAt || drag) return;
-  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 6) { const t = pickTile(e); select(t); }
+  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 8) {
+    const t = pickTile(e);
+    if (armed && t) { apply(armed, t); if (TOOL[armed]?.brush !== true && armed !== 'lens') showHover(t, armed); }
+    else select(t);
+  }
   downAt = null;
 });
+let armed = null;
+function arm(id) {
+  armed = id;
+  dock.querySelectorAll('.tool').forEach(b => b.classList.toggle('armed', b.dataset.tool === id));
+  const T = TOOL[id];
+  $('#armedBar').innerHTML = `<span class="ic">${T.icon}</span><div><b>${T.name}${T.cost ? ' · $' + T.cost : ''}</b><span>Tap tiles to use it. ${T.hint}</span></div><button class="btn" aria-label="Stop using tool">✕</button>`;
+  $('#armedBar').classList.add('show');
+  $('#armedBar button').onclick = disarm;
+}
+function disarm() {
+  armed = null; showHover(null);
+  dock.querySelectorAll('.armed').forEach(b => b.classList.remove('armed'));
+  $('#armedBar').classList.remove('show');
+}
 function hoverTip(e) {
   const t = pickTile(e);
   showHover(t, null);
@@ -1478,11 +1560,28 @@ function renderLevels() {
 }
 renderLevels();
 $('#level').textContent = `${LEVEL} · ${D.name}`;
-$('#goalLbl').textContent = `Money · goal $${D.target}`;
+$('#level').dataset.short = `L${LEVEL}`;
+$('#goalLbl').textContent = `Goal $${D.target}`;
 $('#startBtn').onclick = () => { closeModal('startModal'); setSpeed(0.5); toast(`🌱 Level ${LEVEL} (${D.name}) has started. Reach $${D.target} by day ${SEASON}. Drag 🥬 cabbages onto the soil to begin.`, 'good'); };
 $('#againBtn').onclick = () => location.reload();
 $('#nextBtn').onclick = () => goLevel(LEVEL + 1);
 $('#levelsBtn').onclick = () => { closeModal('endModal'); openModal('startModal'); $('#startBtn').textContent = 'Replay this level'; $('#startBtn').onclick = () => location.reload(); };
+
+// Passing is locked in the moment money reaches the goal, even if the player keeps farming afterwards.
+function checkGoal() {
+  if (G.goalReached || G.over || G.money < D.target) return;
+  G.goalReached = true;
+  progress.unlocked = Math.max(progress.unlocked, LEVEL + 1);
+  progress.best[LEVEL] = Math.max(progress.best[LEVEL] || 0, Math.round(G.money)); store.set(progress);
+  resumeAfterGoal = speed || lastSpeed; setSpeed(0); endDrag(); disarm();
+  $('#goalText').textContent = `You have $${Math.round(G.money)} on day ${G.day}, reaching the $${D.target} goal for level ${LEVEL}. Level ${LEVEL + 1} (${levelParams(LEVEL + 1).name}) is unlocked. Move on now, or keep farming to raise your best score.`;
+  $('#goalBanner').classList.add('show');
+  $('#nextLvlBtn').hidden = false;
+}
+let resumeAfterGoal = 0.5;
+$('#goalNext').onclick = () => goLevel(LEVEL + 1);
+$('#nextLvlBtn').onclick = () => goLevel(LEVEL + 1);
+$('#goalStay').onclick = () => { $('#goalBanner').classList.remove('show'); setSpeed(resumeAfterGoal); };
 
 function endSeason() {
   G.over = true; setSpeed(0); endDrag();
@@ -1500,7 +1599,7 @@ function endSeason() {
   };
   // IPM protects yield: a season that loses the crop cannot score well, however few sprays it used
   const ipmScore = Math.round((20 * sc.just + 20 * sc.eil + 20 * sc.bio + 15 * sc.res + 25 * sc.health) * (0.4 + 0.6 * sc.health));
-  const passed = G.money >= D.target;
+  const passed = G.goalReached || G.money >= D.target;
   if (passed) { progress.unlocked = Math.max(progress.unlocked, LEVEL + 1); }
   progress.best[LEVEL] = Math.max(progress.best[LEVEL] || 0, Math.round(G.money)); store.set(progress);
   $('#passMsg').innerHTML = passed ? `✅ Level ${LEVEL} passed: $${Math.round(G.money)} ≥ goal $${D.target}. Level ${LEVEL + 1} (${levelParams(LEVEL + 1).name}) is unlocked.`
@@ -1542,7 +1641,7 @@ function endSeason() {
 
 addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
-  if (e.code === 'Escape') { if (drag) endDrag(); else if ($('#guideModal').classList.contains('show')) { closeModal('guideModal'); setSpeed(resumeSpeed); } }
+  if (e.code === 'Escape') { if (drag) endDrag(); else if (armed) disarm(); else if ($('#guideModal').classList.contains('show')) { closeModal('guideModal'); setSpeed(resumeSpeed); } }
   if (document.querySelector('.modal.show')) return;
   if (e.code === 'Space') { e.preventDefault(); setSpeed(speed ? 0 : lastSpeed); }
   if (e.key === '1') setSpeed(0.5); if (e.key === '2') setSpeed(1); if (e.key === '3') setSpeed(2);
@@ -1550,8 +1649,9 @@ addEventListener('keydown', e => {
 });
 function fitCamera() {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-  const d = 14.8 * Math.max(1, 1.1 / camera.aspect);
-  const dir = camera.position.clone().sub(controls.target).normalize();
+  const d = 14.8 * Math.max(1, 1.1 / camera.aspect) * (camera.aspect < 0.8 ? 0.92 : 1);
+  // Portrait phones: look more from above so the square field fills the tall screen
+  const dir = camera.aspect < 0.8 ? new THREE.Vector3(0, Math.cos(0.5), Math.sin(0.5)) : camera.position.clone().sub(controls.target).normalize();
   camera.position.copy(controls.target).addScaledVector(dir, Math.min(controls.maxDistance, d));
 }
 fitCamera();
@@ -1574,6 +1674,7 @@ function loop(now) {
         tiles.forEach(t => { if (t.residue === 0 && t.mesh.material.emissive.getHex()) styleTile(t); });
         drawSeries($('#chart'), null); hint();
         if (G.day >= SEASON) { endSeason(); break; }
+        checkGoal(); if (!speed) break;
       }
     }
   }
@@ -1584,6 +1685,8 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
+// Test hook, only with ?debug in the URL
+if (new URLSearchParams(location.search).has('debug')) window.__bcf = { G, D, checkGoal, tiles, camera, controls, ray, ndc, tileMeshes, canvasEl, pickTile, apply, get drag() { return drag; }, get armed() { return armed; } };
 </script>
 </body>
 </html>
