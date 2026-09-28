@@ -41,6 +41,14 @@ try{
  await click('[data-tool="flower"]'); // deselect
  await ev(`(()=>{const h=window.__bcf;h.G.goalReached=true;h.G.money=5000;for(let z=1;z<7;z++)for(let x=1;x<7;x++){const t=h.tiles[z*8+x];if(t.kind==='empty')h.apply(x===1?'flower':x===6?'bank':x<4?'cabbage':'tomato',t);if(t.kind==='crop'){t.grow=(x===2?1:0.75)* (t.crop==='cabbage'?40:70);t.health=z===6?0.5:1;}}h.apply('trap',h.tiles[27]);h.G.money=320;document.querySelectorAll('.toast').forEach(e=>e.remove());})()`);
  await sleep(1700);await shot('desktop');
+ const prices=await ev(`(()=>{const t=__bcf.tiles[18],el=document.querySelector('[data-tile="18"] .crop-value');return {text:el?.textContent,value:Math.round(45*t.health),count:document.querySelectorAll('.crop-value').length,crops:__bcf.tiles.filter(t=>t.kind==='crop').length}})()`);
+ if(prices.text!=='$'+prices.value || prices.count!==prices.crops)throw Error('Crop sale labels do not match simulation');
+ const moneyBeforeDamage=await ev('__bcf.G.money');await ev('__bcf.tiles[18].health=0.6');await sleep(150);
+ if(!await ev(`document.querySelector('[data-tile="18"] .crop-value').textContent==='$27' && document.querySelector('[data-tile="18"] .crop-loss').textContent==='−$18' && __bcf.G.money===${moneyBeforeDamage}`))throw Error('Damage loss display incorrect');
+ await shot('value-loss');await sleep(1500);
+ if(await ev(`!!document.querySelector('[data-tile="18"] .crop-loss')`))throw Error('Loss flash did not expire');
+ await ev(`__bcf.apply('sickle',__bcf.tiles[18])`);await sleep(50);
+ if(!await ev(`!document.querySelector('[data-tile="18"]') && __bcf.G.money===${moneyBeforeDamage+27}`))throw Error('Harvest label cleanup or actual sale value incorrect');
  const diagnostics=await ev('window.__bcf.diagnostics?.() || null');
  const pixels=await ev('window.__bcf.sampleCanvas?.() || null');if(pixels&&pixels.colors<10)throw Error('Canvas lacks visual variation');
  const overlap=await ev("document.querySelector('#panel').getBoundingClientRect().top < document.querySelector('#topbar').getBoundingClientRect().bottom");if(overlap)throw Error('HUD overlaps inspector');

@@ -300,6 +300,16 @@
     #dock .dropdown summary{min-height:44px;padding:5px 3px}.category-current{font-size:10px;margin-top:1px}
     #armedBar div span{white-space:normal;font-size:11px}
   }
+  #cropValues{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+  .crop-value-point{position:absolute;left:0;top:0;pointer-events:none;will-change:transform}
+  .crop-value{display:block;transform:translate(-50%,-50%);padding:1px 4px;border-radius:4px;background:#172b22e6;color:#f2e7c9;border:1px solid #e4d6a844;font:700 11px/1.3 system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 1px 3px #0005}
+  .crop-value.ripe{background:#3d4c26;color:#ffdf83;border-color:#edc77b}
+  .crop-value[hidden]{display:none}
+  .crop-value sup{font-size:8px;color:#c4d2be}
+  .crop-loss{position:absolute;left:0;bottom:12px;white-space:nowrap;color:#ff554b;font:800 16px/1.2 system-ui,sans-serif;text-shadow:0 1px 2px #260a05,1px 0 2px #260a05;animation:cropLoss 1.4s ease-out both}
+  @keyframes cropLoss{0%{transform:translate(-50%,0);opacity:1}65%{opacity:1}100%{transform:translate(-50%,-28px);opacity:0}}
+  @media(max-width:760px){.crop-value{font-size:10px;padding:1px 3px}.crop-loss{font-size:14px}}
+  @media(prefers-reduced-motion:reduce){.crop-loss{animation:none;transform:translateX(-50%)}}
 </style>
 </head>
 <body>
@@ -357,6 +367,7 @@
 
 <nav id="dock" class="card" aria-label="Tool categories – select a tool, then tap a field tile"></nav>
 <div id="armedBar" class="card"></div>
+<div id="cropValues" aria-hidden="true"></div>
 <div class="modal" id="placementModal" role="dialog" aria-modal="true" aria-labelledby="placementTitle">
   <div class="card" style="max-width:440px">
     <h2 id="placementTitle">Confirm placement</h2>
@@ -384,7 +395,7 @@
   <h2>📖 Field guide</h2>
   <h3>How to play</h3>
   <ul>
-    <li><b>🥬 Cabbage</b> ($10, 40 days, sells for up to $45) and <b>🍅 Tomato</b> ($20, 70 days, up to $110). The sale price is multiplied by crop health. Mature crops start to rot 12 days after ripening.</li>
+    <li><b>🥬 Cabbage</b> ($10, 40 days, sells for up to $45) and <b>🍅 Tomato</b> ($20, 70 days, up to $110). Each crop tile shows its health-adjusted sale value. An asterisk (*) means it is still growing and cannot be harvested; a gold label means it is ripe. Red −$ amounts show lost crop value, not money spent. Mature crops start to rot 12 days after ripening.</li>
     <li><b>🧺 Harvest</b> ripe crops (they show a gold ring). <b>⛏️ Dig</b> clears a tile ($2, free if the plant is dead).</li>
     <li><b>🌼 Flower strip</b> and <b>🌾 Beetle bank</b> take up a tile (they can replace a crop). They raise natural-enemy <b>carrying capacity K</b> within 2 tiles and attract wild enemies earlier in the season.</li>
     <li><b>🐞 🐝 🥚</b> Buy and release natural enemies onto a tile. They spread out on their own.</li>
@@ -1255,6 +1266,7 @@ function canApply(id, t) {
   }
 }
 function clearTile(t) {
+  removeCropValue(t); // Harvesting/replacing is intentional, not damage loss.
   Object.assign(t, { kind: 'empty', crop: null, grow: 0, health: 1, ripe: 0 });
   t.aN = 0; t.aM *= 0.3; t.mE = 0; t.mL = 0; t.mP *= 0.5; t.mEp *= 0.3;
 }
@@ -1874,6 +1886,36 @@ addEventListener('resize', () => {
 });
 
 // ---------------------------------------------------------------- main loop
+const cropValueStates=new Map(),cropValuePosition=new THREE.Vector3();
+function removeCropValue(t){const state=cropValueStates.get(t.i);if(state){state.root.remove();cropValueStates.delete(t.i)}}
+function updateCropValues(now){
+  for(const t of tiles){
+    let state=cropValueStates.get(t.i);
+    const isCrop=t.kind==='crop',value=isCrop?Math.round(CROPS[t.crop].value*t.health):0;
+    if(!state && isCrop){
+      const root=document.createElement('div'),badge=document.createElement('span');root.className='crop-value-point';root.dataset.tile=t.i;badge.className='crop-value';root.append(badge);$('#cropValues').append(root);
+      state={root,badge,value,crop:t.crop,loss:0,until:0,flash:null};cropValueStates.set(t.i,state);
+    }
+    if(!state)continue;
+    if(isCrop && state.crop!==t.crop){removeCropValue(t);continue}
+    if(value<state.value && (isCrop || t.kind==='dead')){
+      if(now>=state.until){state.loss=0;state.flash?.remove();state.flash=document.createElement('span');state.flash.className='crop-loss';state.root.append(state.flash);state.until=now+1400}
+      state.loss+=state.value-value;state.flash.textContent=`−$${state.loss}`;
+    }
+    state.value=value;
+    if(state.flash && now>=state.until){state.flash.remove();state.flash=null;state.loss=0}
+    if(!isCrop && !state.flash){removeCropValue(t);continue}
+    state.badge.hidden=!isCrop;
+    if(isCrop){
+      const ripe=t.grow>=CROPS[t.crop].days,text=`$${value}${ripe?'':'*'}`;
+      if(state.badge.textContent!==text)state.badge.textContent=text;
+      state.badge.classList.toggle('ripe',ripe);
+    }
+    const [x,z]=tilePos(t);cropValuePosition.set(x,TOP+0.04,z+0.31).project(camera);
+    state.root.hidden=cropValuePosition.z < -1 || cropValuePosition.z > 1 || Math.abs(cropValuePosition.x)>1.1 || Math.abs(cropValuePosition.y)>1.1;
+    state.root.style.transform=`translate(${(cropValuePosition.x+1)*innerWidth/2}px,${(1-cropValuePosition.y)*innerHeight/2}px)`;
+  }
+}
 tiles.forEach(buildPlant); computeShelter();
 setSpeed(0); refreshHUD(); renderInspector(); hint(); drawSeries($('#chart'), null);
 let last = performance.now(), acc = 0, uiT = 0;
@@ -1894,7 +1936,7 @@ function loop(now) {
   uiT += dt;
   if (uiT > 0.25) { uiT = 0; refreshHUD(); updateHeat(); if (G.selected) renderInspector(); }
   updatePlants(time); updateInsects(time);
-  controls.update(); renderer.render(scene, camera);
+  controls.update(); updateCropValues(now); renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
