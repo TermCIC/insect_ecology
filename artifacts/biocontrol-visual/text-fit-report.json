@@ -1,0 +1,98 @@
+{
+  "errors": [],
+  "diagnostics": {
+    "calls": 246,
+    "triangles": 258534,
+    "geometries": 142,
+    "textures": 2,
+    "dpr": 1
+  },
+  "pixels": {
+    "colors": 45
+  },
+  "fit": {
+    "overflow": false,
+    "tools": [
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      },
+      {
+        "w": 48.5625,
+        "h": 52
+      }
+    ]
+  },
+  "phoneLayouts": [
+    {
+      "width": 320,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    },
+    {
+      "width": 375,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    },
+    {
+      "width": 430,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    }
+  ],
+  "realPointerPlanting": true,
+  "hudOverlap": false
+}

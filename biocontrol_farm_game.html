@@ -226,6 +226,51 @@
     .fr-grid{grid-template-columns:1fr}
     .end-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   }
+  /* Garden field notebook: warm timber, evergreen surfaces and brass accents. */
+  :root{--panel:rgba(24,43,34,.96);--panel-2:rgba(243,227,185,.07);--line:rgba(223,211,170,.23);--ink:#f8f2df;--ink-2:#dddcc7;--ink-3:#b9c6af;--leaf:#c1d994;--gold:#edc77b}
+  .card{border-radius:18px;box-shadow:0 12px 34px #10271938,inset 0 1px #fff1;backdrop-filter:blur(12px)}
+  #topbar{border-top:3px solid #d7b774;gap:12px;padding:10px 16px}
+  .brand{padding-right:14px;border-right:1px solid var(--line)}
+  .brand b{font-size:21px;letter-spacing:-.3px}.brand span{letter-spacing:.08em;text-transform:uppercase;font-size:9px}
+  .stat strong{letter-spacing:-.4px}.season{height:5px;background:#091b17}.season i{background:linear-gradient(90deg,#729653,#d7de9f)}
+  .btn,.seg button{transition:background .16s,box-shadow .16s}.btn:hover,.seg button:not(.on):hover{background:#dbe4b21c}
+  .btn.primary{background:#d4dfa6;box-shadow:0 3px 0 #6c8152;color:#24372c}.btn.primary:hover{background:#e3ecbc}
+  #panel{border-top:3px solid #b1c68e}#inspector h3{font-size:21px}#inspector h4{letter-spacing:.13em}
+  .chart-card{background:#101f192e}.rec,.fr-note{border-left:2px solid #b1c68e}
+  #dock{background:linear-gradient(180deg,#344737,#1b2e24);border-color:#b0a07766;box-shadow:0 12px 32px #15291d55,inset 0 2px #e7d3a233}
+  .tool{background:linear-gradient(#f0e3bd12,#b8c59b07);border-color:#baca9e30;box-shadow:inset 0 1px #fff1}
+  .tool .ic{filter:drop-shadow(0 3px 2px #0004)}.tool .pr{border-radius:4px;background:#081c183d;padding:1px 6px;margin-top:3px}
+  .tool[data-tool="flower"],.tool[data-tool="bank"]{border-top:3px solid #bdce8e}
+  .tool[data-tool="lady"],.tool[data-tool="aphidius"],.tool[data-tool="tricho"]{border-top:3px solid #83b8a1}
+  .tool[data-tool="spray"],.tool[data-tool="bt"]{border-top:3px solid #dcb274}
+  .modal{background:rgba(17,35,28,.55);backdrop-filter:blur(5px)}
+  .modal .card{border-top:4px solid #d8bd83;background:linear-gradient(135deg,#314938,#172c24);padding:28px}
+  .modal h2{font-size:34px;letter-spacing:-.5px}.modal h3{color:#e3d6ab}.lvl{padding:12px;background:#0e221a33}.lvl.on{background:#c9dca51c;box-shadow:inset 0 0 0 1px #d6bd83}
+  #startModal h2::before{content:'FIELD NOTES  /  BIOLOGICAL CONTROL';display:block;font:600 10px/2.5 system-ui,sans-serif;letter-spacing:.2em;color:#c5cea7}
+  @media(min-width:981px){#panel{top:var(--hud-bottom,100px);bottom:122px;width:300px}#log,#heatLegend{top:var(--hud-bottom,100px)}body.heat #log{top:calc(var(--hud-bottom,100px) + 96px)}}
+  @media(min-width:1200px){#topbar{gap:10px}.brand b{font-size:19px}.brand span{font-size:8px;letter-spacing:0}.stat{min-width:78px}.stat.opt strong{font-size:14px}}
+  @media(max-width:760px){#topbar{padding:7px 8px;gap:5px 6px}.modal .card{padding:18px}.modal h2{font-size:28px}.tool{width:calc((100% - 24px)/7);min-width:44px;height:52px}#dock{gap:4px}.lvl{padding:9px}.seg button,#guideBtn,#panelBtn{min-height:34px}}
+  @media(prefers-reduced-motion:reduce){.tool.pulse{animation:none}.tool,.toast,.btn{transition:none}}
+  /* Reserve whole rows for phone HUD values; emoji widths vary across iOS browsers. */
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  .kv{grid-template-columns:minmax(0,1fr) auto}.kv span{overflow-wrap:anywhere}
+  @media(max-width:760px){
+    #topbar{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;align-items:center}
+    #topbar .stat{grid-row:1;min-width:0}
+    #topbar .stat-level{grid-column:1 / 4}#topbar .stat-day{grid-column:4 / 8}#topbar .stat-money{grid-column:8 / 13}
+    #topbar .stat span{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+    #topbar .stat strong{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+    #speed{grid-row:2;grid-column:1 / 9;min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+    #speed button{padding:6px 0;min-width:0;font-size:12px}
+    #guideBtn{grid-row:2;grid-column:9 / 11}#panelBtn{grid-row:2;grid-column:11 / 13}
+    #guideBtn,#panelBtn{min-width:0;padding:6px 0}
+    #views{grid-row:3;grid-column:1 / 13;min-width:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));overflow:visible}
+    #views button{min-width:0;padding:6px 2px;white-space:normal;overflow-wrap:anywhere}
+    #nextLvlBtn{grid-row:4;grid-column:1 / 13}
+    #panel{bottom:var(--dock-clearance,134px);max-height:min(42dvh,calc(100dvh - var(--hud-bottom,160px) - var(--dock-clearance,134px) - 8px))}
+    #armedBar,#log,#heatLegend{bottom:var(--dock-clearance,134px)}
+    #inspector h3{overflow-wrap:anywhere}
+  }
 </style>
 </head>
 <body>
@@ -233,9 +278,9 @@
 
 <header id="topbar" class="card">
   <div class="brand"><b>Biocontrol Farm</b><span>Biological control &amp; functional response</span></div>
-  <div class="stat"><span>Level</span><strong id="level">1</strong></div>
-  <div class="stat"><span>Day</span><strong id="day">0 / 120</strong><div class="season"><i id="seasonBar"></i></div></div>
-  <div class="stat"><span id="goalLbl">Money · goal</span><strong id="money">$250</strong><div class="season"><i id="goalBar"></i></div></div>
+  <div class="stat stat-level"><span>Level</span><strong id="level">1</strong></div>
+  <div class="stat stat-day"><span>Day</span><strong id="day">0 / 120</strong><div class="season"><i id="seasonBar"></i></div></div>
+  <div class="stat stat-money"><span id="goalLbl">Money · goal</span><strong id="money">$250</strong><div class="season"><i id="goalBar"></i></div></div>
   <div class="stat opt" title="Daily temperature and degree-days accumulated above the 10 °C development threshold"><span>Temp · degree-days</span><strong id="temp">18 °C · 0 DD</strong></div>
   <div class="stat opt" title="Resistance of the pest population to the broad-spectrum insecticide / to Bt"><span>Resistance</span><strong id="resist">0% · Bt 0%</strong></div>
   <div class="seg" id="speed" role="group" aria-label="Game speed">
@@ -281,6 +326,14 @@
 
 <nav id="dock" class="card" aria-label="Tools – drag onto a field tile"></nav>
 <div id="armedBar" class="card"></div>
+<div class="modal" id="placementModal" role="dialog" aria-modal="true" aria-labelledby="placementTitle">
+  <div class="card" style="max-width:440px">
+    <h2 id="placementTitle">Confirm placement</h2>
+    <p id="placementDetails"></p>
+    <p id="placementCost"></p>
+    <div class="row"><button class="btn" id="placementCancel">Cancel</button><button class="btn primary" id="placementConfirm">Confirm</button></div>
+  </div>
+</div>
 <div id="ghost"><div class="ic"></div><div class="cap"></div></div>
 <div id="tip"></div>
 
@@ -288,7 +341,7 @@
   <h2>🌱 Biocontrol Farm</h2>
   <p>You run an 8 × 8 vegetable farm for one <b>120-day season</b>. Plant crops, let them grow, and harvest them for money. Winged <b>aphids</b> and egg-laying <b>armyworm moths</b> fly in from the landscape and build up stage-structured populations on your plants.</p>
   <p>Wild <b>predators</b> (ladybirds) and <b>parasitoids</b> (<i>Aphidius</i> and <i>Trichogramma</i> wasps) arrive too, but usually <b>late</b>. You can buy and release them, and plant <b>shelter plants</b> (flower strips, beetle banks) that raise the number of natural enemies each tile can hold (their carrying capacity, K).</p>
-  <p><b>Everything is drag-and-drop.</b> Drag an icon from the bottom dock onto a tile. Crops and the harvest basket can be swept across several tiles in one drag.<br>Drag on empty ground to rotate the view, right-drag to pan, scroll to zoom. Click a tile to scout it.</p>
+  <p><b>Click a tool, then click a tile.</b> Crops are planted immediately; flower strips, beetle banks and pheromone traps ask you to confirm the price before placement. The selected tool stays active for repeated use; click it again or ✕ to put it down. You can also drag tools, or sweep crops and the harvest basket across several tiles.<br>Drag on empty ground to rotate the view, right-drag to pan, scroll to zoom. Without a tool selected, click a tile to scout it.</p>
   <p><b>On a phone:</b> tap a tool to pick it up, then tap tiles to use it (tap ✕ to put it down), or drag it; the drop point sits just above your finger. Pinch to zoom, drag with two fingers to pan. Reach the money goal at any time to jump to the next level.</p>
   <h3 id="levelTitle">Choose a level</h3>
   <p id="levelInfo" style="margin-top:0"></p>
@@ -809,12 +862,15 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.18;
 $('#scene').append(renderer.domElement);
 const canvasEl = renderer.domElement;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa6d2e4);
-scene.fog = new THREE.Fog(0xa6d2e4, 24, 55);
+scene.background = new THREE.Color(0xcbd9c2);
+scene.fog = new THREE.Fog(0xcbd9c2, 35, 65);
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 120);
 camera.position.set(0, 10.5, 10.5);
 const controls = new OrbitControls(camera, canvasEl);
@@ -824,39 +880,91 @@ controls.minDistance = 3.5; controls.maxDistance = 30;
 controls.minPolarAngle = 0.12; controls.maxPolarAngle = 1.25;
 controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 
-scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x4d6b32, 1.5));
-const sun = new THREE.DirectionalLight(0xfff1d0, 2.4);
+scene.add(new THREE.HemisphereLight(0xe2edff, 0x68653c, 1.7));
+const sun = new THREE.DirectionalLight(0xffe4b2, 3.0);
 sun.position.set(6, 12, 5); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 });
 sun.shadow.bias = -0.0006;
+sun.shadow.normalBias = 0.025;
+sun.shadow.radius = 3;
 scene.add(sun);
 
 const U = { sph: new THREE.SphereGeometry(1, 14, 10), cyl: new THREE.CylinderGeometry(1, 1, 1, 8), cone: new THREE.ConeGeometry(1, 1, 7) };
+// Cupped, scalloped leaf: shared across crops; silhouette remains clear when zoomed out.
+const leafVertices = [], leafIndices = [];
+for(let row=0;row<=10;row++) for(let col=0;col<=6;col++){
+  const v=row/10,w=col/3-1,edge=Math.sin(Math.PI*v)*(1+0.09*Math.sin(v*32));
+  leafVertices.push(w*edge*0.56,0.32*v*v+0.19*w*w*edge+0.025*Math.cos(v*32)*Math.abs(w),v);
+}
+for(let r=0;r<10;r++)for(let c=0;c<6;c++){const i=r*7+c;leafIndices.push(i,i+7,i+1,i+1,i+7,i+8)}
+U.leaf=new THREE.BufferGeometry();U.leaf.setAttribute('position',new THREE.Float32BufferAttribute(leafVertices,3));U.leaf.setIndex(leafIndices);U.leaf.computeVertexNormals();
+U.leaf.setAttribute('uv',new THREE.Float32BufferAttribute(Array.from({length:77},(_,i)=>[i%7/6,Math.floor(i/7)/10]).flat(),2));
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...extra });
 function part(geo, mat, sx, sy, sz, x, y, z) { const m = new THREE.Mesh(geo, mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = true; return m; }
+// Collapse repeated static details by material, while keeping animated fruits independent.
+function batchDetails(group, excluded = []) {
+  const batches=new Map();
+  for(const mesh of [...group.children]){
+    if(!mesh.isMesh || excluded.includes(mesh))continue;
+    mesh.updateMatrix();const geo=mesh.geometry.clone().applyMatrix4(mesh.matrix);
+    const list=batches.get(mesh.material)||[];list.push(geo);batches.set(mesh.material,list);group.remove(mesh);
+  }
+  for(const [mat,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.receiveShadow=true;m.userData.merged=true;group.add(m)}
+}
+// Local visual RNG: decorative changes never consume the ecology model's randomness.
+let artSeed=731;
+function artRandom(){artSeed=(Math.imul(1664525,artSeed)+1013904223)>>>0;return artSeed/4294967296}
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), std(0x5f8f3c, { roughness: 1 }));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), std(0x82945a, { roughness: 1 }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 const frame = new THREE.Mesh(new THREE.BoxGeometry(GW + 0.5, 0.1, GH + 0.5), std(0x4a3322, { roughness: 1 }));
 frame.position.y = 0.05; frame.receiveShadow = true; scene.add(frame);
-// Decorative hedgerow trees around the field
+// Layered orchard and timber field edges. Decorative meshes are never raycast targets.
 {
-  const trunk = std(0x5a3d25), crowns = [std(0x3f7a34), std(0x356b2c), std(0x4d8a3a)];
-  for (let i = 0; i < 46; i++) {
-    const a = i / 46 * Math.PI * 2 + Math.random() * 0.1, r = 8.5 + Math.random() * 5;
-    const g = new THREE.Group(); const h = 0.8 + Math.random() * 1.2;
+  const world = new THREE.Group(), trunk = std(0x756047), crowns = [std(0x637b43), std(0x426b48), std(0x81954e)];
+  for (let i = 0; i < 34; i++) {
+    const a = i / 34 * Math.PI * 2, r = 9.5 + artRandom() * 6;
+    const g = new THREE.Group(); const h = 0.8 + artRandom() * 1.1;
     g.add(part(U.cyl, trunk, 0.08, h, 0.08, 0, h / 2, 0));
-    g.add(part(U.sph, crowns[i % 3], 0.6 + Math.random() * 0.4, 0.55 + Math.random() * 0.3, 0.6 + Math.random() * 0.4, 0, h + 0.3, 0));
-    g.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); scene.add(g);
+    for(let k=0;k<4;k++)g.add(part(U.sph,crowns[(i+k)%3],0.62,0.65,0.6,Math.cos(k*2.4)*0.37,h+k*0.19,Math.sin(k*2.4)*0.37));
+    const x=Math.cos(a)*r,z=Math.sin(a)*r;
+    for(const m of [...g.children]){m.position.x+=x;m.position.z+=z;world.add(m)}
   }
+  const wood=std(0x9e8059), cap=std(0xcbb185), stone=std(0xa8a48a), path=std(0xb6a785);
+  const box=new THREE.BoxGeometry(1,1,1);
+  world.add(part(box,path,9.8,0.035,9.8,0,0.005,0));
+  for(const side of [-1,1]){
+    world.add(part(box,wood,8.5,0.21,0.12,0,0.11,side*4.18));
+    world.add(part(box,cap,8.5,0.035,0.15,0,0.23,side*4.18));
+    world.add(part(box,wood,0.12,0.21,8.5,side*4.18,0.11,0));
+    for(let i=0;i<9;i++){
+      const x=i-4;
+      world.add(part(box,wood,0.095,0.66,0.095,x,0.33,-5.2));
+      if(i<8)world.add(part(box,cap,0.96,0.075,0.055,x+0.5,side===1?0.5:0.24,-5.2));
+    }
+  }
+  for(let i=0;i<16;i++)world.add(part(U.sph,stone,0.22,0.04,0.14,(i%2)*0.4-0.2,0.035,4.6+Math.floor(i/2)*0.35));
+  batchDetails(world);world.name='Orchard and field borders';scene.add(world);box.dispose();
+}
+// Meadow tufts are one instanced draw, leaving the entire clickable field clear.
+{
+  const geo=new THREE.ConeGeometry(0.065,0.24,3),mat=std(0x667d45),grass=new THREE.InstancedMesh(geo,mat,420),dummy=new THREE.Object3D();
+  for(let i=0;i<420;i++){
+    const side=i%4,r=5.05+artRandom()*3.7,along=(artRandom()-.5)*17;
+    dummy.position.set(side<2?(side===0?-r:r):along,0.07,side>=2?(side===2?-r:r):along);
+    if(Math.abs(dummy.position.x)<0.7 && dummy.position.z>0)dummy.position.x+=1.2;
+    dummy.rotation.set(0,artRandom()*6.28,(artRandom()-.5)*.3);dummy.scale.setScalar(.5+artRandom());dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix);
+    grass.setColorAt(i,new THREE.Color().setHSL(.19+artRandom()*.06,.25,.29+artRandom()*.12));
+  }
+  grass.instanceMatrix.needsUpdate=true;grass.receiveShadow=true;scene.add(grass);
 }
 
 function soilTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
-  g.fillStyle = '#86603f'; g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${40 + Math.random() * 60 | 0},${25 + Math.random() * 30 | 0},10,${Math.random() * 0.35})`; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
-  for (let r = 0; r < 5; r++) { g.fillStyle = 'rgba(40,24,12,.3)'; g.fillRect(0, r * 26 + 10, 128, 5); }
+  g.fillStyle = '#806348'; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${40 + artRandom() * 60 | 0},${25 + artRandom() * 30 | 0},10,${artRandom() * 0.35})`; g.fillRect(artRandom() * 128, artRandom() * 128, 2, 2); }
+  for (let r = 0; r < 5; r++) { const y=r*26+10;const grad=g.createLinearGradient(0,y-5,0,y+7);grad.addColorStop(0,'#c0a07855');grad.addColorStop(.5,'#392b2590');grad.addColorStop(1,'#a6876055');g.fillStyle=grad;g.fillRect(0,y-5,128,12); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const soilTex = soilTexture();
@@ -881,7 +989,9 @@ for (const t of tiles) {
 const SICK = new THREE.Color(0xb39a4a), DEADC = new THREE.Color(0x6b4e2e);
 function disposePlant(t) {
   if (!t.plant) return;
-  t.plant.traverse(o => { if (o.material && o.userData.own) o.material.dispose(); });
+  const materials=new Set();
+  t.plant.traverse(o => { if(o.material)materials.add(o.material);if(o.userData.merged)o.geometry.dispose(); });
+  materials.forEach(m=>m.dispose());
   scene.remove(t.plant); t.plant = null;
 }
 function buildPlant(t) {
@@ -890,18 +1000,18 @@ function buildPlant(t) {
   const u = g.userData;
   const own = m => { m.userData.own = true; return m; };
   if (t.kind === 'crop' && t.crop === 'cabbage') {
-    u.leaf = std(0x5fa447); u.head = std(0xa9d77c, { roughness: 0.6 }); u.base = u.leaf.color.clone(); u.headBase = u.head.color.clone();
-    for (let k = 0; k < 7; k++) {
-      const a = k / 7 * Math.PI * 2;
-      const m = own(part(U.sph, u.leaf, 0.2, 0.05, 0.13, Math.cos(a) * 0.15, 0.06, Math.sin(a) * 0.15));
-      m.rotation.set(0, -a, 0.35); g.add(m);
+    u.leaf = std(0x548358,{side:THREE.DoubleSide}); u.head = std(0xb5cd81, { roughness: 0.65,side:THREE.DoubleSide }); u.base = u.leaf.color.clone(); u.headBase = u.head.color.clone();
+    for (let k = 0; k < 18; k++) {
+      const a = k * 2.399,inner=k>=10,s=inner?0.23:0.39;
+      const m = own(part(U.leaf, inner?u.head:u.leaf,s,s,s,0,inner?0.1:0.025,0));
+      m.rotation.set(inner?-0.8:-0.1,a,0); g.add(m);
     }
     g.add(own(part(U.sph, u.head, 0.14, 0.13, 0.14, 0, 0.12, 0)));
   } else if (t.kind === 'crop' && t.crop === 'tomato') {
-    u.leaf = std(0x4f9a3c); u.base = u.leaf.color.clone(); u.fruitMat = std(0xd8342a, { roughness: 0.4 });
+    u.leaf = std(0x48763e,{side:THREE.DoubleSide}); u.base = u.leaf.color.clone(); u.fruitMat = std(0xcf5030, { roughness: 0.32 });
     g.add(part(U.cyl, std(0x8a6a44), 0.012, 0.75, 0.012, 0.09, 0.375, 0.05));
     g.add(own(part(U.cyl, u.leaf, 0.02, 0.55, 0.02, 0, 0.275, 0)));
-    [[0, 0.2, 0, 0.16], [0.06, 0.36, -0.04, 0.13], [-0.05, 0.5, 0.03, 0.11]].forEach(([x, y, z, r]) => g.add(own(part(U.sph, u.leaf, r, r * 0.8, r, x, y, z))));
+    for(let k=0;k<11;k++){const m=own(part(U.leaf,u.leaf,0.16,0.19,0.27,0,0.15+k*0.035,0));m.rotation.set(-0.25,k*2.4,0);g.add(m)}
     u.fruits = [];
     [[0.13, 0.25, 0.05], [-0.12, 0.3, 0.07], [0.05, 0.42, 0.12], [-0.08, 0.2, -0.1], [0.1, 0.46, -0.07]].forEach(([x, y, z]) => { const f = own(part(U.sph, u.fruitMat, 0.045, 0.045, 0.045, x, y, z)); g.add(f); u.fruits.push(f); });
   } else if (t.kind === 'dead') {
@@ -912,18 +1022,20 @@ function buildPlant(t) {
     const cols = [0xffffff, 0xc9a7ff, 0xffe066, 0xff9ec7, 0xffffff].map(c => std(c, { roughness: 0.5 }));
     const stem = std(0x4a8a30);
     for (let k = 0; k < 16; k++) {
-      const x = (Math.random() - 0.5) * 0.7, z = (Math.random() - 0.5) * 0.7, h = 0.12 + Math.random() * 0.14;
+      const x = (artRandom() - 0.5) * 0.7, z = (artRandom() - 0.5) * 0.7, h = 0.16 + artRandom() * 0.2;
       g.add(part(U.cyl, stem, 0.006, h, 0.006, x, h / 2, z));
-      g.add(part(U.sph, cols[k % cols.length], 0.035, 0.022, 0.035, x, h, z));
+      for(let p=0;p<5;p++){const a=p*Math.PI*2/5;g.add(part(U.sph,cols[k%cols.length],0.034,0.012,0.026,x+Math.cos(a)*0.029,h,z+Math.sin(a)*0.029))}
+      g.add(part(U.sph, cols[2], 0.018, 0.019, 0.018, x, h+0.009, z));
     }
   } else if (t.kind === 'bank') {
     g.add(part(U.sph, std(0x7a8a45), 0.44, 0.13, 0.44, 0, 0, 0));
     const grass = [std(0x9aa850), std(0x6f8f3a), std(0xb8b060)];
     for (let k = 0; k < 16; k++) {
-      const x = (Math.random() - 0.5) * 0.6, z = (Math.random() - 0.5) * 0.6, h = 0.18 + Math.random() * 0.18;
-      const c = part(U.cone, grass[k % 3], 0.035, h, 0.035, x, 0.08 + h / 2, z); c.rotation.set((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5); g.add(c);
+      const x = (artRandom() - 0.5) * 0.6, z = (artRandom() - 0.5) * 0.6, h = 0.18 + artRandom() * 0.18;
+      const c = part(U.cone, grass[k % 3], 0.035, h, 0.035, x, 0.08 + h / 2, z); c.rotation.set((artRandom() - 0.5) * 0.5, 0, (artRandom() - 0.5) * 0.5); g.add(c);
     }
   } else { t.plant = null; styleTile(t); return; }
+  batchDetails(g,u.fruits || []);
   scene.add(g); t.plant = g; styleTile(t);
 }
 const trapMat = std(0xf4f1e6, { roughness: 0.6 }), lureMat = std(0xd8342a), stakeMat = std(0x8a6a44);
@@ -1169,13 +1281,41 @@ function apply(id, t) {
 }
 
 // ---------------------------------------------------------------- dock & drag-and-drop
+// All player placement paths share this gate; crops remain immediate.
+const CONFIRM_PLACEMENT = new Set(['flower', 'bank', 'trap']);
+let pendingPlacement = null;
+function requestApply(id, t) {
+  if(pendingPlacement || document.querySelector('.modal.show'))return false;
+  if(!CONFIRM_PLACEMENT.has(id) || !canApply(id,t).ok)return apply(id,t);
+  const tool=TOOL[id];
+  pendingPlacement={id,t,speed,focus:document.activeElement};setSpeed(0);
+  $('#placementTitle').textContent=`${tool.icon} Place ${tool.name}?`;
+  const previous=t.kind==='crop'?CROPS[t.crop].name:KIND_NAME[t.kind];
+  const replacing=id!=='trap' && !['empty','dead'].includes(t.kind);
+  $('#placementDetails').textContent=`Tile ${label(t)}. ${replacing?`This replaces ${previous}. The existing plant is removed without a harvest or refund.`:id==='trap'?'The trap is added without removing the plant.':tool.hint}`;
+  $('#placementCost').textContent=`Cost: $${tool.cost} · Money: $${Math.round(G.money)} → $${Math.round(G.money-tool.cost)}`;
+  $('#placementConfirm').textContent=`Place · $${tool.cost}`;
+  tip.style.display='none';openModal('placementModal');$('#placementCancel').focus();
+  return false;
+}
+function finishPlacement(confirmed){
+  if(!pendingPlacement)return;
+  const pending=pendingPlacement;pendingPlacement=null;closeModal('placementModal');
+  setSpeed(pending.speed);
+  if(confirmed)apply(pending.id,pending.t); // Revalidate funds and tile state at purchase time.
+  if(!document.querySelector('.modal.show') && !$('#goalBanner').classList.contains('show'))pending.focus?.focus();
+}
+$('#placementCancel').onclick=()=>finishPlacement(false);
+$('#placementConfirm').onclick=()=>finishPlacement(true);
 const dock = $('#dock');
 for (const tool of TOOLS) {
   if (tool === 'sep') { const s = document.createElement('div'); s.className = 'dock-sep'; dock.append(s); continue; }
   const b = document.createElement('button');
   b.className = 'tool'; b.dataset.tool = tool.id; b.title = tool.hint;
+  b.setAttribute('aria-label',`${tool.name}${tool.cost?' · $'+tool.cost:''}`);b.setAttribute('aria-pressed','false');
   b.innerHTML = `<span class="ic">${tool.icon}</span><span class="nm">${tool.name}</span><span class="pr">${tool.cost ? '$' + tool.cost : 'free'}</span>`;
   b.addEventListener('pointerdown', e => startDrag(e, tool.id));
+  b.addEventListener('click',e=>{if(e.detail===0 && !document.querySelector('.modal.show'))armed===tool.id?disarm():arm(tool.id)});
   dock.append(b);
 }
 const ghost = $('#ghost'), tip = $('#tip');
@@ -1213,7 +1353,7 @@ addEventListener('pointermove', e => {
     const t = pickTile(aim(e)), v = showHover(t, drag.id);
     ghost.querySelector('.cap').textContent = t ? `${label(t)} · ${v.msg}` : (TOOL[drag.id].brush ? 'Sweep across tiles' : 'Drop on a tile');
     ghost.className = t && !v.ok ? 'bad' : '';
-    if (t && TOOL[drag.id].brush && t !== drag.last && !drag.done.has(t.i) && v.ok) { apply(drag.id, t); drag.done.add(t.i); }
+    if (t && TOOL[drag.id].brush && t !== drag.last && !drag.done.has(t.i) && v.ok) { requestApply(drag.id, t); drag.done.add(t.i); }
     drag.last = t;
   } else if (!drag && e.pointerType === 'mouse') { hoverTip(e); if (armed) { const t = pickTile(e); if (t) showHover(t, armed); } }
 });
@@ -1221,9 +1361,9 @@ addEventListener('pointerup', e => {
   if (drag && e.pointerId === drag.pointer) {
     // A tap on a tool (no drag) arms it: then tap tiles to use it, which is easier on phones.
     if (!drag.moved) { const id = drag.id; endDrag(); armed === id ? disarm() : arm(id); return; }
-    const t = pickTile(aim(e));
-    if (t && !drag.done.has(t.i)) apply(drag.id, t);
+    const t = pickTile(aim(e)),id=drag.id,shouldApply=t&&!drag.done.has(t.i);
     endDrag();
+    if(shouldApply)requestApply(id,t);
   }
 });
 addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pointer) endDrag(); });
@@ -1231,10 +1371,10 @@ addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pointe
 let downAt = null;
 canvasEl.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY }; });
 canvasEl.addEventListener('pointerup', e => {
-  if (!downAt || drag) return;
+  if (!downAt || drag || document.querySelector('.modal.show')) return;
   if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 8) {
     const t = pickTile(e);
-    if (armed && t) { apply(armed, t); if (TOOL[armed]?.brush !== true && armed !== 'lens') showHover(t, armed); }
+    if (armed && t) { requestApply(armed, t); if (TOOL[armed]?.brush !== true && armed !== 'lens') showHover(t, armed); }
     else select(t);
   }
   downAt = null;
@@ -1242,15 +1382,15 @@ canvasEl.addEventListener('pointerup', e => {
 let armed = null;
 function arm(id) {
   armed = id;
-  dock.querySelectorAll('.tool').forEach(b => b.classList.toggle('armed', b.dataset.tool === id));
+  dock.querySelectorAll('.tool').forEach(b => {b.classList.toggle('armed', b.dataset.tool === id);b.setAttribute('aria-pressed',String(b.dataset.tool===id))});
   const T = TOOL[id];
-  $('#armedBar').innerHTML = `<span class="ic">${T.icon}</span><div><b>${T.name}${T.cost ? ' · $' + T.cost : ''}</b><span>Tap tiles to use it. ${T.hint}</span></div><button class="btn" aria-label="Stop using tool">✕</button>`;
+  $('#armedBar').innerHTML = `<span class="ic">${T.icon}</span><div><b>${T.name}${T.cost ? ' · $' + T.cost : ''}</b><span>${CONFIRM_PLACEMENT.has(id)?'Tap a tile, then confirm the cost.':'Tap tiles to use it.'} ${T.hint}</span></div><button class="btn" aria-label="Stop using tool">✕</button>`;
   $('#armedBar').classList.add('show');
   $('#armedBar button').onclick = disarm;
 }
 function disarm() {
   armed = null; showHover(null);
-  dock.querySelectorAll('.armed').forEach(b => b.classList.remove('armed'));
+  dock.querySelectorAll('.armed').forEach(b => {b.classList.remove('armed');b.setAttribute('aria-pressed','false')});
   $('#armedBar').classList.remove('show');
 }
 function hoverTip(e) {
@@ -1336,7 +1476,7 @@ function renderInspector() {
     head = `${t.kind === 'flower' ? '🌼 ' : t.kind === 'bank' ? '🌾 ' : ''}${KIND_NAME[t.kind]} · ${label(t)}`;
     if (t.kind === 'flower') body += `<p class="muted">Provides nectar and pollen. Parasitoids live about twice as long nearby, and parasitoid K rises by up to 18 within 2 tiles.</p>`;
     if (t.kind === 'bank') body += `<p class="muted">Tussock grass refuge with alternative prey. Ladybirds can survive and breed here without aphids, then spill over into nearby crops.</p>`;
-    if (t.kind === 'empty') body += `<p class="muted">Drag a crop here, or a shelter plant to raise natural-enemy capacity around it.</p>`;
+    if (t.kind === 'empty') body += `<p class="muted">Select a crop tool, then tap this tile to plant. Shelter plants ask for confirmation before raising natural-enemy capacity nearby. Dragging also works.</p>`;
     if (t.kind === 'dead') body += `<p class="muted">Pests destroyed this plant. Dig it for free, or plant over it.</p>`;
   }
   if (t.residue > 0) body += `<p class="muted" style="color:var(--bad)">🧪 Insecticide residue: ${t.residue} more days. Natural enemies here die quickly.</p>`;
@@ -1562,7 +1702,7 @@ renderLevels();
 $('#level').textContent = `${LEVEL} · ${D.name}`;
 $('#level').dataset.short = `L${LEVEL}`;
 $('#goalLbl').textContent = `Goal $${D.target}`;
-$('#startBtn').onclick = () => { closeModal('startModal'); setSpeed(0.5); toast(`🌱 Level ${LEVEL} (${D.name}) has started. Reach $${D.target} by day ${SEASON}. Drag 🥬 cabbages onto the soil to begin.`, 'good'); };
+$('#startBtn').onclick = () => { closeModal('startModal'); setSpeed(0.5); toast(`🌱 Level ${LEVEL} (${D.name}) has started. Reach $${D.target} by day ${SEASON}. Select 🥬, then tap the soil to plant.`, 'good'); };
 $('#againBtn').onclick = () => location.reload();
 $('#nextBtn').onclick = () => goLevel(LEVEL + 1);
 $('#levelsBtn').onclick = () => { closeModal('endModal'); openModal('startModal'); $('#startBtn').textContent = 'Replay this level'; $('#startBtn').onclick = () => location.reload(); };
@@ -1640,6 +1780,11 @@ function endSeason() {
 }
 
 addEventListener('keydown', e => {
+  if(pendingPlacement){
+    if(e.code==='Escape'){e.preventDefault();finishPlacement(false)}
+    if(e.key==='Tab'){e.preventDefault();const cancel=$('#placementCancel'),confirm=$('#placementConfirm');(document.activeElement===cancel?confirm:cancel).focus()}
+    return;
+  }
   if (e.target.tagName === 'INPUT') return;
   if (e.code === 'Escape') { if (drag) endDrag(); else if (armed) disarm(); else if ($('#guideModal').classList.contains('show')) { closeModal('guideModal'); setSpeed(resumeSpeed); } }
   if (document.querySelector('.modal.show')) return;
@@ -1649,12 +1794,20 @@ addEventListener('keydown', e => {
 });
 function fitCamera() {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  if(innerWidth>980)camera.setViewOffset(innerWidth,innerHeight,145,0,innerWidth,innerHeight);
+  else camera.clearViewOffset();
   const d = 14.8 * Math.max(1, 1.1 / camera.aspect) * (camera.aspect < 0.8 ? 0.92 : 1);
   // Portrait phones: look more from above so the square field fills the tall screen
   const dir = camera.aspect < 0.8 ? new THREE.Vector3(0, Math.cos(0.5), Math.sin(0.5)) : camera.position.clone().sub(controls.target).normalize();
   camera.position.copy(controls.target).addScaledVector(dir, Math.min(controls.maxDistance, d));
 }
 fitCamera();
+function syncHudSpace(){
+  document.documentElement.style.setProperty('--hud-bottom',`${$('#topbar').getBoundingClientRect().bottom+12}px`);
+  document.documentElement.style.setProperty('--dock-clearance',`${innerHeight-$('#dock').getBoundingClientRect().top+8}px`);
+}
+const hudObserver=new ResizeObserver(syncHudSpace);hudObserver.observe($('#topbar'));hudObserver.observe($('#dock'));
+addEventListener('resize',syncHudSpace);
 addEventListener('resize', () => {
   fitCamera(); renderer.setSize(innerWidth, innerHeight);
   drawSeries($('#chart'), null);
@@ -1686,7 +1839,9 @@ function loop(now) {
 }
 requestAnimationFrame(loop);
 // Test hook, only with ?debug in the URL
-if (new URLSearchParams(location.search).has('debug')) window.__bcf = { G, D, checkGoal, tiles, camera, controls, ray, ndc, tileMeshes, canvasEl, pickTile, apply, get drag() { return drag; }, get armed() { return armed; } };
+if (new URLSearchParams(location.search).has('debug')) window.__bcf = { G, D, checkGoal, tiles, camera, controls, ray, ndc, tileMeshes, canvasEl, pickTile, apply,
+  sampleCanvas:()=>{renderer.render(scene,camera);const gl=renderer.getContext(),p=new Uint8Array(4),colors=new Set();for(let x=1;x<12;x++)for(let y=1;y<12;y++){gl.readPixels(Math.floor(gl.drawingBufferWidth*x/12),Math.floor(gl.drawingBufferHeight*y/12),1,1,gl.RGBA,gl.UNSIGNED_BYTE,p);colors.add(`${p[0]},${p[1]},${p[2]}`)}return {colors:colors.size}},
+  diagnostics:()=>({calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,dpr:renderer.getPixelRatio()}), get drag() { return drag; }, get armed() { return armed; } };
 </script>
 </body>
 </html>
