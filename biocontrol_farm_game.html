@@ -271,6 +271,35 @@
     #armedBar,#log,#heatLegend{bottom:var(--dock-clearance,134px)}
     #inspector h3{overflow-wrap:anywhere}
   }
+  /* Compact grouped controls; popovers stay above the field and within the viewport. */
+  .dropdown{position:relative;min-width:0}
+  .dropdown summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:42px;background:var(--panel-2);font-size:12px;user-select:none}
+  .dropdown summary::-webkit-details-marker{display:none}
+  .dropdown summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .dropdown[open]>summary{background:#556848;color:#fff5cf;border-color:var(--gold)}
+  .choices{position:absolute;z-index:12;top:calc(100% + 7px);right:0;width:200px;max-width:calc(100vw - 24px);padding:7px;display:grid;gap:5px;background:#1c3329;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 25px #0005;max-height:50dvh;overflow:auto}
+  .choices button{width:100%;min-height:42px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);padding:8px 10px;text-align:left}
+  .choices button.on{background:var(--leaf);color:#203326;font-weight:700}
+  .choices button[hidden]{display:none}
+  #moreMenu #panelBtn{display:block}#moreMenu #guideBtn .lbl{display:inline}
+  #dock{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));width:min(790px,calc(100vw - 20px));gap:6px}
+  #dock .dropdown summary{padding:8px 5px;text-align:center;min-height:56px}
+  .category-name{display:block;font-size:11px;font-weight:700}.category-current{display:block;font-size:10px;color:var(--ink-3);margin-top:3px;overflow-wrap:anywhere}
+  #dock .dropdown.selected>summary{border-color:var(--gold);box-shadow:inset 0 -3px var(--gold)}
+  #dock .choices{position:fixed;left:50%;right:auto;top:auto;bottom:calc(100% + 8px);transform:translateX(-50%);width:min(440px,calc(100vw - 24px));grid-template-columns:repeat(2,minmax(0,1fr));max-height:45dvh}
+  #dock .tool{width:100%;height:auto;min-width:0;min-height:86px;padding:8px;display:grid;grid-template-columns:40px 1fr;gap:3px 8px;text-align:left}
+  #dock .tool .ic{grid-row:1 / 3;font-size:28px}#dock .tool .nm{display:block;text-align:left;font-size:12px;line-height:1.3}#dock .tool .pr{font-size:12px;justify-self:start}
+  #dock:has(details[open]){z-index:8}
+  @media(max-width:760px){
+    #topbar #speed,#topbar #views,#topbar #moreMenu{display:block;grid-row:2;min-width:0;overflow:visible}
+    #topbar #speed{grid-column:1 / 5}#topbar #views{grid-column:5 / 9}#topbar #moreMenu{grid-column:9 / 13}
+    #topbar summary{padding:8px 5px;font-size:11px;min-height:40px;display:flex;align-items:center;justify-content:center}
+    #topbar .choices{position:fixed;top:var(--hud-bottom,120px);left:8px;right:8px;width:auto;max-width:none;max-height:45dvh}
+    #topbar .choices button{padding:10px;font-size:13px;text-align:left;min-height:44px}
+    #dock{grid-template-columns:repeat(3,minmax(0,1fr));width:calc(100vw - 12px);gap:4px}
+    #dock .dropdown summary{min-height:44px;padding:5px 3px}.category-current{font-size:10px;margin-top:1px}
+    #armedBar div span{white-space:normal;font-size:11px}
+  }
 </style>
 </head>
 <body>
@@ -283,23 +312,25 @@
   <div class="stat stat-money"><span id="goalLbl">Money · goal</span><strong id="money">$250</strong><div class="season"><i id="goalBar"></i></div></div>
   <div class="stat opt" title="Daily temperature and degree-days accumulated above the 10 °C development threshold"><span>Temp · degree-days</span><strong id="temp">18 °C · 0 DD</strong></div>
   <div class="stat opt" title="Resistance of the pest population to the broad-spectrum insecticide / to Bt"><span>Resistance</span><strong id="resist">0% · Bt 0%</strong></div>
-  <div class="seg" id="speed" role="group" aria-label="Game speed">
-    <button data-speed="0" title="Pause (Space)" aria-label="Pause">⏸</button>
-    <button data-speed="0.5" title="Normal speed (1)" aria-label="Normal speed">▶</button>
-    <button data-speed="1" title="Fast (2)" aria-label="Fast">▶▶</button>
-    <button data-speed="2" title="Very fast (3)" aria-label="Very fast">▶▶▶</button>
-  </div>
-  <div class="seg views" id="views" role="group" aria-label="Map view">
+  <details class="dropdown" id="speed"><summary>⏸ Paused ▾</summary><div class="choices" aria-label="Game speed">
+    <button data-speed="0" title="Pause (Space)" aria-label="Pause">⏸ Pause</button>
+    <button data-speed="0.5" title="Normal speed (1)" aria-label="Normal speed">▶ Normal</button>
+    <button data-speed="1" title="Fast (2)" aria-label="Fast">▶▶ Fast</button>
+    <button data-speed="2" title="Very fast (3)" aria-label="Very fast">▶▶▶ Fastest</button>
+  </div></details>
+  <details class="dropdown" id="views"><summary>Map: Farm ▾</summary><div class="choices" aria-label="Map view">
     <button data-view="farm" class="on">Farm</button>
     <button data-view="pests">Pests</button>
     <button data-view="enemies">Enemies</button>
     <button data-view="threshold">ET/EIL</button>
     <button data-view="capacity">Enemy K</button>
-  </div>
+  </div></details>
   <div class="spacer"></div>
+  <details class="dropdown" id="moreMenu"><summary>☰ More ▾</summary><div class="choices">
   <button class="btn primary small" id="nextLvlBtn" hidden>Next level ▶</button>
   <button class="btn" id="guideBtn">📖 <span class="lbl">Guide</span></button>
-  <button class="btn" id="panelBtn" aria-label="Toggle field panel">📋</button>
+  <button class="btn" id="panelBtn" aria-label="Toggle field panel">📋 Field report</button>
+  </div></details>
 </header>
 
 <div id="goalBanner" class="card" role="dialog" aria-live="assertive">
@@ -324,7 +355,7 @@
   </section>
 </aside>
 
-<nav id="dock" class="card" aria-label="Tools – drag onto a field tile"></nav>
+<nav id="dock" class="card" aria-label="Tool categories – select a tool, then tap a field tile"></nav>
 <div id="armedBar" class="card"></div>
 <div class="modal" id="placementModal" role="dialog" aria-modal="true" aria-labelledby="placementTitle">
   <div class="card" style="max-width:440px">
@@ -1308,15 +1339,37 @@ function finishPlacement(confirmed){
 $('#placementCancel').onclick=()=>finishPlacement(false);
 $('#placementConfirm').onclick=()=>finishPlacement(true);
 const dock = $('#dock');
+const TOOL_GROUPS=[
+  ['crops','🌱 Crops',['cabbage','tomato']],['habitat','🌼 Habitat',['flower','bank']],
+  ['enemies','🐞 Enemies',['lady','aphidius','tricho']],['monitor','🔍 Monitor',['lens','trap']],
+  ['control','🧪 Control',['bt','spray']],['farm','🧺 Farm tasks',['sickle','shovel']]
+];
+for(const [id,name,ids] of TOOL_GROUPS){
+  const group=document.createElement('details');group.className='dropdown';group.dataset.group=id;
+  group.innerHTML=`<summary><span><span class="category-name">${name} ▾</span><span class="category-current">Choose tool</span></span></summary><div class="choices" aria-label="${name}"></div>`;
+  dock.append(group);
+}
+function closeMenus(except=null){document.querySelectorAll('.dropdown[open]').forEach(d=>{if(d!==except)d.open=false})}
+document.addEventListener('pointerdown',e=>{
+  if(document.querySelector('.dropdown[open]')&&!e.target.closest('.dropdown')){
+    closeMenus();
+    if(e.target===canvasEl){downAt=null;e.preventDefault();e.stopImmediatePropagation()}
+  }
+},true);
+document.addEventListener('click',e=>{
+  const summary=e.target.closest('.dropdown > summary');if(summary)closeMenus(summary.parentElement);
+  else if(!e.target.closest('.dropdown'))closeMenus();
+});
+document.querySelectorAll('#topbar .choices button').forEach(b=>b.addEventListener('click',()=>closeMenus()));
 for (const tool of TOOLS) {
-  if (tool === 'sep') { const s = document.createElement('div'); s.className = 'dock-sep'; dock.append(s); continue; }
+  if (tool === 'sep') continue;
   const b = document.createElement('button');
   b.className = 'tool'; b.dataset.tool = tool.id; b.title = tool.hint;
   b.setAttribute('aria-label',`${tool.name}${tool.cost?' · $'+tool.cost:''}`);b.setAttribute('aria-pressed','false');
   b.innerHTML = `<span class="ic">${tool.icon}</span><span class="nm">${tool.name}</span><span class="pr">${tool.cost ? '$' + tool.cost : 'free'}</span>`;
   b.addEventListener('pointerdown', e => startDrag(e, tool.id));
   b.addEventListener('click',e=>{if(e.detail===0 && !document.querySelector('.modal.show'))armed===tool.id?disarm():arm(tool.id)});
-  dock.append(b);
+  const group=TOOL_GROUPS.find(g=>g[2].includes(tool.id));dock.querySelector(`[data-group="${group[0]}"] .choices`).append(b);
 }
 const ghost = $('#ghost'), tip = $('#tip');
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -1337,6 +1390,7 @@ const aim = e => e.pointerType === 'touch' ? { clientX: e.clientX, clientY: e.cl
 function startDrag(e, id) {
   if (G.over || document.querySelector('.modal.show') || $('#goalBanner').classList.contains('show')) return;
   e.preventDefault();
+  closeMenus();
   drag = { id, pointer: e.pointerId, last: null, done: new Set(), x0: e.clientX, y0: e.clientY, moved: false, touch: e.pointerType === 'touch' };
   controls.enabled = false; tip.style.display = 'none';
   ghost.querySelector('.ic').textContent = TOOL[id].icon;
@@ -1381,15 +1435,18 @@ canvasEl.addEventListener('pointerup', e => {
 });
 let armed = null;
 function arm(id) {
+  closeMenus();
   armed = id;
   dock.querySelectorAll('.tool').forEach(b => {b.classList.toggle('armed', b.dataset.tool === id);b.setAttribute('aria-pressed',String(b.dataset.tool===id))});
   const T = TOOL[id];
+  dock.querySelectorAll('[data-group]').forEach(g=>{const selected=!!g.querySelector(`[data-tool="${id}"]`);g.classList.toggle('selected',selected);g.querySelector('.category-current').textContent=selected?T.name+(T.cost?' · $'+T.cost:''):'Choose tool'});
   $('#armedBar').innerHTML = `<span class="ic">${T.icon}</span><div><b>${T.name}${T.cost ? ' · $' + T.cost : ''}</b><span>${CONFIRM_PLACEMENT.has(id)?'Tap a tile, then confirm the cost.':'Tap tiles to use it.'} ${T.hint}</span></div><button class="btn" aria-label="Stop using tool">✕</button>`;
   $('#armedBar').classList.add('show');
   $('#armedBar button').onclick = disarm;
 }
 function disarm() {
   armed = null; showHover(null);
+  dock.querySelectorAll('.selected').forEach(g=>{g.classList.remove('selected');g.querySelector('.category-current').textContent='Choose tool'});
   dock.querySelectorAll('.armed').forEach(b => {b.classList.remove('armed');b.setAttribute('aria-pressed','false')});
   $('#armedBar').classList.remove('show');
 }
@@ -1630,6 +1687,7 @@ function updateHeat() {
   }
 }
 function setView(v) {
+  $('#views > summary').textContent='Map: '+({farm:'Farm',pests:'Pests',enemies:'Enemies',threshold:'ET/EIL',capacity:'Enemy K'}[v]||v)+' ▾';
   view = v;
   document.querySelectorAll('#views button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
   const L = $('#heatLegend'), H = HEAT[v];
@@ -1644,6 +1702,7 @@ document.querySelectorAll('#views button').forEach(b => b.onclick = () => setVie
 // ---------------------------------------------------------------- HUD, speed, hints
 let speed = 0, lastSpeed = 0.5;
 function setSpeed(s) {
+  $('#speed > summary').textContent=({0:'⏸ Paused',0.5:'▶ Normal',1:'▶▶ Fast',2:'▶▶▶ Fastest'}[s]||'Speed')+' ▾';
   if (G.over) s = 0;
   if (s > 0) lastSpeed = s;
   speed = s;
@@ -1780,6 +1839,7 @@ function endSeason() {
 }
 
 addEventListener('keydown', e => {
+  if(e.code==='Escape' && document.querySelector('.dropdown[open]')){e.preventDefault();const menu=document.querySelector('.dropdown[open]');closeMenus();menu.querySelector('summary').focus();return}
   if(pendingPlacement){
     if(e.code==='Escape'){e.preventDefault();finishPlacement(false)}
     if(e.key==='Tab'){e.preventDefault();const cancel=$('#placementCancel'),confirm=$('#placementConfirm');(document.activeElement===cancel?confirm:cancel).focus()}

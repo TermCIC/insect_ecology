@@ -1,0 +1,104 @@
+{
+  "errors": [],
+  "diagnostics": {
+    "calls": 247,
+    "triangles": 281098,
+    "geometries": 147,
+    "textures": 2,
+    "dpr": 1
+  },
+  "pixels": {
+    "colors": 45
+  },
+  "fit": {
+    "overflow": false,
+    "tools": [
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      },
+      {
+        "w": 172.5,
+        "h": 86
+      }
+    ]
+  },
+  "phoneLayouts": [
+    {
+      "width": 320,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    },
+    {
+      "width": 375,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    },
+    {
+      "width": 430,
+      "overflow": false,
+      "panelClear": true,
+      "scrollable": true
+    }
+  ],
+  "realPointerPlanting": true,
+  "clickPlanting": true,
+  "confirmationBeforeSpending": true,
+  "cancelPreservesCrop": true,
+  "confirmChargesOnce": true,
+  "touchPlanting": true,
+  "touchConfirmation": true,
+  "hudOverlap": false
+}

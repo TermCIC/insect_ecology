@@ -20,10 +20,12 @@ try{
  for(let n=0;n<80;n++){if(await ev('!!window.__bcf'))break;await sleep(250)}
  await shot('menu');await ev("document.querySelector('#startBtn').click();document.querySelector('[data-speed=\"0\"]').click()");
  // Use actual game actions to populate a representative farm, then inspect growth stages.
+ await ev(`document.querySelector('[data-group="crops"] > summary').click()`);
  const dragPoints=await ev(`(()=>{const h=window.__bcf,b=document.querySelector('[data-tool="cabbage"]').getBoundingClientRect(),p=h.tiles[27].mesh.position.clone().project(h.camera);return {from:[b.x+b.width/2,b.y+b.height/2],to:[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2]}})()`);
  for(const [type,p,buttons] of [['mousePressed',dragPoints.from,1],['mouseMoved',dragPoints.to,1],['mouseReleased',dragPoints.to,0]])await send('Input.dispatchMouseEvent',{type,x:p[0],y:p[1],button:'left',buttons,clickCount:1});
  if(!await ev("__bcf.tiles[27].kind==='crop'"))throw Error('Real pointer planting failed');
  const click=async(selector,tile)=>{
+  if(selector)await ev(`(()=>{const e=document.querySelector(${JSON.stringify(selector)}),d=e.closest('details');if(d&&!d.open&&!e.matches('summary'))d.querySelector('summary').click()})()`);
   const p=await ev(tile===undefined?`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]})()`:`(()=>{const p=__bcf.tiles[${tile}].mesh.position.clone().project(__bcf.camera);return [(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2]})()`);
   for(const type of ['mousePressed','mouseReleased'])await send('Input.dispatchMouseEvent',{type,x:p[0],y:p[1],button:'left',buttons:type==='mousePressed'?1:0,clickCount:1});
  };
@@ -44,7 +46,12 @@ try{
  const overlap=await ev("document.querySelector('#panel').getBoundingClientRect().top < document.querySelector('#topbar').getBoundingClientRect().bottom");if(overlap)throw Error('HUD overlaps inspector');
  await send('Emulation.setDeviceMetricsOverride',{width:1024,height:768,deviceScaleFactor:1,mobile:false});await sleep(300);await shot('laptop');
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(500);await shot('mobile');
+ await click('[data-group="enemies"] > summary');await shot('tools-expanded-mobile');
+ await click('#speed > summary');
+ if(!await ev(`document.querySelectorAll('.dropdown[open]').length===1`))throw Error('Multiple menus remain open');
+ await shot('speed-expanded-mobile');await click('[data-speed="0"]');
  const tap=async(selector,tile)=>{
+  if(selector)await ev(`(()=>{const e=document.querySelector(${JSON.stringify(selector)}),d=e.closest('details');if(d&&!d.open&&!e.matches('summary'))d.querySelector('summary').click()})()`);
   const p=await ev(tile===undefined?`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]})()`:`(()=>{const p=__bcf.tiles[${tile}].mesh.position.clone().project(__bcf.camera);return [(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2]})()`);
   await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:p[0],y:p[1]}]});await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  };
