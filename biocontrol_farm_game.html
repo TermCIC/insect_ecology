@@ -918,9 +918,24 @@ renderer.toneMappingExposure = 1.18;
 $('#scene').append(renderer.domElement);
 const canvasEl = renderer.domElement;
 
+// Per-level scenery: the farm grows more intensive and the season hotter and drier as levels rise,
+// with fewer hedgerow trees (less landscape habitat for natural enemies).
+const SCENES = [
+  { sky: 0xcbd9c2, fog: 65, ground: 0x82945a, sun: 0xffe4b2, sunI: 3.0,  hemi: [0xe2edff, 0x68653c], crowns: [0x637b43, 0x426b48, 0x81954e], grassHue: 0.19,  trees: 34, dry: 0, props: ['shed'] },
+  { sky: 0xc7dbcb, fog: 65, ground: 0x80965b, sun: 0xffe6b8, sunI: 3.0,  hemi: [0xe0f0ff, 0x67663c], crowns: [0x5f7f45, 0x3f6d4a, 0x7f9a50], grassHue: 0.2,   trees: 32, dry: 0, props: ['shed', 'beds'] },
+  { sky: 0xcddbc2, fog: 64, ground: 0x83955a, sun: 0xffe2ae, sunI: 3.0,  hemi: [0xe3eefc, 0x69653b], crowns: [0x65794a, 0x456b47, 0x84954f], grassHue: 0.185, trees: 30, dry: 0, props: ['shed', 'greenhouse'] },
+  { sky: 0xd1d9c0, fog: 63, ground: 0x86935a, sun: 0xffdfa8, sunI: 3.05, hemi: [0xe6ecf8, 0x6a643a], crowns: [0x697a47, 0x486a46, 0x88944d], grassHue: 0.18,  trees: 28, dry: 2, props: ['barn', 'greenhouse', 'shed'] },
+  { sky: 0xd4d7bd, fog: 61, ground: 0x899158, sun: 0xffdca2, sunI: 3.05, hemi: [0xe8eaf2, 0x6b6339], crowns: [0x6d7a45, 0x4c6a45, 0x8c934b], grassHue: 0.17,  trees: 26, dry: 4, props: ['barn', 'silo', 'greenhouse'] },
+  { sky: 0xd6d4b8, fog: 59, ground: 0x8b8f56, sun: 0xffd89a, sunI: 3.1,  hemi: [0xeae6ea, 0x6c6138], crowns: [0x727943, 0x516943, 0x908f49], grassHue: 0.16,  trees: 24, dry: 6, props: ['barn', 'silo', 'windmill'] },
+  { sky: 0xd8d0b2, fog: 57, ground: 0x8e8d54, sun: 0xffd292, sunI: 3.1,  hemi: [0xece2e0, 0x6d5f37], crowns: [0x767842, 0x556842, 0x948c47], grassHue: 0.15,  trees: 22, dry: 8, props: ['barn', 'silo', 'windmill'] },
+  { sky: 0xdacbab, fog: 55, ground: 0x908a52, sun: 0xffca88, sunI: 3.05, hemi: [0xeeddd8, 0x6e5c36], crowns: [0x7b7641, 0x596641, 0x998845], grassHue: 0.14,  trees: 20, dry: 10, props: ['barn', 'silo', 'windmill', 'scarecrow'] },
+];
+const SCENERY = SCENES[Math.min(LEVEL, SCENES.length) - 1];
+const PROP_SPOTS = { shed: [-6.6, -6.6], beds: [6.4, -6.4], greenhouse: [-7.6, 1.5], barn: [7.9, 1], silo: [8.6, -4.6], windmill: [-8.4, -4.8], scarecrow: [-6.2, 5.8] };
+
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xcbd9c2);
-scene.fog = new THREE.Fog(0xcbd9c2, 35, 65);
+scene.background = new THREE.Color(SCENERY.sky);
+scene.fog = new THREE.Fog(SCENERY.sky, 35, SCENERY.fog);
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 120);
 camera.position.set(0, 10.5, 10.5);
 const controls = new OrbitControls(camera, canvasEl);
@@ -930,8 +945,8 @@ controls.minDistance = 3.5; controls.maxDistance = 30;
 controls.minPolarAngle = 0.12; controls.maxPolarAngle = 1.25;
 controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 
-scene.add(new THREE.HemisphereLight(0xe2edff, 0x68653c, 1.7));
-const sun = new THREE.DirectionalLight(0xffe4b2, 3.0);
+scene.add(new THREE.HemisphereLight(SCENERY.hemi[0], SCENERY.hemi[1], 1.7));
+const sun = new THREE.DirectionalLight(SCENERY.sun, SCENERY.sunI);
 sun.position.set(6, 12, 5); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 30 });
@@ -966,15 +981,17 @@ function batchDetails(group, excluded = []) {
 let artSeed=731;
 function artRandom(){artSeed=(Math.imul(1664525,artSeed)+1013904223)>>>0;return artSeed/4294967296}
 
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), std(0x82945a, { roughness: 1 }));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), std(SCENERY.ground, { roughness: 1 }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 const frame = new THREE.Mesh(new THREE.BoxGeometry(GW + 0.5, 0.1, GH + 0.5), std(0x4a3322, { roughness: 1 }));
 frame.position.y = 0.05; frame.receiveShadow = true; scene.add(frame);
 // Layered orchard and timber field edges. Decorative meshes are never raycast targets.
 {
-  const world = new THREE.Group(), trunk = std(0x756047), crowns = [std(0x637b43), std(0x426b48), std(0x81954e)];
-  for (let i = 0; i < 34; i++) {
-    const a = i / 34 * Math.PI * 2, r = 9.5 + artRandom() * 6;
+  const world = new THREE.Group(), trunk = std(0x756047), crowns = SCENERY.crowns.map(c => std(c));
+  const spots = SCENERY.props.map(k => PROP_SPOTS[k]);
+  for (let i = 0; i < SCENERY.trees; i++) {
+    const a = i / SCENERY.trees * Math.PI * 2, r = 9.5 + artRandom() * 6;
+    if (spots.some(([px, pz]) => Math.hypot(Math.cos(a) * r - px, Math.sin(a) * r - pz) < 2.6)) continue;   // keep landmarks clear
     const g = new THREE.Group(); const h = 0.8 + artRandom() * 1.1;
     g.add(part(U.cyl, trunk, 0.08, h, 0.08, 0, h / 2, 0));
     for(let k=0;k<4;k++)g.add(part(U.sph,crowns[(i+k)%3],0.62,0.65,0.6,Math.cos(k*2.4)*0.37,h+k*0.19,Math.sin(k*2.4)*0.37));
@@ -1005,9 +1022,42 @@ frame.position.y = 0.05; frame.receiveShadow = true; scene.add(frame);
     dummy.position.set(side<2?(side===0?-r:r):along,0.07,side>=2?(side===2?-r:r):along);
     if(Math.abs(dummy.position.x)<0.7 && dummy.position.z>0)dummy.position.x+=1.2;
     dummy.rotation.set(0,artRandom()*6.28,(artRandom()-.5)*.3);dummy.scale.setScalar(.5+artRandom());dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix);
-    grass.setColorAt(i,new THREE.Color().setHSL(.19+artRandom()*.06,.25,.29+artRandom()*.12));
+    grass.setColorAt(i,new THREE.Color().setHSL(SCENERY.grassHue+artRandom()*.06,.25,.29+artRandom()*.12));
   }
   grass.instanceMatrix.needsUpdate=true;grass.receiveShadow=true;scene.add(grass);
+}
+// Landmarks and dry patches for this level (decorative only; never raycast)
+{
+  const g = new THREE.Group(), box = new THREE.BoxGeometry(1, 1, 1);
+  const tri = new THREE.Shape([new THREE.Vector2(-1, 0), new THREE.Vector2(1, 0), new THREE.Vector2(0, 1)]);
+  const gable = new THREE.ExtrudeGeometry(tri, { depth: 1, bevelEnabled: false }).translate(0, 0, -0.5);
+  const M = { wood: std(0x8a6a44), roof: std(0x5b4636), red: std(0xa3402f), white: std(0xeee6d2), metal: std(0xb9bdb7, { metalness: 0.35, roughness: 0.5 }),
+    glass: new THREE.MeshStandardMaterial({ color: 0xeaf4ee, transparent: true, opacity: 0.55, roughness: 0.2, side: THREE.DoubleSide }),
+    dark: std(0x3a2e24), straw: std(0xd8b85a), green: std(0x5f7d3c), soil: std(0x6a4a30), dry: std(0xa3985f, { roughness: 1 }) };
+  const mesh = (geo, mat, sx, sy, sz, x, y, z) => { const m = part(geo, mat, sx, sy, sz, x, y, z); m.receiveShadow = true; return m; };
+  const build = {
+    shed() { const o = new THREE.Group(); o.add(mesh(box, M.wood, 1.2, 0.9, 1, 0, 0.45, 0), mesh(gable, M.roof, 0.7, 0.45, 1.15, 0, 0.9, 0), mesh(box, M.dark, 0.35, 0.6, 0.04, 0, 0.3, 0.51)); return o; },
+    beds() { const o = new THREE.Group(); for (let k = 0; k < 3; k++) { const z = (k - 1) * 0.75; o.add(mesh(box, M.wood, 1.5, 0.2, 0.5, 0, 0.1, z), mesh(box, M.soil, 1.4, 0.03, 0.4, 0, 0.21, z)); for (let j = 0; j < 4; j++) o.add(mesh(U.sph, M.green, 0.11, 0.08, 0.11, -0.52 + j * 0.35, 0.26, z)); } return o; },
+    greenhouse() { const o = new THREE.Group(); const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 3, 18, 1, true, 0, Math.PI), M.glass); arch.rotation.z = Math.PI / 2; o.add(arch); for (let k = -1; k <= 1; k++) { const rib = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.025, 4, 18, Math.PI), M.metal); rib.rotation.y = Math.PI / 2; rib.position.x = k * 1.45; o.add(rib); } return o; },
+    barn() { const o = new THREE.Group(); o.add(mesh(box, M.red, 1.7, 1.3, 2.3, 0, 0.65, 0), mesh(gable, M.roof, 0.95, 0.75, 2.4, 0, 1.3, 0), mesh(box, M.white, 0.8, 0.9, 0.05, 0, 0.45, 1.16), mesh(box, M.white, 1.72, 0.06, 2.32, 0, 1.3, 0)); return o; },
+    silo() { const o = new THREE.Group(); o.add(mesh(U.cyl, M.metal, 0.55, 2.6, 0.55, 0, 1.3, 0), mesh(U.sph, M.metal, 0.56, 0.35, 0.56, 0, 2.6, 0)); return o; },
+    windmill() {
+      const o = new THREE.Group(); o.add(mesh(new THREE.CylinderGeometry(0.06, 0.16, 3, 6), M.metal, 1, 1, 1, 0, 1.5, 0));
+      const hub = new THREE.Group(); hub.position.set(0, 3, 0.12);
+      for (let k = 0; k < 4; k++) { const b = mesh(box, M.white, 0.12, 1.1, 0.03, 0, 0.55, 0); const arm = new THREE.Group(); arm.rotation.z = k * Math.PI / 2; arm.add(b); hub.add(arm); }
+      hub.children[0].children[0].onBeforeRender = () => { hub.rotation.z = performance.now() / 900; };
+      o.add(hub); return o;
+    },
+    scarecrow() { const o = new THREE.Group(); o.add(mesh(U.cyl, M.wood, 0.04, 1.3, 0.04, 0, 0.65, 0), mesh(box, M.wood, 0.9, 0.05, 0.05, 0, 1.0, 0), mesh(box, M.red, 0.35, 0.45, 0.2, 0, 0.95, 0), mesh(U.sph, M.straw, 0.14, 0.14, 0.14, 0, 1.3, 0), mesh(U.cone, M.dark, 0.2, 0.22, 0.2, 0, 1.5, 0)); return o; },
+  };
+  const facing = { barn: -Math.PI / 2, greenhouse: Math.PI / 2, shed: Math.PI / 4, beds: -Math.PI / 4, silo: 0, windmill: Math.PI / 4, scarecrow: -Math.PI / 5 };
+  for (const k of SCENERY.props) { const o = build[k](), [x, z] = PROP_SPOTS[k]; o.position.set(x, 0, z); o.rotation.y = facing[k]; g.add(o); }
+  // Sun-scorched grass patches outside the field on the hotter, later levels
+  for (let i = 0; i < SCENERY.dry; i++) {
+    const a = artRandom() * Math.PI * 2, r = 6.2 + artRandom() * 6;
+    g.add(mesh(U.sph, M.dry, 0.25 + artRandom() * 0.35, 0.01, 0.18 + artRandom() * 0.25, Math.cos(a) * r, 0.004, Math.sin(a) * r));
+  }
+  g.name = 'Level scenery'; scene.add(g);
 }
 
 function soilTexture() {
