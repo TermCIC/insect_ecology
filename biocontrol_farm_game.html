@@ -127,6 +127,15 @@
   table.params th{color:var(--ink-3);font-weight:600}
   .pyramid{display:flex;flex-direction:column;align-items:center;gap:3px;margin:10px 0}
   .pyramid div{padding:6px 10px;border-radius:8px;background:rgba(169,207,99,.14);border:1px solid var(--line);text-align:center;font-size:12.5px;color:var(--ink)}
+  .levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .lvl{border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:8px;text-align:left;color:var(--ink)}
+  .lvl b{display:block;font-size:13px}
+  .lvl span{display:block;font-size:11px;color:var(--ink-3);line-height:1.35}
+  .lvl.on{border-color:var(--gold);box-shadow:0 0 0 2px rgba(244,195,90,.35)}
+  .lvl:disabled{opacity:.45;cursor:not-allowed}
+  .lvl .done{color:var(--good)}
+  .pass{font:700 18px Georgia,serif;margin:4px 0 2px}
+  @media (max-width:760px){.levels{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .end-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
   .end-stats div{border:1px solid var(--line);border-radius:10px;padding:8px}
   .end-stats span{display:block;font-size:11px;color:var(--ink-3)}
@@ -178,8 +187,9 @@
 
 <header id="topbar" class="card">
   <div class="brand"><b>Biocontrol Farm</b><span>Biological control &amp; functional response</span></div>
+  <div class="stat"><span>Level</span><strong id="level">1</strong></div>
   <div class="stat"><span>Day</span><strong id="day">0 / 120</strong><div class="season"><i id="seasonBar"></i></div></div>
-  <div class="stat"><span>Money</span><strong id="money">$250</strong></div>
+  <div class="stat"><span id="goalLbl">Money · goal</span><strong id="money">$250</strong><div class="season"><i id="goalBar"></i></div></div>
   <div class="stat opt" title="Daily temperature and degree-days accumulated above the 10 °C development threshold"><span>Temp · degree-days</span><strong id="temp">18 °C · 0 DD</strong></div>
   <div class="stat opt" title="Resistance of the pest population to the broad-spectrum insecticide / to Bt"><span>Resistance</span><strong id="resist">0% · Bt 0%</strong></div>
   <div class="seg" id="speed" role="group" aria-label="Game speed">
@@ -226,6 +236,9 @@
   <p>You run an 8 × 8 vegetable farm for one <b>120-day season</b>. Plant crops, let them grow, and harvest them for money. Winged <b>aphids</b> and egg-laying <b>armyworm moths</b> fly in from the landscape and build up stage-structured populations on your plants.</p>
   <p>Wild <b>predators</b> (ladybirds) and <b>parasitoids</b> (<i>Aphidius</i> and <i>Trichogramma</i> wasps) arrive too, but usually <b>late</b>. You can buy and release them, and plant <b>shelter plants</b> (flower strips, beetle banks) that raise the number of natural enemies each tile can hold (their carrying capacity, K).</p>
   <p><b>Everything is drag-and-drop.</b> Drag an icon from the bottom dock onto a tile. Crops and the harvest basket can be swept across several tiles in one drag.<br>Drag on empty ground to rotate the view, right-drag to pan, scroll to zoom. Click a tile to scout it.</p>
+  <h3 id="levelTitle">Choose a level</h3>
+  <p id="levelInfo" style="margin-top:0"></p>
+  <div class="levels" id="levelGrid"></div>
   <div class="row"><button class="btn primary" id="startBtn">Start the season</button><button class="btn" id="startGuide">📖 Read the guide first</button></div>
 </div></div>
 
@@ -291,6 +304,7 @@
 
 <div class="modal" id="endModal"><div class="card">
   <h2>🌾 Season over</h2>
+  <div class="pass" id="passMsg"></div>
   <div class="rating" id="rating"></div>
   <div class="end-stats" id="endStats"></div>
   <h3>IPM scorecard</h3>
@@ -304,7 +318,7 @@
   </div>
   <h3>Field notes</h3>
   <ul id="lessons"></ul>
-  <div class="row"><button class="btn primary" id="againBtn">Play another season</button></div>
+  <div class="row"><button class="btn primary" id="nextBtn">Next level ▶</button><button class="btn" id="againBtn">↻ Retry this level</button><button class="btn" id="levelsBtn">Choose level</button></div>
 </div></div>
 
 <script type="importmap">
@@ -317,7 +331,27 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // ==SIM START==
 // Population model. Plain JS with no DOM or Three.js, so it can be tested headless.
-const GW = 8, GH = 8, SEASON = 120, START_MONEY = 250, SUB = 0.25;
+const GW = 8, GH = 8, SEASON = 120, SUB = 0.25;
+// Levels: each one raises the pest invasion probability (inv) and growth rate (grow),
+// gives a slightly larger starting budget, and sets the money needed to pass.
+const LEVELS = [
+  { name: 'Backyard plot',    inv: 0.35, grow: 0.70, budget: 250, target: 450 },
+  { name: 'Community garden', inv: 0.50, grow: 0.78, budget: 260, target: 550 },
+  { name: 'Market garden',    inv: 0.65, grow: 0.86, budget: 275, target: 650 },
+  { name: 'Family farm',      inv: 0.80, grow: 0.93, budget: 290, target: 750 },
+  { name: 'Commercial farm',  inv: 1.00, grow: 1.00, budget: 300, target: 800 },
+  { name: 'Pest hotspot',     inv: 1.20, grow: 1.07, budget: 320, target: 850 },
+  { name: 'Outbreak year',    inv: 1.45, grow: 1.14, budget: 340, target: 875 },
+  { name: 'Invasion season',  inv: 1.75, grow: 1.21, budget: 360, target: 900 },
+];
+function levelParams(n) {
+  if (n <= LEVELS.length) return LEVELS[n - 1];
+  const L = LEVELS[LEVELS.length - 1], x = n - LEVELS.length;
+  return { name: `Endless ${x}`, inv: L.inv + 0.3 * x, grow: L.grow + 0.07 * x, budget: L.budget + 20 * x, target: L.target + 25 * x };
+}
+const LEVEL = Math.max(1, parseInt(globalThis.__LEVEL ?? new URLSearchParams(globalThis.location?.search || '').get('level') ?? '1', 10) || 1);
+const D = levelParams(LEVEL);
+const START_MONEY = D.budget;
 const CROPS = {
   cabbage: { name: 'Cabbage', icon: '🥬', cost: 10, value: 45, days: 40 },
   tomato:  { name: 'Tomato',  icon: '🍅', cost: 20, value: 110, days: 70 },
@@ -340,7 +374,7 @@ const G = {
   stats: { planted: 0, harvested: 0, revenue: 0, spent: 0, lost: 0, sprays: 0, agents: 0, shelters: 0, peakAphid: 0, peakLarva: 0, natural: 0 },
   seen: {},
   temps: [], f: 1, dd: 0, res: { broad: 0, bt: 0 }, trapLog: [], biofix: null,
-  ipm: { actions: [], bioKill: 0, chemKill: 0, alerts: 0, daysOverEIL: 0 },
+  ipm: { actions: [], bioKill: 0, chemKill: 0, alerts: 0, daysOverEIL: 0, cropDays: 0 },
 };
 // Seasonal temperature: a warming spring into summer with day-to-day noise
 for (let d = 0; d <= SEASON + 40; d++) G.temps.push(18 + 10 * Math.sin(Math.PI * d / 150) + (Math.random() - 0.5) * 4);
@@ -410,7 +444,7 @@ function stepTile(t, dt) {
 
   // Aphids
   const shareN = aTot > 0 ? t.aN / aTot : 0;
-  const births = crop ? P.aphid.fec * f * t.aA * Math.max(0, 1 - aTot / Kap) : 0;
+  const births = crop ? P.aphid.fec * D.grow * f * t.aA * Math.max(0, 1 - aTot / Kap) : 0;
   const [nMat, nMort, nEat, nPar] = flows(t.aN, [t.aN * f / P.aphid.dev, t.aN * (crop ? P.aphid.mN : 0.6), eatA * shareN, attW], dt);
   const [aMort, aEat] = flows(t.aA, [t.aA * (crop ? P.aphid.mA : 0.6), eatA * (1 - shareN)], dt);
   const [mEm, mMort] = flows(t.aM, [t.aM * f / P.aph.dev, t.aM * (0.02 + res * 0.3)], dt);
@@ -419,7 +453,7 @@ function stepTile(t, dt) {
   const [lPup, lMort] = flows(t.mL, [t.mL * f / P.moth.larva, t.mL * (crop ? 0.03 + 0.1 * (1 - t.health) : 0.8)], dt);
   const [pEc, pMort] = flows(t.mP, [t.mP * f / P.moth.pupa, t.mP * 0.02], dt);
   const [mAMort] = flows(t.mA, [t.mA * P.moth.mA], dt);
-  t.eggOut += P.moth.fec * f * (t.disrupt ? 0.5 : 1) * t.mA * dt;
+  t.eggOut += P.moth.fec * D.grow * f * (t.disrupt ? 0.5 : 1) * t.mA * dt;
   const [epEm, epMort] = flows(t.mEp, [t.mEp * f / P.tri.dev, t.mEp * (0.02 + res * 0.3)], dt);
   // Ladybird demography: recruitment is proportional to food and limited by K
   const room = Math.max(0, 1 - (t.lA + t.lJ) / t.K.lady);
@@ -535,7 +569,7 @@ const et = t => eil(t) * Math.exp(-P.ipm.r * P.ipm.lag);
 function bioBalance(t) {
   const aTot = t.aN + t.aA, [fA, fE] = frLady(aTot, t.mE), effL = t.lA + 0.6 * t.lJ;
   const kill = effL * fA + t.wA * frAphidius(t.aN) + P.ipm.eggEq * (effL * fE + t.tA * frTricho(t.mE));
-  const growth = (t.kind === 'crop' ? P.aphid.fec * G.f * t.aA * Math.max(0, 1 - aTot / aphidK(t)) : 0) + P.ipm.eggEq * t.mE * G.f / P.moth.egg;
+  const growth = (t.kind === 'crop' ? P.aphid.fec * D.grow * G.f * t.aA * Math.max(0, 1 - aTot / aphidK(t)) : 0) + P.ipm.eggEq * t.mE * G.f / P.moth.egg;
   return { kill, growth, winning: kill >= growth && kill > 0 };
 }
 function status(t) {
@@ -569,7 +603,9 @@ function thresholdAlerts() {
   for (const t of tiles) {
     const s = status(t);
     if (!s) { t.overET = false; continue; }
-    if (s.level === 'eil') G.ipm.daysOverEIL++;
+    G.ipm.cropDays++;
+    const e = eilParts(t);   // scoring uses the full-horizon EIL so neglected ripe crops still count
+    if (s.pe >= e.C / (e.V * e.D * e.K * P.ipm.tMax)) G.ipm.daysOverEIL++;
     if (!t.overET && s.pe >= s.et) {
       t.overET = true; G.ipm.alerts++;
       if (!told++) hooks.emit(`⚠️ ${label(t)} passed the economic threshold: ${Math.round(s.pe)} aphid-eq ≥ ET ${Math.round(s.et)}. Scout it: are natural enemies already winning?`, 'warn');
@@ -628,11 +664,11 @@ function immigrate() {
   const maxBy = f => tiles.reduce((b, t) => f(t) > f(b) ? t : b, tiles[0]);
 
   if (crops.length) {
-    if (Math.random() < 0.16 + G.day / 250) {
+    if (Math.random() < (0.16 + G.day / 250) * D.inv) {
       const t = pick(crops); t.aA += 3 + Math.random() * 3;
       if (!G.seen.aphid) { G.seen.aphid = true; hooks.emit(`🟢 Winged aphids landed on ${label(t)}. They give birth to live young and multiply fast.`, 'warn'); }
     }
-    if (G.day > 10 && Math.random() < 0.12 + G.day / 600) {
+    if (G.day > 10 && Math.random() < (0.12 + G.day / 600) * D.inv) {
       const t = pick(crops); t.mA += 1 + Math.random();
       if (!G.seen.moth) { G.seen.moth = true; hooks.emit(`🦋 Armyworm moths are laying eggs around ${label(t)}. The larvae hatch in about 4 days.`, 'warn'); }
     }
@@ -1166,7 +1202,8 @@ function ipmBlock(t, st) {
   else if (b.winning) rec = `Natural enemies are removing ${fmt(b.kill)}/day against ${fmt(b.growth)}/day of new pests. <b>Hold</b> and re-scout in 2 days. A spray now would kill the enemies that are winning.`;
   else if (LARVA_EQ * t.mL > t.aN + t.aA) rec = `<b>Act:</b> caterpillars dominate and no enemy attacks larvae. Use selective 🦠 Bt (spares enemies), and 🥚 Trichogramma against the next egg wave.`;
   else rec = `<b>Act:</b> aphids are outgrowing their enemies (${fmt(b.kill)} vs ${fmt(b.growth)}/day). Release 🐝/🐞 now, or use 🧪 broad-spectrum as a last resort (it currently kills ${Math.round(sprayK() * 100)}%).`;
-  if (st.level === 'eil') rec = `Economic damage is already happening: the lost crop value now exceeds the cost of control. ` + rec;
+  if (sizeOf(t) >= 1) rec = `<b>Ripe: harvest now.</b> With about 1 day of exposure left, the EIL is very high, so no control pays back its cost. Every day of waiting costs health and value.`;
+  else if (st.level === 'eil') rec = `Economic damage is already happening: the lost crop value now exceeds the cost of control. ` + rec;
   return `<h4>IPM decision · economic threshold</h4>
     <div class="kv"><span>Pest pressure</span><span>${fmt(st.pe)} aphid-eq</span></div>
     <div class="muted" style="font-size:11.5px">aphids ${fmt(t.aN + t.aA)} + ${LARVA_EQ} × ${fmt(t.mL)} larvae (one larva injures like ${LARVA_EQ} aphids)</div>
@@ -1395,6 +1432,8 @@ function refreshHUD() {
   $('#day').textContent = `${G.day} / ${SEASON}`;
   $('#seasonBar').style.width = G.day / SEASON * 100 + '%';
   $('#money').textContent = '$' + Math.round(G.money);
+  $('#goalBar').style.width = Math.min(100, G.money / D.target * 100) + '%';
+  $('#goalBar').style.background = G.money >= D.target ? 'var(--gold)' : '';
   $('#temp').textContent = `${Math.round(G.temps[G.day])} °C · ${Math.round(G.dd)} DD`;
   $('#resist').textContent = `${Math.round(G.res.broad * 100)}% · Bt ${Math.round(G.res.bt * 100)}%`;
   $('#resist').style.color = G.res.broad > 0.4 ? 'var(--bad)' : '';
@@ -1417,8 +1456,33 @@ function openGuide() { resumeSpeed = speed; setSpeed(0); openModal('guideModal')
 $('#guideBtn').onclick = openGuide;
 $('#startGuide').onclick = () => { closeModal('startModal'); openGuide(); resumeSpeed = 0.5; };
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => { closeModal('guideModal'); setSpeed(resumeSpeed); });
-$('#startBtn').onclick = () => { closeModal('startModal'); setSpeed(0.5); toast('🌱 The season has started. Drag 🥬 cabbages onto the soil to begin.', 'good'); };
+// Level progress is a per-browser convenience, so storage failures are ignored
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem('biocontrolFarm') || '{}'); } catch { return {}; } },
+  set(v) { try { localStorage.setItem('biocontrolFarm', JSON.stringify(v)); } catch {} },
+};
+const progress = Object.assign({ unlocked: 1, best: {} }, store.get());
+const goLevel = n => { const u = new URL(location.href); u.searchParams.set('level', n); location.href = u.href; };
+function renderLevels() {
+  const grid = $('#levelGrid'), max = Math.max(LEVELS.length, progress.unlocked);
+  grid.innerHTML = '';
+  for (let n = 1; n <= max; n++) {
+    const L = levelParams(n), b = document.createElement('button'), best = progress.best[n];
+    b.className = 'lvl' + (n === LEVEL ? ' on' : ''); b.disabled = n > progress.unlocked;
+    b.innerHTML = `<b>${n > progress.unlocked ? '🔒 ' : ''}${n}. ${L.name}</b><span>Budget $${L.budget} · goal $${L.target}</span><span>Invasion ×${L.inv.toFixed(2)} · growth ×${L.grow.toFixed(2)}</span>${best ? `<span class="done">Best: $${best}</span>` : ''}`;
+    b.onclick = () => n === LEVEL ? null : goLevel(n);
+    grid.append(b);
+  }
+  $('#levelTitle').textContent = `Level ${LEVEL}: ${D.name}`;
+  $('#levelInfo').innerHTML = `Start with <b>$${D.budget}</b> and finish the season with at least <b>$${D.target}</b> to unlock the next level. Pests invade ${D.inv < 1 ? 'less' : D.inv > 1 ? 'more' : 'as'} often (×${D.inv.toFixed(2)}) and grow ${D.grow < 1 ? 'slower' : D.grow > 1 ? 'faster' : 'at the normal rate'} (×${D.grow.toFixed(2)}).`;
+}
+renderLevels();
+$('#level').textContent = `${LEVEL} · ${D.name}`;
+$('#goalLbl').textContent = `Money · goal $${D.target}`;
+$('#startBtn').onclick = () => { closeModal('startModal'); setSpeed(0.5); toast(`🌱 Level ${LEVEL} (${D.name}) has started. Reach $${D.target} by day ${SEASON}. Drag 🥬 cabbages onto the soil to begin.`, 'good'); };
 $('#againBtn').onclick = () => location.reload();
+$('#nextBtn').onclick = () => goLevel(LEVEL + 1);
+$('#levelsBtn').onclick = () => { closeModal('endModal'); openModal('startModal'); $('#startBtn').textContent = 'Replay this level'; $('#startBtn').onclick = () => location.reload(); };
 
 function endSeason() {
   G.over = true; setSpeed(0); endDrag();
@@ -1429,18 +1493,28 @@ function endSeason() {
   const acts = G.ipm.actions, just = acts.filter(a => a.verdict === 'ok').length;
   const sc = {
     just: acts.length ? just / acts.length : 1,
+    eil: G.ipm.cropDays ? 1 - G.ipm.daysOverEIL / G.ipm.cropDays : 0,
     bio: G.ipm.bioKill / Math.max(1, G.ipm.bioKill + G.ipm.chemKill),
     res: 1 - G.res.broad,
-    health: S.harvested ? S.healthSum / S.harvested : 0,
+    health: S.harvested + S.lost ? (S.healthSum || 0) / (S.harvested + S.lost) : 0,   // killed crops count as zero
   };
-  const ipmScore = Math.round(30 * sc.just + 30 * sc.bio + 20 * sc.res + 20 * sc.health);
-  const title = G.money >= 1100 ? '🏆 Master grower' : G.money >= 600 ? '🌟 Skilled grower' : G.money >= START_MONEY ? '🙂 Break-even farmer' : '🥀 Pests won this season';
-  $('#rating').innerHTML = `${title} <span class="ipm-badge">IPM score ${ipmScore}/100 · ${ipmScore >= 80 ? 'certified IPM practice' : ipmScore >= 60 ? 'partial IPM' : 'conventional control'}</span>`;
+  // IPM protects yield: a season that loses the crop cannot score well, however few sprays it used
+  const ipmScore = Math.round((20 * sc.just + 20 * sc.eil + 20 * sc.bio + 15 * sc.res + 25 * sc.health) * (0.4 + 0.6 * sc.health));
+  const passed = G.money >= D.target;
+  if (passed) { progress.unlocked = Math.max(progress.unlocked, LEVEL + 1); }
+  progress.best[LEVEL] = Math.max(progress.best[LEVEL] || 0, Math.round(G.money)); store.set(progress);
+  $('#passMsg').innerHTML = passed ? `✅ Level ${LEVEL} passed: $${Math.round(G.money)} ≥ goal $${D.target}. Level ${LEVEL + 1} (${levelParams(LEVEL + 1).name}) is unlocked.`
+    : `❌ Level ${LEVEL} not passed: $${Math.round(G.money)} of the $${D.target} goal. Try again, or try a different strategy.`;
+  $('#passMsg').style.color = passed ? 'var(--good)' : 'var(--bad)';
+  $('#nextBtn').style.display = passed ? '' : 'none';
+  const title = G.money >= D.target * 1.4 ? '🏆 Master grower' : passed ? '🌟 Goal reached' : G.money >= START_MONEY ? '🙂 Made a profit, short of the goal' : '🥀 Pests won this season';
+  $('#rating').innerHTML = `${title} <span class="ipm-badge">IPM score ${ipmScore}/100 · ${ipmScore >= 80 ? 'certified IPM practice' : ipmScore >= 55 ? 'partial IPM' : 'needs work'}</span>`;
   $('#scorecard').innerHTML = [
-    ['Justified interventions', sc.just, 30, acts.length ? `${just} of ${acts.length} sprays were above ET with enemies losing` : 'no sprays needed'],
-    ['Biological share of kills', sc.bio, 30, `natural enemies ${fmt(G.ipm.bioKill)} vs pesticides ${fmt(G.ipm.chemKill)} aphid-eq`],
-    ['Resistance management', sc.res, 20, `broad-spectrum resistance ${Math.round(G.res.broad * 100)}%`],
-    ['Crop quality', sc.health, 20, `average health at harvest ${Math.round(sc.health * 100)}%`],
+    ['Justified interventions', sc.just, 20, acts.length ? `${just} of ${acts.length} sprays were above ET with enemies losing` : 'no sprays applied'],
+    ['Kept below the EIL', sc.eil, 20, `${Math.round(sc.eil * 100)}% of crop-days had pests below the economic injury level`],
+    ['Biological share of kills', sc.bio, 20, `natural enemies ${fmt(G.ipm.bioKill)} vs pesticides ${fmt(G.ipm.chemKill)} aphid-eq`],
+    ['Resistance management', sc.res, 15, `broad-spectrum resistance ${Math.round(G.res.broad * 100)}%`],
+    ['Crop outcome', sc.health, 25, `average health of every crop grown (killed crops count as 0): ${Math.round(sc.health * 100)}%`],
   ].map(([k, v, w, d]) => `<div class="sc-row"><div class="top"><b>${k}</b><span>${Math.round(v * w)} / ${w}</span></div><div class="meter"><i style="width:${v * 100}%;background:var(--leaf)"></i></div><span class="muted">${d}</span></div>`).join('');
   $('#endStats').innerHTML = [
     ['Final money', '$' + Math.round(G.money)], ['Profit', (profit >= 0 ? '+$' : '−$') + Math.abs(Math.round(profit))],
