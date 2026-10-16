@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 const root=resolve('.'),out=resolve('artifacts/climate-qa');await mkdir(out,{recursive:true});
 const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}const data=await readFile(path);res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port,debugPort=19400+Math.floor(Math.random()*1000);
-const browser=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check',`--remote-debugging-port=${debugPort}`,`--user-data-dir=${join(tmpdir(),'climate-qa-'+Date.now())}`,'about:blank'],{stdio:'ignore',windowsHide:true});
+const browser=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox','--disable-gpu-shader-disk-cache','--disable-features=SkiaGraphite,DawnGraphite,WebGPU','--no-first-run','--no-default-browser-check',`--remote-debugging-port=${debugPort}`,`--user-data-dir=${join(tmpdir(),'climate-qa-'+Date.now())}`,'about:blank'],{stdio:'ignore',windowsHide:true});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));let ws,id=0;const pending=new Map(),errors=[];let checks=0;
 try{
  let targets;for(let n=0;n<60;n++){try{targets=await(await fetch(`http://127.0.0.1:${debugPort}/json`)).json();break;}catch{await sleep(200);}}
@@ -42,7 +42,7 @@ try{
  await ev(`document.querySelector('#saveSiteBtn').click();document.querySelector('#siteName').value='Other';document.querySelector('#savedSites button').click()`);
  await check('saved site restores coordinates and name',`document.querySelector('#siteName').value==='Chiang Mai'`);
  await ev(`window.__downloads=[];window.__objectURL=URL.createObjectURL;URL.createObjectURL=blob=>{__downloads.push(blob);return __objectURL(blob)};document.querySelector('#exportFormat').value='csv';document.querySelector('#exportBtn').click();`);
- await check('CSV includes every day, units and metadata',`(async()=>{const text=await __downloads.at(-1).text();return text.split('\r\n').length===366 && text.includes('temperature_2m_min [°C]') && text.includes('gridLatitude') && text.includes('paired_valid_days')})()`);
+ await check('CSV includes every day, units and metadata',`(async()=>{const text=await __downloads.at(-1).text();return text.split(String.fromCharCode(13,10)).length===366 && text.includes('temperature_2m_min [°C]') && text.includes('gridLatitude') && text.includes('paired_valid_days')})()`);
  await ev(`document.querySelector('#exportFormat').value='json';document.querySelector('#exportBtn').click()`);
  await check('JSON exports full model',`(async()=>{const m=JSON.parse(await __downloads.at(-1).text());return m.rows.length===365 && m.months.length===12 && m.coverage.complete===365})()`);
  // Load and capture the actual workbook before write, inspecting numeric cell types and coverage.
@@ -65,3 +65,5 @@ try{
  await check('no runtime exceptions',`${errors.length}===0`);
  await writeFile(join(out,'qa-summary.json'),JSON.stringify({checks,live,xlsx,runtimeErrors:errors},null,2));console.log(`${checks} browser checks passed.`);
 }finally{ws?.close();browser.kill();await new Promise(r=>server.close(r));}
+
+

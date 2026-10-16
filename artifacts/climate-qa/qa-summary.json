@@ -1,0 +1,21 @@
+{
+  "checks": 19,
+  "live": {
+    "ok": true,
+    "complete": 3,
+    "timezone": "Asia/Bangkok",
+    "units": {
+      "time": "iso8601",
+      "temperature_2m_mean": "°C",
+      "temperature_2m_min": "°C",
+      "temperature_2m_max": "°C",
+      "relative_humidity_2m_mean": "%",
+      "relative_humidity_2m_min": "%",
+      "relative_humidity_2m_max": "%",
+      "precipitation_sum": "mm",
+      "et0_fao_evapotranspiration": "mm"
+    }
+  },
+  "xlsx": true,
+  "runtimeErrors": []
+}
