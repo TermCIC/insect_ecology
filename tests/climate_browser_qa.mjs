@@ -55,7 +55,10 @@ try{
   await ev(`document.querySelector('#language').value='${language}';document.querySelector('#language').dispatchEvent(new Event('change'));`);
   await waitFor(`!window.Chart || Chart.getChart('climateChart').data.datasets[0].label===ClimateI18n.text('Precipitation')`);
   await check(`${language}: static labels, model and chart translated`, `document.documentElement.lang==='${language}' && document.querySelector('h1').textContent===ClimateI18n.text('Climate Data Viewer') && document.querySelector('#tableContainer th').textContent===ClimateI18n.text('Date') && document.querySelector('#coverageNote').textContent.includes('365/365') && __fetchCount===${initialFetches}`);
-  await check(`${language}: translated field validation`, `ClimateI18n.text('Latitude must be between −90 and 90.') !== '' && document.querySelector('#coordinates').value==='18.7883, 98.9853' && document.querySelector('#year').value==='2025'`);
+  await check(`${language}: complete static translation coverage`, `Array.from(document.querySelectorAll('[data-i18n]')).every(el=>!!ClimateI18n.catalog[el.dataset.i18n]) && document.querySelector('#coordinates').value==='18.7883, 98.9853' && document.querySelector('#year').value==='2025'`);
+  await ev(`document.querySelector('#coordinates').value='91, 99';document.querySelector('#fetchBtn').click()`);
+  await check(`${language}: actual field validation translated`, `document.querySelector('#coordinateError').textContent===ClimateI18n.text('Latitude must be between −90 and 90.') && __fetchCount===${initialFetches}`);
+  await ev(`document.querySelector('#exampleBtn').click()`);
   if(language!=='en'){
    await ev(`document.querySelector('#exportFormat').value='xlsx';document.querySelector('#exportBtn').click()`);
    await waitFor(`!document.querySelector('#exportBtn').disabled`);
