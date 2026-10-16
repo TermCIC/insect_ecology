@@ -1,0 +1,67 @@
+import {spawn} from 'node:child_process';
+import {createServer} from 'node:http';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {join,resolve,extname,sep} from 'node:path';
+import {tmpdir} from 'node:os';
+import assert from 'node:assert/strict';
+const root=resolve('.'),out=resolve('artifacts/climate-qa');await mkdir(out,{recursive:true});
+const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}const data=await readFile(path);res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port,debugPort=19400+Math.floor(Math.random()*1000);
+const browser=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check',`--remote-debugging-port=${debugPort}`,`--user-data-dir=${join(tmpdir(),'climate-qa-'+Date.now())}`,'about:blank'],{stdio:'ignore',windowsHide:true});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));let ws,id=0;const pending=new Map(),errors=[];let checks=0;
+try{
+ let targets;for(let n=0;n<60;n++){try{targets=await(await fetch(`http://127.0.0.1:${debugPort}/json`)).json();break;}catch{await sleep(200);}}
+ ws=new WebSocket(targets.find(p=>p.type==='page').webSocketDebuggerUrl);await new Promise(r=>ws.onopen=r);
+ ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id)pending.get(m.id)?.(m);if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails);};
+ const send=(method,params={})=>new Promise((r,j)=>{const n=++id,t=setTimeout(()=>j(Error(method+' timeout')),55000);pending.set(n,m=>{clearTimeout(t);pending.delete(n);m.error?j(Error(JSON.stringify(m.error))):r(m.result);});ws.send(JSON.stringify({id:n,method,params}));});
+ const ev=async expression=>{const m=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(m.exceptionDetails)throw Error(JSON.stringify(m.exceptionDetails));return m.result.value;};
+ const check=async(name,expression)=>{assert.ok(await ev(expression),name);checks++;console.log('PASS',name);};
+ const waitFor=async expression=>{for(let n=0;n<120;n++){if(await ev(expression))return;await sleep(100);}throw Error('Timed out: '+expression);};
+ const shot=async name=>{const m=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(join(out,name+'.png'),Buffer.from(m.data,'base64'));};
+ await send('Page.enable');await send('Runtime.enable');await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+ await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html`});await waitFor('!!window.ClimateCore && document.querySelector("#year").value');
+ await shot('desktop-empty');
+ await check('initial page fits viewport','document.documentElement.scrollWidth<=innerWidth');
+ await ev(`document.querySelector('#fetchBtn').click()`);await check('coordinate validation inline',`document.querySelector('#coordinateError').textContent.length>0 && document.activeElement.id==='coordinates'`);
+ // Live API smoke test uses the same parameter set as the application. Fixture tests follow independently.
+ const live=await ev(`(async()=>{try{const url=new URL('https://archive-api.open-meteo.com/v1/archive');Object.entries({latitude:18.7883,longitude:98.9853,start_date:'2025-01-01',end_date:'2025-01-03',daily:Object.keys(ClimateCore.FIELDS).join(','),models:'era5',timezone:'auto'}).forEach(([k,v])=>url.searchParams.set(k,v));const res=await fetch(url,{signal:AbortSignal.timeout(20000)});const data=await res.json();if(!res.ok) return {ok:false,error:data}; const m=ClimateCore.build(data,{lat:18.7883,lon:98.9853,start:'2025-01-01',end:'2025-01-03'});window.__liveData=data;return {ok:true,complete:m.coverage.complete,timezone:m.source.timezone,units:m.source.units};}catch(e){return {ok:false,error:e.message};}})()`);
+ console.log('LIVE_API',JSON.stringify(live));await writeFile(join(out,'live-api.json'),JSON.stringify(live,null,2));
+ await ev(`window.__originalFetch=window.fetch;window.__fetchCount=0;window.__mode='ok';window.fetch=async(url,options={})=>{if(!String(url).startsWith('https://archive-api.open-meteo.com/'))return __originalFetch(url,options);__fetchCount++;if(__mode==='wait')return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError'))));if(__mode==='error')return new Response(JSON.stringify({error:true,reason:'Test service unavailable'}),{status:503});const u=new URL(url),start=u.searchParams.get('start_date'),end=u.searchParams.get('end_date'),dates=[];for(let day=new Date(start+'T00:00:00Z');day.toISOString().slice(0,10)<=end;day.setUTCDate(day.getUTCDate()+1))dates.push(day.toISOString().slice(0,10));const fields=Object.keys(ClimateCore.FIELDS),daily={time:dates};fields.forEach((key,j)=>daily[key]=dates.map((d,i)=>__mode==='missing'&&i>2?null:key==='precipitation_sum'?i%7===0?12:0:key==='et0_fao_evapotranspiration'?3.4:key.includes('humidity')?60+j+Math.sin(i/20)*10:20+j+Math.sin(i/25)*5));return new Response(JSON.stringify({latitude:18.75,longitude:99,elevation:310,timezone:'Asia/Bangkok',daily}),{status:200});};`);
+ await ev(`document.querySelector('#exampleBtn').click();document.querySelector('#year').value='2025';document.querySelector('#fetchBtn').click()`);
+ await waitFor(`!document.querySelector('#results').hidden && !document.querySelector('#fetchBtn').disabled`);
+ await waitFor(`!!window.Chart || !document.querySelector('#chartFallback').hidden`);
+ await check('annual summaries and coverage',`document.querySelector('#coverageNote').textContent.includes('365/365') && document.querySelectorAll('.stat-card').length===4`);
+ await check('monthly table has 12 rows',`document.querySelectorAll('#tableContainer tbody tr').length===12`);
+ await check('query URL matches loaded result',`new URLSearchParams(location.search).get('start')==='2025-01-01'`);
+ await shot('desktop-results');
+ await ev(`document.querySelector('[data-chart="water"]').click();document.querySelector('#chartScale').value='monthly';document.querySelector('#chartScale').dispatchEvent(new Event('change'));`);await sleep(600);
+ await check('water chart and monthly totals',`document.querySelector('#chartDescription').textContent.includes('Precipitation') && (!window.Chart || Chart.getChart('climateChart').data.datasets[0].type==='bar')`);
+ await check('no horizontal overflow in results',`document.documentElement.scrollWidth<=innerWidth`);
+ await ev(`document.querySelector('#tableScale').value='daily';document.querySelector('#tableScale').dispatchEvent(new Event('change'));document.querySelector('#nextBtn').click()`);
+ await check('daily pagination uses correct calendar dates',`document.querySelector('#tableContainer tbody th').textContent==='2025-02-01' && document.querySelectorAll('#tableContainer tbody tr').length===31`);
+ await ev(`document.querySelector('#saveSiteBtn').click();document.querySelector('#siteName').value='Other';document.querySelector('#savedSites button').click()`);
+ await check('saved site restores coordinates and name',`document.querySelector('#siteName').value==='Chiang Mai'`);
+ await ev(`window.__downloads=[];window.__objectURL=URL.createObjectURL;URL.createObjectURL=blob=>{__downloads.push(blob);return __objectURL(blob)};document.querySelector('#exportFormat').value='csv';document.querySelector('#exportBtn').click();`);
+ await check('CSV includes every day, units and metadata',`(async()=>{const text=await __downloads.at(-1).text();return text.split('\r\n').length===366 && text.includes('temperature_2m_min [°C]') && text.includes('gridLatitude') && text.includes('paired_valid_days')})()`);
+ await ev(`document.querySelector('#exportFormat').value='json';document.querySelector('#exportBtn').click()`);
+ await check('JSON exports full model',`(async()=>{const m=JSON.parse(await __downloads.at(-1).text());return m.rows.length===365 && m.months.length===12 && m.coverage.complete===365})()`);
+ // Load and capture the actual workbook before write, inspecting numeric cell types and coverage.
+ await ev(`document.querySelector('#exportFormat').value='xlsx';document.querySelector('#exportBtn').click()`);await waitFor(`!document.querySelector('#exportBtn').disabled`);
+ const xlsx=await ev(`!!window.XLSX`);console.log('XLSX_LIBRARY',xlsx);
+ if(xlsx){await ev(`window.__writeFile=XLSX.writeFile;XLSX.writeFile=wb=>window.__workbook=wb;document.querySelector('#exportBtn').click()`);await waitFor('!!window.__workbook');await check('Excel keeps numeric values and 3 sheets',`__workbook.SheetNames.join(',')==='Daily,Monthly,Metadata' && __workbook.Sheets.Daily.B2.t==='n' && __workbook.Sheets.Monthly.B2.t==='n' && __workbook.Sheets.Monthly.K2.v===31`);}
+ await ev(`document.querySelector('#tableScale').value='monthly';document.querySelector('#tableScale').dispatchEvent(new Event('change'));window.dispatchEvent(new Event('beforeprint'));`);
+ const pdf=await send('Page.printToPDF',{printBackground:true,preferCSSPageSize:true});await writeFile(join(out,'climate-report.pdf'),Buffer.from(pdf.data,'base64'));
+ await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await ev(`window.scrollTo(0,0)`);await sleep(200);await shot('mobile-query');
+ await check('mobile query fits viewport',`document.documentElement.scrollWidth<=innerWidth`);
+ await ev(`document.querySelector('#results').scrollIntoView()`);await sleep(200);await shot('mobile-results');
+ await check('mobile result fits viewport',`document.documentElement.scrollWidth<=innerWidth`);
+ await ev(`document.querySelector('#coordFormat').value='dms';document.querySelector('#coordFormat').dispatchEvent(new Event('change'));`);await check('DMS inputs visible and common year preserved',`!document.querySelector('#dmsFields').hidden && document.querySelector('#year').value==='2025'`);
+ await ev(`document.querySelector('#exampleBtn').click();document.querySelector('#period').value='custom';document.querySelector('#period').dispatchEvent(new Event('change'));document.querySelector('#startDate').value='2025-02-01';document.querySelector('#endDate').value='2025-02-05';window.__mode='missing';document.querySelector('#fetchBtn').click()`);await waitFor(`!document.querySelector('#fetchBtn').disabled`);
+ await check('partial coverage explicit and no NaN/Infinity',`document.querySelector('#coverageNote').textContent.includes('3/5') && !/NaN|Infinity/.test(document.querySelector('#results').textContent)`);
+ await ev(`document.querySelector('#startDate').value='2025-03-01';document.querySelector('#endDate').value='2025-03-05';window.__mode='error';document.querySelector('#fetchBtn').click()`);await waitFor(`!document.querySelector('#fetchBtn').disabled`);
+ await check('failed query preserves previous result consistently',`document.querySelector('#status').textContent.includes('previous result') && document.querySelector('#metadata').textContent.includes('2025-02-01') && new URLSearchParams(location.search).get('start')==='2025-02-01'`);
+ await ev(`window.__mode='wait';document.querySelector('#fetchBtn').click();document.querySelector('#cancelBtn').click()`);await waitFor(`!document.querySelector('#fetchBtn').disabled`);
+ await check('request cancellation restores controls',`document.querySelector('#status').textContent.includes('cancelled') && document.querySelector('#cancelBtn').hidden`);
+ await check('no runtime exceptions',`${errors.length}===0`);
+ await writeFile(join(out,'qa-summary.json'),JSON.stringify({checks,live,xlsx,runtimeErrors:errors},null,2));console.log(`${checks} browser checks passed.`);
+}finally{ws?.close();browser.kill();await new Promise(r=>server.close(r));}
