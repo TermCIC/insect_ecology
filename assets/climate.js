@@ -3,7 +3,7 @@
   'use strict';
   const C = window.ClimateCore, $ = id => document.getElementById(id);
   const keys = Object.keys(C.FIELDS), cache = new Map(), libraries = new Map();
-  let model = null, chart = null, chartKind = 'temperature', page = 0, controller = null, chartRevision = 0;
+  let model = null, chart = null, chartKind = 'temperature', page = 0, controller = null, chartRevision = 0, exporting = false;
   const latest = C.latestDate(), currentYear = new Date().getUTCFullYear();
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const fmt = (value, digits = 1) => C.finite(value) ? new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value) : '—';
@@ -150,7 +150,7 @@
     page = 0; renderTable(); drawChart();
   }
   async function fetchClimate(event) {
-    event?.preventDefault(); if (controller) return;
+    event?.preventDefault(); if (controller || exporting) return;
     const query = readQuery(); if (!query) return;
     const key = JSON.stringify([query.lat, query.lon, query.start, query.end]);
     const active = new AbortController(); controller = active;
@@ -195,8 +195,8 @@
   function safeCell(value) { return typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? "'" + value : value; }
   const csvCell = value => '"' + String(safeCell(value) ?? '').replaceAll('"', '""') + '"';
   async function exportData() {
-    if (!model || controller) return;
-    const format = $('exportFormat').value; $('exportBtn').disabled = true;
+    if (!model || controller || exporting) return;
+    const format = $('exportFormat').value; exporting = true; $('exportBtn').disabled = true; $('fetchBtn').disabled = true;
     try {
       if (format === 'pdf') { preparePrint(); window.print(); }
       else if (format === 'json') download(new Blob([JSON.stringify(model, null, 2)], { type: 'application/json' }), filename('json', 'full'));
@@ -216,7 +216,7 @@
         XLSX.writeFile(wb, filename('xlsx', 'full'));
       }
       status(format === 'pdf' ? 'Print dialog opened. Choose “Save as PDF” to save the report.' : 'Download prepared for the displayed result.');
-    } catch (error) { status(error.message, true); } finally { $('exportBtn').disabled = false; }
+    } catch (error) { status(error.message, true); } finally { exporting = false; $('exportBtn').disabled = false; $('fetchBtn').disabled = false; }
   }
   function loadSaved() {
     try { const values = JSON.parse(localStorage.getItem('climate.sites.v1') || '[]'); return Array.isArray(values) ? values.filter(site => typeof site?.name === 'string' && C.finite(site.lat) && C.finite(site.lon) && Math.abs(site.lat) <= 90 && Math.abs(site.lon) <= 180).slice(0, 20) : []; } catch { return []; }
@@ -250,7 +250,7 @@
   $('chartScale').addEventListener('change', drawChart); $('tableScale').addEventListener('change', () => { page = 0; renderTable(); });
   $('prevBtn').addEventListener('click', () => { page--; renderTable(); }); $('nextBtn').addEventListener('click', () => { page++; renderTable(); });
   $('exportBtn').addEventListener('click', exportData);
-  $('pngBtn').addEventListener('click', () => { if (!chart || controller) return; chart.canvas.toBlob(blob => { if (blob) download(blob, filename('png', chartKind + '_' + $('chartScale').value)); }, 'image/png'); });
+  $('pngBtn').addEventListener('click', () => { if (!chart || controller) return; const name = filename('png', chartKind + '_' + $('chartScale').value); chart.canvas.toBlob(blob => { if (blob) download(blob, name); }, 'image/png'); });
   $('shareBtn').addEventListener('click', async () => { if (!model) return; const text = queryUrl(model.query).href; try { await navigator.clipboard.writeText(text); status('Query link copied. It restores the site and selected period.'); } catch { status('Copy this query link from the address bar.'); updateUrl(model.query); } });
   window.addEventListener('beforeprint', preparePrint);
   $('climateForm').addEventListener('input', () => { if (model && !controller) status('Query edited. Get climate data to refresh; the result and downloads still refer to the displayed query.'); });
