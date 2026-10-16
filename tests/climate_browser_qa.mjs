@@ -5,7 +5,8 @@ import {join,resolve,extname,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import assert from 'node:assert/strict';
 const root=resolve('.'),out=resolve('artifacts/climate-qa');await mkdir(out,{recursive:true});
-const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}const data=await readFile(path);res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
+let omitController = false;
+const server=createServer(async(req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}const data=omitController&&path===join(root,'assets','climate.js')?Buffer.from('/* Simulate unavailable climate controller. */'):await readFile(path);res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port,debugPort=19400+Math.floor(Math.random()*1000);
 const browser=spawn('C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox','--disable-gpu-shader-disk-cache','--disable-features=SkiaGraphite,DawnGraphite,WebGPU','--no-first-run','--no-default-browser-check',`--remote-debugging-port=${debugPort}`,`--user-data-dir=${join(tmpdir(),'climate-qa-'+Date.now())}`,'about:blank'],{stdio:'ignore',windowsHide:true});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));let ws,id=0;const pending=new Map(),errors=[];let checks=0;
@@ -19,7 +20,10 @@ try{
  const waitFor=async expression=>{for(let n=0;n<120;n++){if(await ev(expression))return;await sleep(100);}throw Error('Timed out: '+expression);};
  const shot=async name=>{const m=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(join(out,name+'.png'),Buffer.from(m.data,'base64'));};
  await send('Page.enable');await send('Runtime.enable');await send('Browser.setDownloadBehavior',{behavior:'deny'});await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
- await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html?lang=en`});await waitFor('!!window.ClimateCore && document.querySelector("#year").value');
+ await send('Page.addScriptToEvaluateOnNewDocument',{source:"Object.defineProperty(navigator,'language',{configurable:true,value:'th-TH'})"});
+ await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html`});await waitFor('!!window.ClimateCore && document.querySelector("#year").value');
+ await check('fresh visit defaults to English even with Thai browser locale',`document.documentElement.lang==='en' && document.querySelector('#language').value==='en'`);
+ await check('updated assets have matching cache versions',`Array.from(document.querySelectorAll('script[src],link[href]')).filter(el=>(el.src||el.href).includes('/assets/climate')).every(el=>new URL(el.src||el.href).searchParams.get('v')==='20261016-i18n-2')`);
  await shot('desktop-empty');
  await check('initial page fits viewport','document.documentElement.scrollWidth<=innerWidth');
  await ev(`document.querySelector('#fetchBtn').click()`);await check('coordinate validation inline',`document.querySelector('#coordinateError').textContent.length>0 && document.activeElement.id==='coordinates'`);
@@ -101,6 +105,17 @@ try{
  await check('language preference persists without URL parameter',`document.documentElement.lang==='th' && document.querySelector('#results').hidden`);
  await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html?lang=zh-Hant`});await waitFor(`document.querySelector('#language').value==='zh-Hant'`);
  await check('explicit shared language overrides stored preference',`document.documentElement.lang==='zh-Hant' && document.querySelector('h1').textContent==='氣候資料檢視器'`);
+ omitController = true;
+ await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html?lang=en`});
+ await waitFor(`!!window.ClimateI18n && document.querySelector('#language').value==='en'`);
+ await ev(`document.querySelector('#language').focus()`);
+ for(const language of ['zh-Hant','th']){
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40});
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40});
+  await waitFor(`document.documentElement.lang==='${language}'`);
+  await check(`${language}: native selection updates text without data controller`, `document.querySelector('h1').textContent===ClimateI18n.text('Climate Data Viewer') && document.querySelector('.source-badge').textContent===ClimateI18n.text('ERA5 · Historical reanalysis')`);
+ }
+ await shot('language-native-selection');
  await check('no runtime exceptions',`${errors.length}===0`);
  await writeFile(join(out,'qa-summary.json'),JSON.stringify({checks,live,xlsx,runtimeErrors:errors},null,2));console.log(`${checks} browser checks passed.`);
 }finally{ws?.close();browser.kill();await new Promise(r=>server.close(r));}

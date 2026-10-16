@@ -2,7 +2,6 @@
 (() => {
   'use strict';
   const I = window.ClimateI18n, t = I.text, html = I.html;
-  I.setLanguage(I.initialLanguage(), false);
   const C = window.ClimateCore, $ = id => document.getElementById(id);
   const keys = Object.keys(C.FIELDS), cache = new Map(), libraries = new Map();
   let model = null, chart = null, chartKind = 'temperature', page = 0, controller = null, chartRevision = 0, exporting = false;
@@ -257,9 +256,7 @@
   $('shareBtn').addEventListener('click', async () => { if (!model) return; const text = queryUrl(model.query).href; try { await navigator.clipboard.writeText(text); status(t('Query link copied. It restores the site and selected period.')); } catch { status(t('Copy this query link from the address bar.')); updateUrl(model.query); } });
   window.addEventListener('beforeprint', preparePrint);
   $('climateForm').addEventListener('input', () => { if (model && !controller) status(t('Query edited. Get climate data to refresh; the result and downloads still refer to the displayed query.')); });
-  $('language').value = I.language;
-  $('language').addEventListener('change', () => {
-    I.setLanguage($('language').value);
+  window.addEventListener('climate:languagechange', () => {
     $('availability').textContent = t`Conservative latest date: ${latest}. Up to 10 years per request.`;
     document.querySelectorAll('[data-error-source]').forEach(el => { el.textContent = t(el.dataset.errorSource); });
     if (model) { const oldPage = page; render(); page = oldPage; renderTable(); }

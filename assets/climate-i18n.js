@@ -250,8 +250,20 @@ Language changed.|已切換語言。|เปลี่ยนภาษาแล้�
   function setLanguage(value, persist = true) { lang = locales[value] ? value : 'en'; if (persist) { try { localStorage.setItem('climate.language.v1', lang); } catch { /* Preference storage is optional. */ } } apply(); }
   function initialLanguage() {
     const url = new URLSearchParams(location.search).get('lang'); if (locales[url]) return url;
-    try { const saved = localStorage.getItem('climate.language.v1'); if (locales[saved]) return saved; } catch { /* fall back to browser */ }
-    const preferred = navigator.language || 'en'; return /^zh/i.test(preferred) ? 'zh-Hant' : /^th/i.test(preferred) ? 'th' : 'en';
+    try { const saved = localStorage.getItem('climate.language.v1'); if (locales[saved]) return saved; } catch { /* use the English default */ }
+    return 'en';
   }
   window.ClimateI18n = { text, html, apply, setLanguage, initialLanguage, get language() { return lang; }, get locale() { return locales[lang]; }, catalog };
+  // Initialize the static interface independently of climate data and chart setup.
+  const selector = document.getElementById?.('language');
+  if (selector) {
+    setLanguage(initialLanguage(), false);
+    selector.value = lang;
+    selector.addEventListener('change', () => {
+      setLanguage(selector.value);
+      const url = new URL(location.href); url.searchParams.set('lang', lang);
+      try { history.replaceState(null, '', url); } catch { /* local file URLs may restrict history */ }
+      window.dispatchEvent(new Event('climate:languagechange'));
+    });
+  }
 })();
