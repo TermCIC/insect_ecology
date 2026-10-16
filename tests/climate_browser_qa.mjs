@@ -19,7 +19,7 @@ try{
  const waitFor=async expression=>{for(let n=0;n<120;n++){if(await ev(expression))return;await sleep(100);}throw Error('Timed out: '+expression);};
  const shot=async name=>{const m=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(join(out,name+'.png'),Buffer.from(m.data,'base64'));};
  await send('Page.enable');await send('Runtime.enable');await send('Browser.setDownloadBehavior',{behavior:'deny'});await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
- await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html`});await waitFor('!!window.ClimateCore && document.querySelector("#year").value');
+ await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html?lang=en`});await waitFor('!!window.ClimateCore && document.querySelector("#year").value');
  await shot('desktop-empty');
  await check('initial page fits viewport','document.documentElement.scrollWidth<=innerWidth');
  await ev(`document.querySelector('#fetchBtn').click()`);await check('coordinate validation inline',`document.querySelector('#coordinateError').textContent.length>0 && document.activeElement.id==='coordinates'`);
@@ -49,6 +49,30 @@ try{
  await ev(`document.querySelector('#exportFormat').value='xlsx';document.querySelector('#exportBtn').click()`);await waitFor(`!document.querySelector('#exportBtn').disabled`);
  const xlsx=await ev(`!!window.XLSX`);console.log('XLSX_LIBRARY',xlsx);
  if(xlsx){await ev(`window.__writeFile=XLSX.writeFile;XLSX.writeFile=wb=>window.__workbook=wb;document.querySelector('#exportBtn').click()`);await waitFor('!!window.__workbook');await check('Excel keeps numeric values and 3 sheets',`__workbook.SheetNames.join(',')==='Daily,Monthly,Metadata' && __workbook.Sheets.Daily.B2.t==='n' && __workbook.Sheets.Monthly.B2.t==='n' && __workbook.Sheets.Monthly.K2.v===31`);}
+
+ const initialFetches=await ev('__fetchCount');
+ for(const language of ['zh-Hant','th','en']){
+  await ev(`document.querySelector('#language').value='${language}';document.querySelector('#language').dispatchEvent(new Event('change'));`);
+  await waitFor(`!window.Chart || Chart.getChart('climateChart').data.datasets[0].label===ClimateI18n.text('Precipitation')`);
+  await check(`${language}: static labels, model and chart translated`, `document.documentElement.lang==='${language}' && document.querySelector('h1').textContent===ClimateI18n.text('Climate Data Viewer') && document.querySelector('#tableContainer th').textContent===ClimateI18n.text('Date') && document.querySelector('#coverageNote').textContent.includes('365/365') && __fetchCount===${initialFetches}`);
+  await check(`${language}: translated field validation`, `ClimateI18n.text('Latitude must be between −90 and 90.') !== '' && document.querySelector('#coordinates').value==='18.7883, 98.9853' && document.querySelector('#year').value==='2025'`);
+  if(language!=='en'){
+   await ev(`document.querySelector('#exportFormat').value='xlsx';document.querySelector('#exportBtn').click()`);
+   await waitFor(`!document.querySelector('#exportBtn').disabled`);
+   await check(`${language}: localized Excel with numeric values`, `__workbook.SheetNames[0]===ClimateI18n.text('Daily sheet') && __workbook.Sheets[__workbook.SheetNames[0]].B1.v===ClimateI18n.text('Mean temperature')+' (°C)' && __workbook.Sheets[__workbook.SheetNames[0]].B2.t==='n'`);
+   await ev(`document.querySelector('#exportFormat').value='json';document.querySelector('#exportBtn').click()`);
+   await check(`${language}: stable JSON schema and localized labels`, `(async()=>{const m=JSON.parse(await __downloads.at(-1).text());return m.exportLanguage==='${language}' && m.fieldLabels.temperature_2m_mean===ClimateI18n.text('Mean temperature') && typeof m.rows[0].temperature_2m_mean==='number'})()`);
+   await ev(`document.querySelector('#tableScale').value='monthly';document.querySelector('#tableScale').dispatchEvent(new Event('change'));window.dispatchEvent(new Event('beforeprint'));window.scrollTo(0,0)`);
+   await check(`${language}: monthly and print text translated`, `document.querySelector('#printReport h1').textContent===ClimateI18n.text('Climate report') && document.querySelector('#tableContainer th').textContent===ClimateI18n.text('Month') && !document.querySelector('#printReport').textContent.includes('paired days')`);
+   const localizedPDF=await send('Page.printToPDF',{printBackground:true,preferCSSPageSize:true});await writeFile(join(out,'climate-report-'+language+'.pdf'),Buffer.from(localizedPDF.data,'base64'));
+   await shot('desktop-'+language);
+   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+   await check(`${language}: mobile page fits viewport`,`document.documentElement.scrollWidth<=innerWidth`);await shot('mobile-'+language);
+   await ev(`document.querySelector('#results').scrollIntoView()`);await shot('mobile-results-'+language);
+   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+   await ev(`document.querySelector('#tableScale').value='daily';document.querySelector('#tableScale').dispatchEvent(new Event('change'));`);
+  }
+ }
  await ev(`document.querySelector('#tableScale').value='monthly';document.querySelector('#tableScale').dispatchEvent(new Event('change'));window.dispatchEvent(new Event('beforeprint'));`);
  const pdf=await send('Page.printToPDF',{printBackground:true,preferCSSPageSize:true});await writeFile(join(out,'climate-report.pdf'),Buffer.from(pdf.data,'base64'));
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await ev(`window.scrollTo(0,0)`);await sleep(200);await shot('mobile-query');
@@ -69,6 +93,11 @@ try{
  await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html?lat=-33.8688&lon=151.2093&name=Sydney&start=2024-02-01&end=2024-02-29&period=custom`});
  await waitFor(`document.querySelector('#siteName').value==='Sydney'`);
  await check('shared URL restores site and range without auto-fetch',`document.querySelector('#coordinates').value==='-33.8688, 151.2093' && document.querySelector('#endDate').value==='2024-02-29' && document.querySelector('#period').value==='custom' && document.querySelector('#results').hidden`);
+ await ev(`document.querySelector('#language').value='th';document.querySelector('#language').dispatchEvent(new Event('change'))`);
+ await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html`});await waitFor(`document.querySelector('#language').value==='th'`);
+ await check('language preference persists without URL parameter',`document.documentElement.lang==='th' && document.querySelector('#results').hidden`);
+ await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html?lang=zh-Hant`});await waitFor(`document.querySelector('#language').value==='zh-Hant'`);
+ await check('explicit shared language overrides stored preference',`document.documentElement.lang==='zh-Hant' && document.querySelector('h1').textContent==='氣候資料檢視器'`);
  await check('no runtime exceptions',`${errors.length}===0`);
  await writeFile(join(out,'qa-summary.json'),JSON.stringify({checks,live,xlsx,runtimeErrors:errors},null,2));console.log(`${checks} browser checks passed.`);
 }finally{ws?.close();browser.kill();await new Promise(r=>server.close(r));}
