@@ -18,7 +18,7 @@ try{
  const check=async(name,expression)=>{assert.ok(await ev(expression),name);checks++;console.log('PASS',name);};
  const waitFor=async expression=>{for(let n=0;n<120;n++){if(await ev(expression))return;await sleep(100);}throw Error('Timed out: '+expression);};
  const shot=async name=>{const m=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(join(out,name+'.png'),Buffer.from(m.data,'base64'));};
- await send('Page.enable');await send('Runtime.enable');await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+ await send('Page.enable');await send('Runtime.enable');await send('Browser.setDownloadBehavior',{behavior:'deny'});await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  await send('Page.navigate',{url:`http://127.0.0.1:${port}/get_climate.html`});await waitFor('!!window.ClimateCore && document.querySelector("#year").value');
  await shot('desktop-empty');
  await check('initial page fits viewport','document.documentElement.scrollWidth<=innerWidth');
@@ -72,6 +72,3 @@ try{
  await check('no runtime exceptions',`${errors.length}===0`);
  await writeFile(join(out,'qa-summary.json'),JSON.stringify({checks,live,xlsx,runtimeErrors:errors},null,2));console.log(`${checks} browser checks passed.`);
 }finally{ws?.close();browser.kill();await new Promise(r=>server.close(r));}
-
-
-
